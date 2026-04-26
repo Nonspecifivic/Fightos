@@ -1326,8 +1326,35 @@ textarea{resize:vertical;min-height:70px;}
         </div>
       </div>
       <div class="f2 fg">
-        <div><label class="lbl">Method</label>
-          <select id="ma-finish"><option>Decision</option><option>Submission</option><option>KO/TKO</option><option>Points</option><option>DQ</option></select>
+        <div><label class="lbl">Method / finish</label>
+          <select id="ma-finish">
+            <optgroup label="Wrestling / Grappling">
+              <option>Pin / Fall</option>
+              <option>Technical superiority</option>
+              <option>Points</option>
+              <option>Injury default</option>
+              <option>Disqualification</option>
+              <option>Criteria (last scoring action)</option>
+              <option>Passivity / activity points</option>
+            </optgroup>
+            <optgroup label="BJJ / Submission">
+              <option>Submission</option>
+              <option>Referee stoppage</option>
+              <option>Advantages / points</option>
+              <option>Penalty decision</option>
+            </optgroup>
+            <optgroup label="Striking / MMA">
+              <option>KO / TKO</option>
+              <option>Decision (unanimous)</option>
+              <option>Decision (split)</option>
+              <option>Decision (majority)</option>
+              <option>Corner stoppage</option>
+            </optgroup>
+            <optgroup label="Other">
+              <option>Walkover</option>
+              <option>No contest</option>
+            </optgroup>
+          </select>
         </div>
         <div><label class="lbl">Rounds / Duration</label><input type="text" id="ma-dur" placeholder="e.g. 3×5 min"></div>
       </div>
@@ -2630,7 +2657,7 @@ Be direct and technical. Real fighters need real feedback.`;
     const resp=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01','x-api-key':key,'anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:userContent}]})
+      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1000,messages:[{role:'user',content:userContent}]})
     });
     if(!resp.ok){const err=await resp.json().catch(()=>({}));throw new Error(err.error?.message||resp.statusText);}
     const data=await resp.json();
@@ -2751,7 +2778,7 @@ async function anthropicCall(prompt, maxTokens=1000, imageContent=null){
       'anthropic-dangerous-direct-browser-access':'true',
     },
     body:JSON.stringify({
-      model:'claude-sonnet-4-20250514',
+      model:'claude-sonnet-4-5',
       max_tokens:maxTokens,
       messages:[{role:'user',content:userContent}]
     })
@@ -2873,7 +2900,7 @@ async function syncGoogleFit(){
     const data = await res.json();
     localStorage.setItem('gfit_latest', JSON.stringify(data));
     renderGfitData(data);
-    if(label) label.textContent = 'Synced · ' + new Date().toLocaleTimeString(uLocale,{hour:'2-digit',minute:'2-digit'});
+    if(label) label.textContent = 'Synced · ' + new Date().toLocaleTimeString(userLocale,{hour:'2-digit',minute:'2-digit'});
   }catch(e){
     if(label) label.textContent = 'Sync failed — ' + e.message;
     // If 401, tokens are invalid — disconnect
