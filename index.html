@@ -614,6 +614,59 @@ textarea{resize:vertical;min-height:70px;}
 </div>
 <!-- ==================== END API KEY MODAL ==================== -->
 
+<!-- ==================== ACCOUNT MODAL ==================== -->
+<div id="account-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:2000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--surf);border:1px solid var(--bdr2);border-radius:14px;padding:22px;width:100%;max-width:400px">
+
+    <!-- Signed out: sign in / sign up tabs -->
+    <div id="acct-auth-panel">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;margin-bottom:4px">FightOS Account</div>
+      <p style="font-size:13px;color:var(--mut2);line-height:1.5;margin-bottom:14px">Create an account to sync your data across all your devices.</p>
+
+      <!-- Tab toggle -->
+      <div style="display:flex;background:var(--surf2);border-radius:8px;padding:3px;margin-bottom:16px">
+        <button id="acct-signin-tab" onclick="switchAuthTab('signin')" style="flex:1;padding:7px;border-radius:6px;border:none;background:var(--surf);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;font-weight:500;color:var(--txt)">Sign in</button>
+        <button id="acct-signup-tab" onclick="switchAuthTab('signup')" style="flex:1;padding:7px;border-radius:6px;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;color:var(--mut2)">Create account</button>
+      </div>
+
+      <div style="margin-bottom:10px"><label style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);display:block;margin-bottom:5px">Email</label>
+        <input type="email" id="acct-email" placeholder="you@example.com" style="width:100%;background:var(--surf2);border:1.5px solid var(--bdr2);border-radius:8px;padding:9px 12px;color:var(--txt);font-family:'DM Sans',sans-serif;font-size:13px;outline:none">
+      </div>
+      <div style="margin-bottom:14px"><label style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);display:block;margin-bottom:5px">Password</label>
+        <input type="password" id="acct-password" placeholder="8+ characters" style="width:100%;background:var(--surf2);border:1.5px solid var(--bdr2);border-radius:8px;padding:9px 12px;color:var(--txt);font-family:'DM Sans',sans-serif;font-size:13px;outline:none" onkeydown="if(event.key==='Enter')submitAuth()">
+      </div>
+      <div id="acct-error" style="display:none;background:rgba(255,59,48,.08);border:1px solid rgba(255,59,48,.2);border-radius:7px;padding:9px 12px;font-size:12px;color:var(--acc2);margin-bottom:10px"></div>
+      <div style="display:flex;gap:8px">
+        <button onclick="closeAccountModal()" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer">Cancel</button>
+        <button onclick="submitAuth()" id="acct-submit-btn" style="flex:2;padding:10px;border-radius:8px;border:none;background:var(--acc);color:#000;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;cursor:pointer">SIGN IN</button>
+      </div>
+    </div>
+
+    <!-- Signed in: account info + sync controls -->
+    <div id="acct-signed-in-panel" style="display:none">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;margin-bottom:4px">Your Account</div>
+      <div style="font-size:13px;color:var(--mut2);margin-bottom:16px" id="acct-email-display"></div>
+
+      <!-- Sync status -->
+      <div style="background:var(--surf2);border:1px solid var(--bdr);border-radius:9px;padding:12px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:13px;font-weight:500">Data sync</span>
+          <span id="acct-sync-badge" class="pill pill-grn">✓ Synced</span>
+        </div>
+        <div style="font-size:11px;color:var(--mut2);line-height:1.6" id="acct-sync-detail">Your profile, training log, calendar and match history are synced across devices.</div>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="manualSync()" class="btn btn-ghost" style="flex:1;font-size:12px">↻ Sync now</button>
+        <button onclick="signOut()" class="btn btn-danger" style="flex:1;font-size:12px">Sign out</button>
+        <button onclick="closeAccountModal()" class="btn btn-ghost" style="width:100%;font-size:12px;margin-top:4px">Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+<!-- ==================== END ACCOUNT MODAL ==================== -->
+
 <div class="app">
 
 <!-- TOPBAR -->
@@ -622,6 +675,7 @@ textarea{resize:vertical;min-height:70px;}
   <div class="top-right">
     <button id="theme-btn" onclick="toggleTheme()" title="Toggle light/dark mode" style="background:transparent;border:1px solid var(--bdr2);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:15px;line-height:1;color:var(--mut2);transition:border-color .15s" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--bdr2)'">☀️</button>
     <button id="apikey-btn" onclick="openKeyModal()" title="Set Anthropic API key" style="background:transparent;border:1px solid var(--bdr2);border-radius:6px;padding:3px 9px;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap">🔑 API Key</button>
+    <button id="account-btn" onclick="openAccountModal()" title="Account & sync" style="background:transparent;border:1px solid var(--bdr2);border-radius:6px;padding:3px 9px;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap">👤 Account</button>
     <div class="ai-badge" id="ai-status-badge">AI Active</div>
     <div class="avatar" id="app-avatar" onclick="resetProfile()" title="Reset profile">MF</div>
   </div>
@@ -1672,7 +1726,7 @@ function selMood(el,m){
 
 // ===== TRAINING LOG — persistent, editable =====
 function getTrainingLog(){ try{ return JSON.parse(localStorage.getItem('fos_training_log')||'[]'); }catch(e){ return []; } }
-function saveTrainingLog(log){ try{ localStorage.setItem('fos_training_log',JSON.stringify(log)); }catch(e){} }
+function saveTrainingLog(log){ try{ localStorage.setItem('fos_training_log',JSON.stringify(log)); debouncedSync(); }catch(e){} }
 
 function saveTraining(){
   const type=document.getElementById('tr-type').value;
@@ -2215,6 +2269,7 @@ function saveEditEvent(id){
 
 function saveCalEvents(){
   try{localStorage.setItem('fos_cal_events',JSON.stringify(calEvents));}catch(e){}
+  debouncedSync();
 }
 function loadCalEvents(){
   try{const s=localStorage.getItem('fos_cal_events');if(s) calEvents=JSON.parse(s);}catch(e){}
@@ -3183,6 +3238,125 @@ function renderSavedBriefs(){
     el.innerHTML=briefs.map(b=>`<div class="row" style="align-items:flex-start;gap:8px"><div style="flex:1"><div style="font-size:11px;color:var(--mut2);margin-bottom:3px">${fmtDate(b.date)}</div><div style="font-size:12px;line-height:1.6;color:var(--txt)">${b.text.replace(/\n/g,' ').slice(0,200)}…</div></div></div>`).join('');
   }catch(e){}
 }
+// ===== ACCOUNT & CLOUD SYNC =====
+const ACCT={user:null,accessToken:null,refreshToken:null,expiresAt:0,backendUrl:'',authTab:'signin',syncing:false,lastSynced:null};
+
+function loadAccountSession(){ try{ const s=JSON.parse(localStorage.getItem('fos_account')||'null'); if(s){ ACCT.user=s.user;ACCT.accessToken=s.accessToken;ACCT.refreshToken=s.refreshToken;ACCT.expiresAt=s.expiresAt;ACCT.backendUrl=s.backendUrl||''; } }catch(e){} }
+function saveAccountSession(){ try{ localStorage.setItem('fos_account',JSON.stringify({user:ACCT.user,accessToken:ACCT.accessToken,refreshToken:ACCT.refreshToken,expiresAt:ACCT.expiresAt,backendUrl:ACCT.backendUrl})); }catch(e){} }
+function clearAccountSession(){ ACCT.user=null;ACCT.accessToken=null;ACCT.refreshToken=null;ACCT.expiresAt=0; try{ localStorage.removeItem('fos_account'); }catch(e){} }
+function isSignedIn(){ return !!(ACCT.user&&ACCT.accessToken); }
+
+async function getValidToken(){
+  if(!ACCT.accessToken) return null;
+  if(Date.now()<ACCT.expiresAt-60000) return ACCT.accessToken;
+  const bu=ACCT.backendUrl||gfitBackendUrl(); if(!bu) return ACCT.accessToken;
+  try{ const r=await fetch(`${bu}/api/account/auth`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'refresh',token:ACCT.refreshToken})}); const d=await r.json(); if(d.access_token){ ACCT.accessToken=d.access_token; if(d.refresh_token) ACCT.refreshToken=d.refresh_token; ACCT.expiresAt=Date.now()+(d.expires_in||3600)*1000; saveAccountSession(); } }catch(e){}
+  return ACCT.accessToken;
+}
+
+function openAccountModal(){ document.getElementById('account-modal').style.display='flex'; if(isSignedIn()) showSignedInPanel(); else showAuthPanel(); }
+function closeAccountModal(){ document.getElementById('account-modal').style.display='none'; }
+
+function showAuthPanel(){ document.getElementById('acct-auth-panel').style.display='block'; document.getElementById('acct-signed-in-panel').style.display='none'; document.getElementById('acct-error').style.display='none'; }
+function showSignedInPanel(){ document.getElementById('acct-auth-panel').style.display='none'; document.getElementById('acct-signed-in-panel').style.display='block'; document.getElementById('acct-email-display').textContent=ACCT.user?.email||''; updateSyncBadge(); }
+
+function switchAuthTab(tab){
+  ACCT.authTab=tab;
+  const si=document.getElementById('acct-signin-tab'),su=document.getElementById('acct-signup-tab'),btn=document.getElementById('acct-submit-btn');
+  if(tab==='signin'){ si.style.cssText='flex:1;padding:7px;border-radius:6px;border:none;background:var(--surf);font-family:DM Sans,sans-serif;font-size:13px;cursor:pointer;font-weight:500;color:var(--txt)'; su.style.cssText='flex:1;padding:7px;border-radius:6px;border:none;background:transparent;font-family:DM Sans,sans-serif;font-size:13px;cursor:pointer;color:var(--mut2)'; btn.textContent='SIGN IN'; }
+  else { su.style.cssText='flex:1;padding:7px;border-radius:6px;border:none;background:var(--surf);font-family:DM Sans,sans-serif;font-size:13px;cursor:pointer;font-weight:500;color:var(--txt)'; si.style.cssText='flex:1;padding:7px;border-radius:6px;border:none;background:transparent;font-family:DM Sans,sans-serif;font-size:13px;cursor:pointer;color:var(--mut2)'; btn.textContent='CREATE ACCOUNT'; }
+}
+
+async function submitAuth(){
+  const email=document.getElementById('acct-email').value.trim();
+  const password=document.getElementById('acct-password').value;
+  const errEl=document.getElementById('acct-error');
+  const btn=document.getElementById('acct-submit-btn');
+  errEl.style.display='none';
+  if(!email||!password){ errEl.textContent='Please enter your email and password.'; errEl.style.display='block'; return; }
+  const backendUrl=ACCT.backendUrl||gfitBackendUrl();
+  if(!backendUrl){ errEl.textContent='Enter your Vercel backend URL in the Trackers tab first.'; errEl.style.display='block'; return; }
+  btn.textContent='…'; btn.disabled=true;
+  try{
+    const res=await fetch(`${backendUrl}/api/account/auth`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:ACCT.authTab,email,password})});
+    const data=await res.json();
+    if(!res.ok||data.error){ errEl.textContent=data.error||'Authentication failed.'; errEl.style.display='block'; btn.disabled=false; btn.textContent=ACCT.authTab==='signin'?'SIGN IN':'CREATE ACCOUNT'; return; }
+    ACCT.user=data.user; ACCT.accessToken=data.access_token; ACCT.refreshToken=data.refresh_token; ACCT.expiresAt=Date.now()+(data.expires_in||3600)*1000; ACCT.backendUrl=backendUrl;
+    saveAccountSession(); updateAccountBtn(); showSignedInPanel();
+    if(ACCT.authTab==='signin') await loadFromCloud();
+    else await syncToCloud();
+  }catch(e){ errEl.textContent='Connection error — check your backend URL.'; errEl.style.display='block'; }
+  btn.disabled=false; btn.textContent=ACCT.authTab==='signin'?'SIGN IN':'CREATE ACCOUNT';
+}
+
+async function signOut(){
+  const bu=ACCT.backendUrl||gfitBackendUrl();
+  if(bu) fetch(`${bu}/api/account/auth`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'signout'})}).catch(()=>{});
+  clearAccountSession(); updateAccountBtn(); closeAccountModal();
+}
+
+function updateAccountBtn(){
+  const btn=document.getElementById('account-btn'); if(!btn) return;
+  if(isSignedIn()){ btn.textContent='👤 '+(ACCT.user?.email?.split('@')[0]||'Account'); btn.style.borderColor='rgba(0,230,118,.3)'; btn.style.color='var(--grn)'; }
+  else { btn.textContent='👤 Account'; btn.style.borderColor=''; btn.style.color=''; }
+}
+
+function updateSyncBadge(syncing=false,error=false){
+  const badge=document.getElementById('acct-sync-badge'),detail=document.getElementById('acct-sync-detail');
+  if(!badge) return;
+  if(syncing){ badge.textContent='⟳ Syncing…'; badge.className='pill pill-ora'; }
+  else if(error){ badge.textContent='⚠️ Error'; badge.className='pill pill-red'; }
+  else { badge.textContent='✓ Synced'; badge.className='pill pill-grn'; if(detail&&ACCT.lastSynced) detail.textContent='Last synced '+ACCT.lastSynced; }
+}
+
+async function syncToCloud(){
+  if(!isSignedIn()||ACCT.syncing) return;
+  ACCT.syncing=true; updateSyncBadge(true);
+  try{
+    const token=await getValidToken();
+    const bu=ACCT.backendUrl;
+    const h={'Content-Type':'application/json','Authorization':'Bearer '+token};
+    const post=(type,data)=>fetch(`${bu}/api/data/sync`,{method:'POST',headers:h,body:JSON.stringify({type,data})});
+    const profile=loadProfile();
+    await Promise.all([
+      profile?post('profile',profile):Promise.resolve(),
+      post('training_log',getTrainingLog()),
+      post('calendar',JSON.parse(localStorage.getItem('fos_cal_events')||'[]')),
+      post('match_history',getMatchHistory()),
+      post('coach_briefs',JSON.parse(localStorage.getItem('fos_briefs')||'[]')),
+    ]);
+    ACCT.lastSynced=new Date().toLocaleTimeString(userLocale,{hour:'2-digit',minute:'2-digit'});
+    saveAccountSession(); updateSyncBadge();
+  }catch(e){ console.error('Sync failed',e); updateSyncBadge(false,true); }
+  ACCT.syncing=false;
+}
+
+async function loadFromCloud(){
+  if(!isSignedIn()) return;
+  updateSyncBadge(true);
+  try{
+    const token=await getValidToken();
+    const res=await fetch(`${ACCT.backendUrl}/api/data/sync?type=all`,{headers:{'Authorization':'Bearer '+token}});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const d=await res.json();
+    if(d.profile) try{ localStorage.setItem('fightos_profile',JSON.stringify(d.profile)); }catch(e){}
+    if(d.training_log?.length) saveTrainingLog(d.training_log);
+    if(d.calendar?.length) try{ localStorage.setItem('fos_cal_events',JSON.stringify(d.calendar)); }catch(e){}
+    if(d.match_history?.length) saveMatchHistory(d.match_history);
+    if(d.coach_briefs?.length) try{ localStorage.setItem('fos_briefs',JSON.stringify(d.coach_briefs)); }catch(e){}
+    const profile=loadProfile();
+    if(profile){ applyProfile(profile); renderNutritionStats(); renderWeightStats(); renderTDEECard(); }
+    renderTrainingLog(); renderCal(); renderMatchRecord(); renderMatchHistory(); renderSavedBriefs();
+    ACCT.lastSynced=new Date().toLocaleTimeString(userLocale,{hour:'2-digit',minute:'2-digit'});
+    saveAccountSession(); updateSyncBadge();
+  }catch(e){ console.error('Load from cloud failed',e); updateSyncBadge(false,true); }
+}
+
+async function manualSync(){ await syncToCloud(); await loadFromCloud(); }
+
+let _syncTimer=null;
+function debouncedSync(){ clearTimeout(_syncTimer); _syncTimer=setTimeout(()=>{ if(isSignedIn()) syncToCloud(); },3000); }
+
 function renderMarkdown(text){
   return text.split('\n').map(line=>{
     if(line.startsWith('###'))return`<h4 style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;color:var(--acc);margin:12px 0 4px">${line.replace(/^###\s*/,'')}</h4>`;
@@ -3197,6 +3371,8 @@ function renderMarkdown(text){
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded',()=>{
   initTheme();
+  loadAccountSession();
+  updateAccountBtn();
   updateKeyStatus();
   renderSavedBriefs();
   renderMatchRecord();
