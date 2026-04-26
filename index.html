@@ -1648,17 +1648,47 @@ function saveTraining(){
   log.unshift(entry);
   saveTrainingLog(log);
   renderTrainingLog();
-  renderCal(); // refresh calendar to show new session dot
+  renderCal();
 
-  // Reset form
-  document.getElementById('tr-dur').value='';
-  document.getElementById('tr-focus').value='';
-  if(document.getElementById('tr-coach')) document.getElementById('tr-coach').value='';
-  selectedRPE=null; selectedMood=null;
-  document.querySelectorAll('.rpe-btn').forEach(b=>b.classList.remove('sel'));
-  document.querySelectorAll('#tab-training .mood-btn').forEach(b=>b.classList.remove('sel'));
-  document.getElementById('cf-fields').style.display='none';
-  document.getElementById('tr-type').value=document.getElementById('tr-type').options[0].value;
+  // ── Reset ALL form fields ──
+  document.getElementById('tr-date').value = todayStr();
+  document.getElementById('tr-dur').value = '';
+  document.getElementById('tr-focus').value = '';
+  const coachEl = document.getElementById('tr-coach');
+  if(coachEl) coachEl.value = '';
+
+  // Reset selects to first option
+  ['tr-type'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.selectedIndex = 0;
+  });
+
+  // Clear RPE and mood selections
+  selectedRPE = null;
+  selectedMood = null;
+  document.querySelectorAll('.rpe-btn').forEach(b => b.classList.remove('sel'));
+  document.querySelectorAll('#tab-training .mood-btn').forEach(b => b.classList.remove('sel'));
+
+  // Clear and hide CrossFit fields
+  ['cf-wod','cf-score','cf-movements'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+  ['cf-format','cf-rx'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.selectedIndex = 0;
+  });
+  const cfFields = document.getElementById('cf-fields');
+  if(cfFields) cfFields.style.display = 'none';
+
+  // Brief visual confirmation
+  const btn = document.querySelector('#tab-training .btn-hero');
+  if(btn){
+    const orig = btn.textContent;
+    btn.textContent = '✅ SESSION SAVED';
+    btn.style.opacity = '.7';
+    setTimeout(() => { btn.textContent = orig; btn.style.opacity = '1'; }, 1500);
+  }
 }
 
 function renderTrainingLog(){
