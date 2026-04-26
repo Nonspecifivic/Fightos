@@ -1299,17 +1299,40 @@ textarea{resize:vertical;min-height:70px;}
   <div class="card" style="margin-bottom:10px">
     <div class="card-header"><h3>📹 Upload footage or screenshots</h3><span class="pill pill-blu">AI Visual Analysis</span></div>
     <div class="card-body">
+
+      <!-- Google Photos button — only shown when connected -->
+      <div id="gphotos-btn-wrap" style="display:none;margin-bottom:10px">
+        <button class="btn btn-full" onclick="openGooglePhotosPicker()" style="background:rgba(66,133,244,.1);border:1px solid rgba(66,133,244,.3);color:#4285F4;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#4285F4"/><path d="M12 7a5 5 0 100 10A5 5 0 0012 7z" fill="white"/></svg>
+          Pick from Google Photos
+        </button>
+        <div style="font-size:10px;color:var(--mut2);text-align:center;margin-top:4px">Opens your Google Photos library — select match screenshots or clips</div>
+      </div>
+
+      <!-- Not connected notice -->
+      <div id="gphotos-connect-notice" style="display:none;padding:9px 12px;background:rgba(255,149,0,.07);border:1px solid rgba(255,149,0,.2);border-radius:7px;margin-bottom:10px;font-size:12px;color:var(--ora)">
+        📸 Connect Google Fit in the <strong>Trackers</strong> tab to also enable Google Photos picking
+      </div>
+
+      <!-- Local file drop zone -->
       <div style="border:2px dashed var(--bdr2);border-radius:10px;padding:22px 16px;text-align:center;margin-bottom:10px;position:relative;cursor:pointer;transition:border-color .2s" id="upload-zone" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
         <input type="file" accept="image/*,video/*" multiple onchange="handleFiles(this.files)" style="position:absolute;inset:0;opacity:0;cursor:pointer">
         <div style="font-size:26px;margin-bottom:6px">🎬</div>
         <div style="font-size:14px;font-weight:500;margin-bottom:3px">Drop footage or screenshots here</div>
-        <div style="font-size:11px;color:var(--mut2);margin-bottom:8px">Drag & drop from device, Google Photos download, or any source</div>
+        <div style="font-size:11px;color:var(--mut2);margin-bottom:8px">Or click to browse from your device</div>
         <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
-          <span class="pill pill-blu">JPG/PNG</span><span class="pill pill-blu">MP4/MOV</span><span class="pill pill-blu">Screenshots</span><span class="pill pill-blu">Key frames</span>
+          <span class="pill pill-blu">JPG/PNG</span><span class="pill pill-blu">MP4/MOV</span><span class="pill pill-blu">Screenshots</span>
         </div>
       </div>
       <div id="file-preview" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
-      <div class="tip" style="margin-bottom:0;font-size:11px">💡 <strong>Best results:</strong> Screenshot key moments (takedown attempts, submission setups, striking exchanges). The AI analyses body position, technique and tactical patterns from images.</div>
+
+      <!-- Google Photos selected images preview -->
+      <div id="gphotos-preview" style="display:none;margin-bottom:10px">
+        <div style="font-size:11px;color:var(--mut2);margin-bottom:6px" id="gphotos-count"></div>
+        <div id="gphotos-thumbs" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      </div>
+
+      <div class="tip" style="margin-bottom:0;font-size:11px">💡 <strong>Best results:</strong> Screenshot key moments — takedown attempts, submission setups, positions. The AI analyses body position and technique from images.</div>
     </div>
   </div>
 
@@ -2438,6 +2461,129 @@ function renderCoachOutput(text){
   return html||`<div class="result-card"><p style="font-size:13px;line-height:1.65">${text}</p></div>`;
 }
 
+// ===== GOOGLE PHOTOS PICKER =====
+// Stores photos selected from Google Photos (as base64) alongside local file uploads
+let gPhotosSelected = []; // array of {base64, mimeType, name}
+
+function initGooglePhotosUI(){
+  // Show/hide the Google Photos button based on connection state
+  const btnWrap  = document.getElementById('gphotos-btn-wrap');
+  const notice   = document.getElementById('gphotos-connect-notice');
+  if(!btnWrap || !notice) return;
+  if(gfitConnected()){
+    btnWrap.style.display  = 'block';
+    notice.style.display   = 'none';
+  } else {
+    btnWrap.style.display  = 'none';
+    notice.style.display   = 'block';
+  }
+}
+
+async function openGooglePhotosPicker(){
+  // The Google Photos Picker API is loaded dynamically via a script tag
+  // It's only available in supported browsers (Chrome, Edge, Safari 16+)
+  if(!window.google?.photos?.picker){
+    await loadPickerScript();
+  }
+
+  const token = await ensureGfitToken().catch(()=>null);
+  if(!token){
+    alert('Google not connected. Go to Trackers tab and connect Google Fit first.');
+    return;
+  }
+
+  try{
+    // Create the picker session using Google's Photos Picker API
+    const session = await google.photos.picker.create({
+      authToken: token,
+    });
+
+    // Open the picker UI
+    session.on('cancel', () => {});
+    session.on('done', async (result) => {
+      const mediaItems = result.mediaItems || [];
+      if(!mediaItems.length) return;
+
+      const backendUrl = gfitBackendUrl();
+      if(!backendUrl){
+        alert('Enter your Vercel backend URL in the Trackers tab first.');
+        return;
+      }
+
+      // Show loading state
+      const thumbs = document.getElementById('gphotos-thumbs');
+      const countEl = document.getElementById('gphotos-count');
+      const prev = document.getElementById('gphotos-preview');
+      prev.style.display = 'block';
+      countEl.textContent = `Fetching ${mediaItems.length} image${mediaItems.length>1?'s':''} from Google Photos…`;
+      thumbs.innerHTML = '';
+      gPhotosSelected = [];
+
+      for(const item of mediaItems.slice(0, 5)){ // max 5 images
+        try{
+          // Proxy through our Vercel backend to avoid CORS
+          const proxyUrl = `${backendUrl}/api/photos/proxy?url=${encodeURIComponent(item.baseUrl)}`;
+          const res = await fetch(proxyUrl, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if(!res.ok) throw new Error(`HTTP ${res.status}`);
+
+          const blob      = await res.blob();
+          const mimeType  = blob.type || 'image/jpeg';
+          const base64    = await blobToBase64(blob);
+
+          gPhotosSelected.push({ base64, mimeType, name: item.filename || 'photo.jpg' });
+
+          // Show thumbnail
+          const img = document.createElement('img');
+          img.src = `data:${mimeType};base64,${base64}`;
+          img.style.cssText = 'width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--bdr2)';
+          thumbs.appendChild(img);
+
+        }catch(e){
+          console.error('Failed to fetch photo:', e);
+        }
+      }
+
+      countEl.textContent = `${gPhotosSelected.length} photo${gPhotosSelected.length!==1?'s':''} selected from Google Photos`;
+    });
+
+    session.open();
+
+  }catch(e){
+    // Picker API not supported in this browser — fall back to guidance
+    alert('Google Photos Picker is not supported in this browser.\n\nTip: Download the image from Google Photos, then drop it into the upload zone below.');
+  }
+}
+
+function loadPickerScript(){
+  return new Promise((resolve, reject) => {
+    if(window.google?.photos?.picker){ resolve(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://apis.google.com/js/api.js';
+    s.onload = () => {
+      gapi.load('photos.picker', { callback: resolve, onerror: reject });
+    };
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+function blobToBase64(blob){
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload  = () => resolve(r.result.split(',')[1]);
+    r.onerror = reject;
+    r.readAsDataURL(blob);
+  });
+}
+
+function clearGPhotosSelection(){
+  gPhotosSelected = [];
+  const prev = document.getElementById('gphotos-preview');
+  if(prev){ prev.style.display='none'; document.getElementById('gphotos-thumbs').innerHTML=''; }
+}
+
 // ===== MACROFACTOR CSV IMPORT =====
 let csvData = null;
 
@@ -2628,19 +2774,43 @@ async function analyzeMatch(){
   const loading=document.getElementById('analysis-loading');
   const content=document.getElementById('analysis-content');
   out.style.display='block';loading.style.display='flex';content.style.display='none';content.innerHTML='';
+
   const type=document.getElementById('ma-type').value;
   const result=document.getElementById('ma-result').value;
   const finish=document.getElementById('ma-finish').value;
   const dur=document.getElementById('ma-dur').value;
   const desc=document.getElementById('ma-desc').value;
   const focus=document.getElementById('ma-focus').value;
+  const profile=loadProfile()||{};
   const userContent=[];
-  for(const f of uploadedFiles2){if(f.type.startsWith('image/')){const b64=await fileToBase64(f);userContent.push({type:'image',source:{type:'base64',media_type:f.type,data:b64}});}}
+
+  // 1. Add local file uploads (images only — Claude can't process video)
+  for(const f of uploadedFiles2){
+    if(f.type.startsWith('image/')){
+      const b64=await fileToBase64(f);
+      userContent.push({type:'image',source:{type:'base64',media_type:f.type,data:b64}});
+    }
+  }
+
+  // 2. Add Google Photos selections
+  for(const p of gPhotosSelected){
+    userContent.push({type:'image',source:{type:'base64',media_type:p.mimeType,data:p.base64}});
+  }
+
+  const totalImages=userContent.length;
+  const imageNote=totalImages>0
+    ?`${totalImages} image${totalImages>1?'s':''} attached (${uploadedFiles2.filter(f=>f.type.startsWith('image/')).length} local, ${gPhotosSelected.length} from Google Photos) — analyse visible technique, positioning and tactical patterns.`
+    :'No images attached — analysis based on description only.';
+
   const prompt=`You are an elite combat sports coach. Analyse this fighter's match performance.
 
+FIGHTER: ${profile.firstName||'—'} | ${profile.sport||type} | ${profile.exp||'—'}
 Match: ${type} | Result: ${result} by ${finish} | Duration: ${dur||'unknown'}
+${document.getElementById('ma-opponent')?.value?'Opponent: '+document.getElementById('ma-opponent').value:''}
+${document.getElementById('ma-event')?.value?'Event: '+document.getElementById('ma-event').value:''}
 Description: ${desc||'No description provided'}
 Focus areas: ${focus||'General analysis'}
+Images: ${imageNote}
 
 Provide a structured breakdown:
 PERFORMANCE SCORES — rate 1-5: Takedown offense, Takedown defense, Guard work, Striking, Cardio, Tactics
@@ -2648,10 +2818,13 @@ KEY STRENGTHS — 2-3 specific things done well with examples
 CRITICAL IMPROVEMENTS — top 3 areas, specific and actionable with drills
 TRAINING DRILLS — 4 specific drills to address the biggest gaps
 TACTICAL ADJUSTMENTS — fight-specific changes for next time
-${document.getElementById('ma-scout')?.value==='yes'?'OPPONENT PATTERNS — based on the description, what patterns did the opponent show and how to counter them':''}
+${document.getElementById('ma-scout')?.value==='yes'?'OPPONENT PATTERNS — patterns observed and how to counter them in a rematch':''}
+${totalImages>0?'VISUAL OBSERVATIONS — specific technique feedback based on the images provided':''}
 
 Be direct and technical. Real fighters need real feedback.`;
+
   userContent.push({type:'text',text:prompt});
+
   try{
     const key=getAPIKey(); if(!key){openKeyModal();throw new Error('no_key');}
     const resp=await fetch('https://api.anthropic.com/v1/messages',{
@@ -2668,9 +2841,7 @@ Be direct and technical. Real fighters need real feedback.`;
     const history=getMatchHistory();
     history.unshift({
       date:todayStr(),
-      type:document.getElementById('ma-type').value,
-      result:document.getElementById('ma-result').value,
-      finish:document.getElementById('ma-finish').value,
+      type,result,finish,
       opponent:document.getElementById('ma-opponent')?.value||'',
       event:document.getElementById('ma-event')?.value||'',
       analysis:text.slice(0,1000)
@@ -2678,6 +2849,8 @@ Be direct and technical. Real fighters need real feedback.`;
     saveMatchHistory(history.slice(0,20));
     renderMatchRecord();
     renderMatchHistory();
+    // Clear Google Photos selection after analysis
+    clearGPhotosSelection();
   }catch(e){showAIError(content,loading,e.message);}
 }
 
@@ -2950,6 +3123,7 @@ function renderGfitConnectedState(){
   const badge = document.getElementById('gfit-status-badge');
   badge.textContent = 'Connected ✓';
   badge.className   = 'pill pill-grn';
+  initGooglePhotosUI(); // show Photos picker in Match Analysis
 }
 
 function renderGfitDisconnectedState(){
@@ -3029,6 +3203,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   renderMatchHistory();
   renderTrainingLog();
   initGoogleFit();
+  initGooglePhotosUI();
   initBodyParts();
   loadCalEvents(); // load saved events BEFORE rendering
   renderWeightChart();
