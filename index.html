@@ -154,9 +154,10 @@ textarea{resize:vertical;min-height:70px;}
 .cal-grid-hdr{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:2px;}
 .cal-day-hdr{text-align:center;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);padding:4px 0;}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
-.day-cell{min-height:58px;background:var(--surf);border-radius:5px;padding:4px;border:1px solid transparent;transition:border-color .15s;cursor:pointer;}
-.day-cell:hover{border-color:var(--bdr2);}
+.day-cell{min-height:58px;background:var(--surf);border-radius:5px;padding:4px;border:1px solid transparent;transition:border-color .15s,background .15s;cursor:pointer;}
+.day-cell:hover{border-color:var(--bdr2);background:var(--surf2);}
 .day-cell.today{border-color:var(--acc);}
+.day-cell.selected-day{border-color:var(--blu)!important;background:rgba(68,138,255,.07)!important;box-shadow:0 0 0 1px var(--blu);}
 .day-cell.other-month{background:#0C0C0C;opacity:.5;}
 .day-num{font-size:11px;font-weight:500;margin-bottom:2px;}
 .day-evt{font-size:8px;padding:1px 3px;border-radius:2px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -862,6 +863,61 @@ textarea{resize:vertical;min-height:70px;}
       <div class="row" style="color:var(--mut2);font-size:13px">No food logged today — add entries above or use the AI Meal Planner.</div>
     </div>
   </div>
+
+  <!-- MacroFactor CSV Import -->
+  <div class="card" style="margin-top:4px">
+    <div class="card-header">
+      <h3>🥗 MacroFactor import</h3>
+      <span class="pill pill-pur">CSV Analysis</span>
+    </div>
+    <div class="card-body">
+      <p style="font-size:13px;color:var(--mut2);line-height:1.6;margin-bottom:12px">
+        MacroFactor has no public API, but you can export your data as a CSV and let your AI coach analyse your weekly nutrition patterns, adherence, and suggestions.
+      </p>
+      <div style="background:var(--surf2);border:1px solid var(--bdr);border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px;line-height:1.8">
+        <strong>How to export from MacroFactor:</strong><br>
+        1. Open MacroFactor app → tap your profile icon<br>
+        2. Settings → <strong>Export Data</strong><br>
+        3. Choose date range → Export as CSV<br>
+        4. Save to your device → upload here
+      </div>
+      <div style="border:2px dashed var(--bdr2);border-radius:8px;padding:18px;text-align:center;position:relative;cursor:pointer;margin-bottom:10px;transition:border-color .2s" id="csv-drop-zone" ondragover="event.preventDefault();this.style.borderColor='var(--acc)'" ondragleave="this.style.borderColor=''" ondrop="handleCSVDrop(event)">
+        <input type="file" accept=".csv,.txt" id="csv-file-input" onchange="handleCSVFile(this.files[0])" style="position:absolute;inset:0;opacity:0;cursor:pointer">
+        <div style="font-size:22px;margin-bottom:5px">📊</div>
+        <div style="font-size:13px;font-weight:500">Drop MacroFactor CSV here</div>
+        <div style="font-size:11px;color:var(--mut2);margin-top:3px">or click to browse</div>
+      </div>
+      <div id="csv-preview" style="display:none;margin-bottom:10px">
+        <div style="font-size:11px;color:var(--mut2);margin-bottom:6px" id="csv-file-name"></div>
+        <div style="background:var(--surf2);border-radius:6px;padding:8px;font-size:11px;font-family:monospace;max-height:100px;overflow-y:auto;color:var(--txt)" id="csv-preview-text"></div>
+      </div>
+      <div class="f2 fg">
+        <div><label class="lbl">Analysis focus</label>
+          <select id="csv-focus">
+            <option>Overall weekly nutrition review</option>
+            <option>Protein targets — hitting them?</option>
+            <option>Calorie adherence vs target</option>
+            <option>Cut progress — rate & sustainability</option>
+            <option>Recovery nutrition patterns</option>
+            <option>Fight week nutrition strategy</option>
+          </select>
+        </div>
+        <div><label class="lbl">Date range in file</label>
+          <select id="csv-range">
+            <option>Last 7 days</option>
+            <option>Last 2 weeks</option>
+            <option>Last month</option>
+            <option>Full export</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-acc btn-full btn-hero" onclick="analyzeMacroFactorCSV()" id="csv-analyze-btn" disabled style="opacity:.5">ANALYSE WITH AI COACH</button>
+    </div>
+    <div id="csv-output" style="display:none">
+      <div class="dots-loading" id="csv-loading"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+      <div id="csv-content" style="display:none;padding:13px"></div>
+    </div>
+  </div>
 </div>
 
 <!-- ==================== HYDRATION ==================== -->
@@ -910,7 +966,44 @@ textarea{resize:vertical;min-height:70px;}
 
 <!-- ==================== CALENDAR ==================== -->
 <div class="tab" id="tab-calendar">
-  <div id="comp-countdown" class="warn" style="display:none"></div>
+
+  <!-- Competition countdown hero -->
+  <div id="comp-countdown-hero" style="display:none;margin-bottom:10px">
+    <div style="background:linear-gradient(135deg,rgba(232,255,0,.08),rgba(255,59,48,.06));border:1px solid rgba(232,255,0,.2);border-radius:12px;padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--mut2);margin-bottom:3px">Next competition</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px" id="cd-comp-name">—</div>
+          <div style="font-size:11px;color:var(--mut2);margin-top:2px" id="cd-comp-date">—</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:1;color:var(--acc2)" id="cd-days">—</div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2)">days</div>
+        </div>
+      </div>
+      <!-- Phase timeline -->
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--mut2);margin-bottom:4px">
+          <span id="cd-phase-label">Camp phase</span>
+          <span id="cd-phase-sub"></span>
+        </div>
+        <div style="background:var(--surf2);border-radius:4px;height:6px;overflow:hidden">
+          <div id="cd-phase-bar" style="height:100%;border-radius:4px;background:var(--acc);transition:width .5s"></div>
+        </div>
+      </div>
+      <!-- Week-by-week breakdown -->
+      <div id="cd-weekly-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:6px;margin-bottom:10px"></div>
+      <!-- Cut status -->
+      <div id="cd-cut-status" style="display:none;padding:8px;background:rgba(255,149,0,.08);border:1px solid rgba(255,149,0,.2);border-radius:6px;font-size:12px;line-height:1.6"></div>
+      <!-- AI fight prep brief -->
+      <button class="btn btn-ghost btn-full" style="margin-top:8px;font-size:12px" onclick="getCompBrief()">🧠 Get AI fight prep brief for this comp</button>
+    </div>
+    <div id="comp-brief-out" style="display:none;margin-top:8px">
+      <div class="dots-loading" id="comp-brief-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+      <div id="comp-brief-content"></div>
+    </div>
+  </div>
+
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
     <button class="btn btn-ghost" style="padding:5px 12px" onclick="calNav(-1)">‹</button>
     <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px" id="cal-month-label">APRIL 2026</div>
@@ -1196,18 +1289,33 @@ textarea{resize:vertical;min-height:70px;}
 
 <!-- ==================== MATCH ANALYSIS ==================== -->
 <div class="tab" id="tab-analysis">
-  <div class="tip"><strong>Video analysis:</strong> Upload screenshots or key-frame images from your match video for full AI visual analysis. You can also upload video clips — describe key moments for a complete breakdown.</div>
-  <div style="border:2px dashed var(--bdr2);border-radius:10px;padding:28px 16px;text-align:center;margin-bottom:12px;position:relative;cursor:pointer;transition:border-color .2s" id="upload-zone" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-    <input type="file" accept="image/*,video/*" multiple onchange="handleFiles(this.files)" style="position:absolute;inset:0;opacity:0;cursor:pointer">
-    <div style="font-size:28px;margin-bottom:8px">🎬</div>
-    <div style="font-size:14px;font-weight:500;margin-bottom:4px">Upload footage or screenshots</div>
-    <div style="font-size:12px;color:var(--mut2)">Drag & drop video clips, screenshots or key frame images</div>
-    <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:10px">
-      <span class="pill pill-blu">MP4</span><span class="pill pill-blu">MOV</span><span class="pill pill-blu">JPG/PNG</span><span class="pill pill-blu">Screenshots</span>
+
+  <!-- Match history summary -->
+  <div class="stat-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:10px" id="ma-record-grid">
+    <!-- populated by renderMatchRecord() -->
+  </div>
+
+  <!-- Upload zone -->
+  <div class="card" style="margin-bottom:10px">
+    <div class="card-header"><h3>📹 Upload footage or screenshots</h3><span class="pill pill-blu">AI Visual Analysis</span></div>
+    <div class="card-body">
+      <div style="border:2px dashed var(--bdr2);border-radius:10px;padding:22px 16px;text-align:center;margin-bottom:10px;position:relative;cursor:pointer;transition:border-color .2s" id="upload-zone" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+        <input type="file" accept="image/*,video/*" multiple onchange="handleFiles(this.files)" style="position:absolute;inset:0;opacity:0;cursor:pointer">
+        <div style="font-size:26px;margin-bottom:6px">🎬</div>
+        <div style="font-size:14px;font-weight:500;margin-bottom:3px">Drop footage or screenshots here</div>
+        <div style="font-size:11px;color:var(--mut2);margin-bottom:8px">Drag & drop from device, Google Photos download, or any source</div>
+        <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
+          <span class="pill pill-blu">JPG/PNG</span><span class="pill pill-blu">MP4/MOV</span><span class="pill pill-blu">Screenshots</span><span class="pill pill-blu">Key frames</span>
+        </div>
+      </div>
+      <div id="file-preview" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
+      <div class="tip" style="margin-bottom:0;font-size:11px">💡 <strong>Best results:</strong> Screenshot key moments (takedown attempts, submission setups, striking exchanges). The AI analyses body position, technique and tactical patterns from images.</div>
     </div>
   </div>
-  <div id="file-preview" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
-  <div class="card">
+
+  <!-- Match details -->
+  <div class="card" style="margin-bottom:10px">
+    <div class="card-header"><h3>Match details</h3></div>
     <div class="card-body">
       <div class="f2 fg">
         <div><label class="lbl">Match type</label>
@@ -1219,18 +1327,48 @@ textarea{resize:vertical;min-height:70px;}
       </div>
       <div class="f2 fg">
         <div><label class="lbl">Method</label>
-          <select id="ma-finish"><option>Decision</option><option>Submission</option><option>KO/TKO</option><option>Points</option></select>
+          <select id="ma-finish"><option>Decision</option><option>Submission</option><option>KO/TKO</option><option>Points</option><option>DQ</option></select>
         </div>
-        <div><label class="lbl">Rounds / Duration</label><input type="text" id="ma-dur" placeholder="e.g. 3x5 min"></div>
+        <div><label class="lbl">Rounds / Duration</label><input type="text" id="ma-dur" placeholder="e.g. 3×5 min"></div>
       </div>
-      <div class="fg"><label class="lbl">Describe key moments</label><textarea id="ma-desc" placeholder="Positions, submissions attempted, where you felt out-of-control, what worked..."></textarea></div>
-      <div class="fg"><label class="lbl">Areas to focus on</label><textarea id="ma-focus" style="min-height:50px" placeholder="e.g. My guard passing was weak, I gassed in round 2..."></textarea></div>
+      <div class="f2 fg">
+        <div><label class="lbl">Opponent name (optional)</label><input type="text" id="ma-opponent" placeholder="e.g. John Smith"></div>
+        <div><label class="lbl">Competition / event</label><input type="text" id="ma-event" placeholder="e.g. Regional Open 2026"></div>
+      </div>
+      <div class="fg"><label class="lbl">Describe key moments</label><textarea id="ma-desc" placeholder="Positions you found yourself in, submissions attempted, where you felt in control or out of control, what surprised you..."></textarea></div>
+      <div class="fg"><label class="lbl">What you want to improve</label><textarea id="ma-focus" style="min-height:50px" placeholder="e.g. Guard passing felt weak, gassed in round 2, kept getting caught in the same position..."></textarea></div>
+      <div class="f2 fg">
+        <div><label class="lbl">Analysis depth</label>
+          <select id="ma-depth">
+            <option value="full">Full analysis — all sections</option>
+            <option value="technical">Technical only — positions & technique</option>
+            <option value="tactical">Tactical only — game plan & strategy</option>
+            <option value="conditioning">Conditioning & cardio focus</option>
+            <option value="drill">Drill recommendations only</option>
+          </select>
+        </div>
+        <div><label class="lbl">Opponent scouting?</label>
+          <select id="ma-scout">
+            <option value="no">No — just analyse my performance</option>
+            <option value="yes">Yes — also scout opponent patterns</option>
+          </select>
+        </div>
+      </div>
       <button class="btn btn-acc btn-full btn-hero" onclick="analyzeMatch()">ANALYZE MY PERFORMANCE</button>
     </div>
   </div>
+
   <div id="analysis-output" style="display:none">
     <div class="dots-loading" id="analysis-loading"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
     <div id="analysis-content"></div>
+  </div>
+
+  <!-- Match history -->
+  <div style="margin-top:4px">
+    <p class="sec-title">Match history</p>
+    <div class="card" id="match-history-list">
+      <div class="row" style="color:var(--mut2);font-size:13px">No matches logged yet — analyse your first match above.</div>
+    </div>
   </div>
 </div>
 
@@ -1442,7 +1580,6 @@ let calEvents = [];
 let nextEvtId = Date.now();  // unique IDs
 let uploadedFiles = [];
 const bodyParts = ['Neck','Left shoulder','Right shoulder','Left bicep','Right bicep','Chest','Upper back','Lower back','Left hip','Right hip','Left knee','Right knee','Left ankle','Right ankle','Ribs','Abs'];
-const typeColors = {competition:'#FF3B30',camp:'#E8FF00','weigh-in':'#FF9500',training:'#448AFF',recovery:'#00E676'};
 const techniques = [
   {icon:'🥋',name:'Rear Naked Choke',type:'BJJ',steps:['Secure back control with both hooks in.','Slide choking arm under chin across throat.','Lock a figure-four behind their head.','Squeeze elbows together — not backward.','Keep hips glued to prevent escape.'],tip:'If they tuck chin, use palm-to-palm grip and work to expose neck first.'},
   {icon:'🤼',name:'Double-Leg Takedown',type:'Wrestling',steps:['Penetration step — drop level sharply.','Head outside their hip, not into chest.','Wrap both arms around back of thighs.','Drive forward and lift into your body.','Finish to side or into top position.'],tip:'Level-change speed is everything — commit hard and drive through.'},
@@ -1460,9 +1597,11 @@ function showTab(id){
   const tabs=['dashboard','training','body','nutrition','hydration','weight','calendar','womens','trackers','coach','strength','mobility','techniques','analysis'];
   document.querySelectorAll('.nb')[tabs.indexOf(id)]?.classList.add('active');
   if(id==='techniques') renderTechGrid();
-  if(id==='calendar') renderCal();
+  if(id==='calendar'){ renderCal(); renderCompCountdown(); }
   if(id==='weight') renderWeightChart();
   if(id==='dashboard') renderDashAIBanner();
+  if(id==='analysis'){ renderMatchRecord(); renderMatchHistory(); }
+  if(id==='nutrition'){ renderNutritionStats(); renderFoodLog(); }
 }
 
 function resetProfile(){
@@ -1471,28 +1610,151 @@ function resetProfile(){
   location.reload();
 }
 
-// ===== TRAINING LOG =====
+// ===== RPE & MOOD SELECTORS =====
 function selRPE(el,val){
   document.querySelectorAll('.rpe-btn').forEach(b=>b.classList.remove('sel'));
-  el.classList.add('sel');
-  selectedRPE = val;
+  el.classList.add('sel'); selectedRPE=val;
 }
 function selMood(el,m){
   document.querySelectorAll('#tab-training .mood-btn').forEach(b=>b.classList.remove('sel'));
-  el.classList.add('sel');
-  selectedMood = m;
+  el.classList.add('sel'); selectedMood=m;
 }
+
+// ===== TRAINING LOG — persistent, editable =====
+function getTrainingLog(){ try{ return JSON.parse(localStorage.getItem('fos_training_log')||'[]'); }catch(e){ return []; } }
+function saveTrainingLog(log){ try{ localStorage.setItem('fos_training_log',JSON.stringify(log)); }catch(e){} }
+
 function saveTraining(){
-  const type = document.getElementById('tr-type').value;
-  const dur = document.getElementById('tr-dur').value;
-  const rpe = selectedRPE || 5;
-  const mood = selectedMood || '😐';
-  const list = document.getElementById('training-log-list');
-  const pillClass = rpe>=8?'pill-red':rpe>=6?'pill-acc':'pill-blu';
-  const todayLabel = new Date().toLocaleDateString(userLocale,{weekday:'short',day:'numeric',month:'short'});
-  list.insertAdjacentHTML('afterbegin',`<div class="row"><div><div style="font-weight:500;font-size:13px">${type} · ${dur||'?'} min</div><div style="font-size:11px;color:var(--mut2)">${todayLabel} · Felt: ${mood}</div></div><span class="pill ${pillClass}">RPE ${rpe}</span></div>`);
+  const type=document.getElementById('tr-type').value;
+  const dur=document.getElementById('tr-dur').value;
+  const rpe=selectedRPE||5;
+  const mood=selectedMood||'😐';
+  const focus=document.getElementById('tr-focus').value;
+  const coach=document.getElementById('tr-coach')?.value||'';
+  const date=document.getElementById('tr-date').value||todayStr();
+  // CrossFit extras
+  const isCF=type.startsWith('CrossFit');
+  const cfWod=isCF?document.getElementById('cf-wod')?.value:'';
+  const cfFormat=isCF?document.getElementById('cf-format')?.value:'';
+  const cfScore=isCF?document.getElementById('cf-score')?.value:'';
+  const cfRx=isCF?document.getElementById('cf-rx')?.value:'';
+  const cfMovements=isCF?document.getElementById('cf-movements')?.value:'';
+
+  const log=getTrainingLog();
+  const entry={
+    id:Date.now(),date,type,dur:parseInt(dur)||60,rpe,mood,focus,coach,
+    ...(isCF&&{cfWod,cfFormat,cfScore,cfRx,cfMovements})
+  };
+  log.unshift(entry);
+  saveTrainingLog(log);
+  renderTrainingLog();
+  renderCal(); // refresh calendar to show new session dot
+
+  // Reset form
   document.getElementById('tr-dur').value='';
   document.getElementById('tr-focus').value='';
+  if(document.getElementById('tr-coach')) document.getElementById('tr-coach').value='';
+  selectedRPE=null; selectedMood=null;
+  document.querySelectorAll('.rpe-btn').forEach(b=>b.classList.remove('sel'));
+  document.querySelectorAll('#tab-training .mood-btn').forEach(b=>b.classList.remove('sel'));
+  document.getElementById('cf-fields').style.display='none';
+  document.getElementById('tr-type').value=document.getElementById('tr-type').options[0].value;
+}
+
+function renderTrainingLog(){
+  const log=getTrainingLog();
+  const list=document.getElementById('training-log-list');
+  if(!log.length){
+    list.innerHTML='<div class="row" style="color:var(--mut2);font-size:13px">No sessions logged yet — log your first one above.</div>';
+    return;
+  }
+  list.innerHTML=log.slice(0,15).map(s=>{
+    const pillClass=s.rpe>=8?'pill-red':s.rpe>=6?'pill-acc':'pill-blu';
+    const cfBadge=s.cfWod?`<span style="font-size:10px;color:var(--ora);margin-left:4px">${s.cfWod}${s.cfScore?' · '+s.cfScore:''} ${s.cfRx||''}</span>`:'';
+    return `<div class="row" style="align-items:flex-start" id="tr-row-${s.id}">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:500;font-size:13px">${s.type} · ${s.dur} min ${cfBadge}</div>
+        <div style="font-size:11px;color:var(--mut2)">${fmtDate(s.date)}${s.coach?' · '+s.coach:''} · ${s.mood}</div>
+        ${s.focus?`<div style="font-size:11px;color:var(--mut2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.focus}</div>`:''}
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;margin-left:8px">
+        <span class="pill ${pillClass}">RPE ${s.rpe}</span>
+        <button onclick="editTrainingSession(${s.id})" style="padding:3px 7px;border-radius:5px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-size:11px;cursor:pointer" title="Edit">✏️</button>
+        <button onclick="deleteTrainingSession(${s.id})" style="padding:3px 7px;border-radius:5px;border:1px solid rgba(255,59,48,.2);background:transparent;color:var(--acc2);font-size:11px;cursor:pointer" title="Delete">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function deleteTrainingSession(id){
+  if(!confirm('Delete this session?')) return;
+  const log=getTrainingLog().filter(s=>s.id!==id);
+  saveTrainingLog(log);
+  renderTrainingLog();
+  renderCal();
+}
+
+function editTrainingSession(id){
+  const log=getTrainingLog();
+  const s=log.find(e=>e.id===id);
+  if(!s) return;
+  // Remove any existing edit form
+  document.getElementById('tr-edit-form')?.remove();
+  const form=document.createElement('div');
+  form.id='tr-edit-form';
+  form.style.cssText='background:var(--surf2);border:1px solid rgba(232,255,0,.25);border-radius:10px;padding:13px;margin-bottom:10px';
+  form.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--acc)">✏️ Edit session</div>
+      <button onclick="document.getElementById('tr-edit-form').remove()" style="background:transparent;border:none;color:var(--mut2);cursor:pointer;font-size:16px">✕</button>
+    </div>
+    <div class="f2 fg">
+      <div><label class="lbl">Date</label><input type="date" id="edit-tr-date" value="${s.date}"></div>
+      <div><label class="lbl">Session type</label>
+        <select id="edit-tr-type">
+          ${document.getElementById('tr-type').innerHTML}
+        </select>
+      </div>
+    </div>
+    <div class="f2 fg">
+      <div><label class="lbl">Duration (min)</label><input type="number" id="edit-tr-dur" value="${s.dur}"></div>
+      <div><label class="lbl">RPE</label>
+        <select id="edit-tr-rpe">
+          ${[1,2,3,4,5,6,7,8,9,10].map(n=>`<option value="${n}" ${n===s.rpe?'selected':''}>${n}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label class="lbl">Focus / notes</label><textarea id="edit-tr-focus" style="min-height:55px">${s.focus||''}</textarea></div>
+    <div class="fg"><label class="lbl">Coach / partner</label><input type="text" id="edit-tr-coach" value="${s.coach||''}"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-acc" style="flex:1" onclick="saveEditTraining(${id})">SAVE CHANGES</button>
+      <button class="btn" style="background:rgba(255,59,48,.1);color:var(--acc2);border:1px solid rgba(255,59,48,.25)" onclick="deleteTrainingSession(${id})">Delete</button>
+    </div>`;
+  // Insert above the log list
+  const row=document.getElementById('tr-row-'+id);
+  if(row) row.before(form);
+  else document.getElementById('training-log-list').before(form);
+  // Set current type
+  document.getElementById('edit-tr-type').value=s.type;
+  form.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function saveEditTraining(id){
+  const log=getTrainingLog();
+  const idx=log.findIndex(s=>s.id===id);
+  if(idx<0) return;
+  log[idx]={...log[idx],
+    date:document.getElementById('edit-tr-date').value||log[idx].date,
+    type:document.getElementById('edit-tr-type').value,
+    dur:parseInt(document.getElementById('edit-tr-dur').value)||log[idx].dur,
+    rpe:parseInt(document.getElementById('edit-tr-rpe').value)||log[idx].rpe,
+    focus:document.getElementById('edit-tr-focus').value,
+    coach:document.getElementById('edit-tr-coach').value
+  };
+  saveTrainingLog(log);
+  document.getElementById('tr-edit-form')?.remove();
+  renderTrainingLog();
+  renderCal();
 }
 
 // ===== BODY / SORENESS =====
@@ -1572,14 +1834,35 @@ function logWeight(){
   document.getElementById('wt-input').value='';
 }
 
-// ===== CALENDAR =====
+// ===== CALENDAR — interactive, shows training sessions =====
 function parseDate(s){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
 function daysBetween(a,b){return Math.round((b-a)/86400000);}
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+// Training colour by type
+const typeColors={competition:'#FF3B30',camp:'#E8FF00','weigh-in':'#FF9500',training:'#448AFF',recovery:'#00E676'};
+const sessionColors={BJJ:'#448AFF',MMA:'#E8FF00',Wrestling:'#FF9500',Boxing:'#FF3B30','Muay Thai':'#BF5FFF',CrossFit:'#00E676',Strength:'#FF9500',Cardio:'#00E676',Recovery:'#30D158',default:'#888'};
+
+function getSessionColor(type){
+  for(const[k,v] of Object.entries(sessionColors)) if(type.includes(k)) return v;
+  return sessionColors.default;
+}
+
 function getEvts(y,m,d){
   const t=new Date(y,m,d);
-  return calEvents.filter(e=>{const s=parseDate(e.date);const en=e.end?parseDate(e.end):s;return t>=s&&t<=en;});
+  return calEvents.filter(e=>{try{const s=parseDate(e.date);const en=e.end?parseDate(e.end):s;return t>=s&&t<=en;}catch(x){return false;}});
 }
+
+function getSessionsOnDate(dateStr){
+  return getTrainingLog().filter(s=>s.date===dateStr);
+}
+
+function dateStr(y,m,d){
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+let selectedCalDate=null;
+
 function renderCal(){
   const now=new Date();
   document.getElementById('cal-month-label').textContent=MONTHS[calMonth].toUpperCase()+' '+calYear;
@@ -1589,37 +1872,188 @@ function renderCal(){
   startDow=startDow===0?6:startDow-1;
   const dim=new Date(calYear,calMonth+1,0).getDate();
   const dimp=new Date(calYear,calMonth,0).getDate();
-  for(let i=0;i<startDow;i++){const d=dimp-startDow+1+i;grid.appendChild(makeDay(calYear,calMonth-1,d,true));}
+  for(let i=0;i<startDow;i++){const d=dimp-startDow+1+i;grid.appendChild(makeDay(calYear,calMonth-1<0?11:calMonth-1,d,true));}
   for(let d=1;d<=dim;d++){grid.appendChild(makeDay(calYear,calMonth,d,false));}
   const tot=startDow+dim;const rem=tot%7===0?0:7-tot%7;
-  for(let d=1;d<=rem;d++){grid.appendChild(makeDay(calYear,calMonth+1,d,true));}
+  for(let d=1;d<=rem;d++){grid.appendChild(makeDay(calYear,calMonth+1>11?0:calMonth+1,d,true));}
   renderUpcoming();
   renderCompCountdown();
+  // Reopen selected day panel if still visible
+  if(selectedCalDate) openDayPanel(selectedCalDate);
 }
+
 function makeDay(y,m,d,other){
   const cell=document.createElement('div');
   cell.className='day-cell'+(other?' other-month':'');
   const now=new Date();
-  if(y===now.getFullYear()&&m===now.getMonth()&&d===now.getDate())cell.classList.add('today');
+  const isToday=y===now.getFullYear()&&m===now.getMonth()&&d===now.getDate();
+  if(isToday) cell.classList.add('today');
+
+  const ds=dateStr(y,m,d);
   const evts=getEvts(y,m,d);
-  const num=document.createElement('div');num.className='day-num';num.textContent=d;
-  if(cell.classList.contains('today'))num.style.color='var(--acc)';
+  const sessions=getSessionsOnDate(ds);
+  const hasData=evts.length||sessions.length;
+
+  // Click handler — open day panel
+  cell.onclick=()=>openDayPanel(ds);
+  cell.style.cursor='pointer';
+
+  // Highlight selected
+  if(selectedCalDate===ds) cell.classList.add('selected-day');
+
+  // Day number
+  const num=document.createElement('div');
+  num.className='day-num';
+  num.textContent=d;
+  if(isToday) num.style.color='var(--acc)';
   cell.appendChild(num);
-  evts.slice(0,3).forEach(e=>{
+
+  // Event pills (max 2)
+  evts.slice(0,2).forEach(e=>{
     const pill=document.createElement('div');
     pill.className='day-evt';
-    pill.style.background=typeColors[e.type]+'30';
-    pill.style.color=typeColors[e.type];
+    pill.style.background=(typeColors[e.type]||'#888')+'28';
+    pill.style.color=typeColors[e.type]||'#888';
     pill.textContent=e.name;
     cell.appendChild(pill);
   });
+
+  // Training session dots — show up to 3 coloured dots per session type
+  if(sessions.length){
+    const dotRow=document.createElement('div');
+    dotRow.style.cssText='display:flex;gap:2px;flex-wrap:wrap;padding:1px 2px';
+    sessions.slice(0,4).forEach(s=>{
+      const dot=document.createElement('div');
+      dot.style.cssText=`width:5px;height:5px;border-radius:50%;background:${getSessionColor(s.type)};flex-shrink:0`;
+      dot.title=`${s.type} · RPE ${s.rpe}`;
+      dotRow.appendChild(dot);
+    });
+    if(sessions.length>4){
+      const more=document.createElement('div');
+      more.style.cssText='font-size:8px;color:var(--mut2);line-height:1;padding-top:1px';
+      more.textContent='+'+( sessions.length-4);
+      dotRow.appendChild(more);
+    }
+    cell.appendChild(dotRow);
+  }
+
+  // Subtle background tint if day has activity
+  if(hasData&&!isToday) cell.style.background='var(--surf2)';
+
   return cell;
 }
+
+// ── DAY DETAIL PANEL ──
+function openDayPanel(ds){
+  selectedCalDate=ds;
+  // Highlight selected cell — re-render highlights
+  document.querySelectorAll('.day-cell').forEach(c=>c.classList.remove('selected-day'));
+  // Find the clicked cell by matching date
+  // (re-render is handled by renderCal but we want instant response)
+
+  const evts=calEvents.filter(e=>{try{const s=parseDate(e.date);const en=e.end?parseDate(e.end):s;const t=parseDate(ds);return t>=s&&t<=en;}catch(x){return false;}});
+  const sessions=getSessionsOnDate(ds);
+  const dateLabel=fmtDate(ds);
+  const isToday=ds===todayStr();
+  const isPast=parseDate(ds)<new Date(new Date().setHours(0,0,0,0));
+
+  // Remove existing panel
+  document.getElementById('day-detail-panel')?.remove();
+
+  const panel=document.createElement('div');
+  panel.id='day-detail-panel';
+  panel.style.cssText='background:var(--surf);border:1px solid var(--bdr2);border-radius:10px;padding:14px;margin-top:12px;animation:fadeUp .2s ease';
+
+  let html=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:1px">${dateLabel}</div>
+        <div style="font-size:10px;color:var(--mut2);text-transform:uppercase;letter-spacing:1px">${isToday?'Today':isPast?'Past day':'Upcoming'}</div>
+      </div>
+      <button onclick="closeDayPanel()" style="background:transparent;border:none;color:var(--mut2);cursor:pointer;font-size:18px;line-height:1">✕</button>
+    </div>`;
+
+  // Events on this day
+  if(evts.length){
+    html+=`<div style="margin-bottom:10px">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);margin-bottom:6px">Events</div>
+      ${evts.map(e=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 9px;background:${(typeColors[e.type]||'#888')}14;border-radius:7px;margin-bottom:4px">
+        <div style="width:7px;height:7px;border-radius:2px;background:${typeColors[e.type]||'#888'};flex-shrink:0"></div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500">${e.name}</div>${e.loc?`<div style="font-size:11px;color:var(--mut2)">${e.loc}</div>`:''}</div>
+        <button onclick="openEditEvent(${e.id})" style="padding:3px 7px;border-radius:5px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-size:10px;cursor:pointer">Edit</button>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  // Training sessions on this day
+  if(sessions.length){
+    html+=`<div style="margin-bottom:10px">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);margin-bottom:6px">Training sessions</div>
+      ${sessions.map(s=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 9px;background:var(--surf2);border-radius:7px;margin-bottom:4px;border-left:3px solid ${getSessionColor(s.type)}">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500">${s.type} · ${s.dur} min</div>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:2px">
+            <span style="font-size:11px;color:var(--mut2)">${s.mood} ${s.coach?'· '+s.coach:''}</span>
+            <span class="pill ${s.rpe>=8?'pill-red':s.rpe>=6?'pill-acc':'pill-blu'}" style="font-size:9px">RPE ${s.rpe}</span>
+          </div>
+          ${s.focus?`<div style="font-size:11px;color:var(--mut2);margin-top:3px">${s.focus}</div>`:''}
+          ${s.cfWod?`<div style="font-size:11px;color:var(--ora);margin-top:2px">🏋️ ${s.cfWod} · ${s.cfScore||''} ${s.cfRx||''}</div>`:''}
+        </div>
+        <div style="display:flex;gap:4px">
+          <button onclick="editTrainingSession(${s.id});closeDayPanel()" style="padding:3px 7px;border-radius:5px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-size:10px;cursor:pointer">✏️</button>
+          <button onclick="deleteTrainingSession(${s.id});closeDayPanel()" style="padding:3px 7px;border-radius:5px;border:1px solid rgba(255,59,48,.2);background:transparent;color:var(--acc2);font-size:10px;cursor:pointer">✕</button>
+        </div>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  // Empty state with quick-add options
+  if(!evts.length&&!sessions.length){
+    html+=`<div style="text-align:center;padding:12px 0;color:var(--mut2);font-size:13px">Nothing logged for this day</div>`;
+  }
+
+  // Quick actions
+  html+=`<div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:4px">
+    <button class="btn btn-ghost" style="font-size:11px;flex:1" onclick="quickLogSession('${ds}')">+ Log session</button>
+    <button class="btn btn-ghost" style="font-size:11px;flex:1" onclick="quickAddEvent('${ds}')">+ Add event</button>
+  </div>`;
+
+  panel.innerHTML=html;
+
+  // Insert panel after the calendar grid
+  const grid=document.getElementById('cal-grid');
+  grid.after(panel);
+  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function closeDayPanel(){
+  document.getElementById('day-detail-panel')?.remove();
+  selectedCalDate=null;
+}
+
+function quickLogSession(ds){
+  closeDayPanel();
+  // Switch to training tab with date pre-filled
+  showTab('training');
+  const dateEl=document.getElementById('tr-date');
+  if(dateEl) dateEl.value=ds;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function quickAddEvent(ds){
+  closeDayPanel();
+  // Scroll to add event form and pre-fill date
+  const evDate=document.getElementById('ev-date');
+  if(evDate) evDate.value=ds;
+  const evName=document.getElementById('ev-name');
+  if(evName){ evName.focus(); evName.scrollIntoView({behavior:'smooth',block:'center'}); }
+}
+
 function renderUpcoming(){
   const now=new Date(new Date().getFullYear(),new Date().getMonth(),new Date().getDate());
   const up=calEvents.filter(e=>{try{return parseDate(e.date)>=now||(e.end&&parseDate(e.end)>=now);}catch(x){return false;}}).sort((a,b)=>parseDate(a.date)-parseDate(b.date)).slice(0,8);
   const el=document.getElementById('upcoming-list');
-  if(!up.length){el.innerHTML='<div class="row"><span style="color:var(--mut2);font-size:13px">No upcoming events — add one below or tap a calendar date.</span></div>';return;}
+  if(!up.length){el.innerHTML='<div class="row"><span style="color:var(--mut2);font-size:13px">No upcoming events — tap a calendar date or add one below.</span></div>';return;}
   el.innerHTML=up.map(e=>{
     const dl=daysBetween(now,parseDate(e.date));
     const dlabel=dl===0?'<span style="color:var(--acc)">Today</span>':dl>0?`<span style="color:${dl<=7?'var(--ora)':'var(--mut2)'}">in ${dl}d</span>`:'<span style="color:var(--grn)">Active</span>';
@@ -1947,6 +2381,179 @@ function renderCoachOutput(text){
   return html||`<div class="result-card"><p style="font-size:13px;line-height:1.65">${text}</p></div>`;
 }
 
+// ===== MACROFACTOR CSV IMPORT =====
+let csvData = null;
+
+function handleCSVDrop(e){
+  e.preventDefault();
+  document.getElementById('csv-drop-zone').style.borderColor='';
+  const file = e.dataTransfer.files[0];
+  if(file) handleCSVFile(file);
+}
+
+function handleCSVFile(file){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    csvData = e.target.result;
+    document.getElementById('csv-file-name').textContent = `📄 ${file.name} · ${(file.size/1024).toFixed(1)}KB`;
+    document.getElementById('csv-preview-text').textContent = csvData.slice(0,400)+(csvData.length>400?'…':'');
+    document.getElementById('csv-preview').style.display='block';
+    const btn=document.getElementById('csv-analyze-btn');
+    btn.disabled=false; btn.style.opacity='1';
+  };
+  reader.readAsText(file);
+}
+
+async function analyzeMacroFactorCSV(){
+  if(!csvData){ alert('Please upload a MacroFactor CSV first.'); return; }
+  const out=document.getElementById('csv-output'),dots=document.getElementById('csv-loading'),content=document.getElementById('csv-content');
+  out.style.display='block'; dots.style.display='flex'; content.style.display='none';
+  const profile=loadProfile()||{};
+  const focus=document.getElementById('csv-focus').value;
+  const range=document.getElementById('csv-range').value;
+  const csvSample=csvData.slice(0,3000);
+  const prompt=`You are an elite sports nutritionist analysing a fighter's MacroFactor nutrition export.
+
+FIGHTER: ${profile.firstName||'Athlete'}, ${profile.sport||'Combat sports'}, ${profile.age||'—'} yrs
+TARGETS: ${profile.calTarget||'—'} kcal | Protein: ${profile.proteinTarget||'—'}g | Carbs: ${profile.carbTarget||'—'}g | Fat: ${profile.fatTarget||'—'}g
+GOAL: ${profile.goal||'—'} | Weight class: ${profile.wclass||'—'} | Current: ${profile.weight||'—'}${profile.weightUnit||'kg'}
+
+MACROFACTOR EXPORT (${range}):
+${csvSample}
+
+FOCUS: ${focus}
+
+Provide:
+ADHERENCE SUMMARY — % targets hit for calories, protein, carbs, fat
+KEY PATTERNS — 3-4 specific observations with actual numbers from the data
+PERFORMANCE IMPACT — how this nutrition affects training & recovery
+PROBLEM AREAS — specific days/patterns with actual values
+RECOMMENDATIONS — 4 prioritised actionable changes
+FIGHT CAMP ADJUSTMENTS — how to modify as competition approaches
+
+Reference actual numbers from the CSV.`;
+  try{
+    const text=await anthropicCall(prompt,1000);
+    dots.style.display='none'; content.style.display='block';
+    content.innerHTML=renderMarkdown(text);
+  }catch(e){ showAIError(content,dots,e.message); }
+}
+
+// ===== MATCH HISTORY =====
+function getMatchHistory(){ try{ return JSON.parse(localStorage.getItem('fos_match_history')||'[]'); }catch(e){ return []; } }
+function saveMatchHistory(h){ try{ localStorage.setItem('fos_match_history',JSON.stringify(h)); }catch(e){} }
+
+function renderMatchRecord(){
+  const h=getMatchHistory();
+  const wins=h.filter(m=>m.result==='Win').length, losses=h.filter(m=>m.result==='Loss').length, draws=h.filter(m=>m.result==='Draw').length, subs=h.filter(m=>m.finish==='Submission'&&m.result==='Win').length;
+  const grid=document.getElementById('ma-record-grid');
+  if(!grid) return;
+  grid.innerHTML=`
+    <div class="stat"><div class="stat-l">Wins</div><div class="stat-v grn">${wins}</div></div>
+    <div class="stat"><div class="stat-l">Losses</div><div class="stat-v red">${losses}</div></div>
+    <div class="stat"><div class="stat-l">Draws</div><div class="stat-v" style="color:var(--mut2)">${draws}</div></div>
+    <div class="stat"><div class="stat-l">Sub wins</div><div class="stat-v pur">${subs}</div></div>`;
+}
+
+function renderMatchHistory(){
+  const history=getMatchHistory();
+  const el=document.getElementById('match-history-list');
+  if(!el) return;
+  if(!history.length){ el.innerHTML='<div class="row" style="color:var(--mut2);font-size:13px">No matches logged yet — analyse your first match above.</div>'; return; }
+  el.innerHTML=history.slice(0,10).map((m,i)=>`
+    <div class="row" style="align-items:flex-start;gap:8px">
+      <div style="width:32px;height:32px;border-radius:6px;background:${m.result==='Win'?'rgba(0,230,118,.15)':m.result==='Loss'?'rgba(255,59,48,.12)':'rgba(136,136,136,.12)'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${m.result==='Win'?'var(--grn)':m.result==='Loss'?'var(--acc2)':'var(--mut2)'};flex-shrink:0">${m.result==='Win'?'W':m.result==='Loss'?'L':'D'}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500">${m.type||'Match'}${m.opponent?' vs '+m.opponent:''} · ${m.finish||'Decision'}</div>
+        <div style="font-size:11px;color:var(--mut2)">${fmtDate(m.date)}${m.event?' · '+m.event:''}</div>
+      </div>
+      <button onclick="viewMatchAnalysis(${i})" style="padding:3px 8px;border-radius:5px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-size:11px;cursor:pointer;flex-shrink:0">View</button>
+    </div>`).join('');
+}
+
+function viewMatchAnalysis(i){
+  const history=getMatchHistory(), m=history[i];
+  if(!m||!m.analysis) return;
+  const content=document.getElementById('analysis-content'), out=document.getElementById('analysis-output');
+  out.style.display='block'; content.style.display='block';
+  document.getElementById('analysis-loading').style.display='none';
+  content.innerHTML=`<div style="padding:8px 0;font-size:11px;color:var(--mut2);margin-bottom:8px">📋 Saved analysis — ${fmtDate(m.date)}</div>`+renderCoachOutput(m.analysis);
+  out.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ===== COMPETITION COUNTDOWN =====
+function renderCompCountdown(){
+  const now=new Date(); now.setHours(0,0,0,0);
+  const events=JSON.parse(localStorage.getItem('fos_cal_events')||'[]');
+  const comps=events.filter(e=>e.type==='competition').map(e=>({...e,dateObj:parseDate(e.date)})).filter(e=>e.dateObj>=now).sort((a,b)=>a.dateObj-b.dateObj);
+  const hero=document.getElementById('comp-countdown-hero');
+  if(!comps.length){ if(hero) hero.style.display='none'; return; }
+  hero.style.display='block';
+  const comp=comps[0], days=Math.round((comp.dateObj-now)/86400000), profile=loadProfile()||{};
+  document.getElementById('cd-comp-name').textContent=comp.name;
+  document.getElementById('cd-comp-date').textContent=fmtDate(comp.date)+(comp.loc?' · '+comp.loc:'');
+  document.getElementById('cd-days').textContent=days;
+  let phase,phaseColor,phasePct;
+  if(days>56){phase='Off-season / base building';phaseColor='var(--blu)';phasePct=10;}
+  else if(days>28){phase='Early camp — volume phase';phaseColor='var(--grn)';phasePct=Math.round((1-(days-28)/56)*40)+10;}
+  else if(days>14){phase='Mid camp — intensity phase';phaseColor='var(--ora)';phasePct=Math.round((1-(days-14)/28)*30)+50;}
+  else if(days>7){phase='Peak week — sharpening';phaseColor='var(--acc2)';phasePct=80;}
+  else if(days>1){phase='⚠️ Fight week — taper & cut';phaseColor='var(--acc2)';phasePct=95;}
+  else{phase='🥊 FIGHT DAY';phaseColor='var(--acc)';phasePct=100;}
+  document.getElementById('cd-phase-label').textContent=phase;
+  document.getElementById('cd-phase-sub').textContent=days+' days to go';
+  document.getElementById('cd-phase-bar').style.width=phasePct+'%';
+  document.getElementById('cd-phase-bar').style.background=phaseColor;
+  const weeks=Math.min(8,Math.ceil(days/7));
+  document.getElementById('cd-weekly-grid').innerHTML=Array.from({length:weeks},(_,i)=>{
+    const wDays=days-(i*7), isCurrent=i===0;
+    return `<div style="background:${isCurrent?'rgba(232,255,0,.1)':'var(--surf2)'};border:1px solid ${isCurrent?'rgba(232,255,0,.3)':'var(--bdr)'};border-radius:6px;padding:7px;text-align:center"><div style="font-size:9px;text-transform:uppercase;color:var(--mut2);letter-spacing:1px">Wk ${weeks-i}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:${isCurrent?'var(--acc)':'var(--txt)'}">${Math.max(0,wDays-6)}–${Math.max(0,wDays)}d</div></div>`;
+  }).reverse().join('');
+  const wclassKg=(profile.wclass||'').match(/≤(\d+)/), targetKg=wclassKg?parseInt(wclassKg[1]):null, currentKg=parseFloat(profile.weight)||null;
+  const cutEl=document.getElementById('cd-cut-status');
+  if(targetKg&&currentKg){
+    const toCut=currentKg-targetKg; cutEl.style.display='block';
+    if(toCut>0){ const rate=(toCut/Math.max(1,days/7)).toFixed(1); cutEl.innerHTML=`⚖️ <strong>Cut:</strong> ${currentKg}kg → ${targetKg}kg · Lose <strong>${toCut.toFixed(1)}kg</strong> · Rate: <strong>${rate}kg/week</strong> · ${toCut>days/7*1.5?'⚠️ Aggressive — plan carefully':'✅ Manageable'}`; }
+    else{ cutEl.innerHTML=`✅ <strong>On weight:</strong> ${currentKg}kg is within ${targetKg}kg class`; cutEl.style.background='rgba(0,230,118,.06)'; cutEl.style.borderColor='rgba(0,230,118,.2)'; }
+  } else cutEl.style.display='none';
+}
+
+async function getCompBrief(){
+  const out=document.getElementById('comp-brief-out'),dots=document.getElementById('comp-brief-dots'),content=document.getElementById('comp-brief-content');
+  out.style.display='block'; dots.style.display='flex'; content.innerHTML='';
+  const profile=loadProfile()||{};
+  const events=JSON.parse(localStorage.getItem('fos_cal_events')||'[]');
+  const now=new Date(); now.setHours(0,0,0,0);
+  const comp=events.filter(e=>e.type==='competition'&&parseDate(e.date)>=now).sort((a,b)=>parseDate(a.date)-parseDate(b.date))[0];
+  if(!comp){ dots.style.display='none'; content.innerHTML='<div class="warn">No upcoming competition found — add one in the calendar.</div>'; return; }
+  const days=Math.round((parseDate(comp.date)-now)/86400000);
+  const wclassKg=(profile.wclass||'').match(/≤(\d+)/), targetKg=wclassKg?parseInt(wclassKg[1]):null;
+  const toCut=targetKg&&profile.weight?Math.max(0,parseFloat(profile.weight)-targetKg):0;
+  const gf=window.gfitLiveData;
+  const prompt=`You are an elite fight coach giving a competition preparation brief ${days} days out.
+
+FIGHTER: ${profile.firstName||'—'} | ${profile.sport||'MMA'} | ${profile.exp||'—'} | ${profile.clvl||'Amateur'}
+COMPETITION: ${comp.name}${comp.loc?' at '+comp.loc:''} — ${fmtDate(comp.date)} (${days} days)
+WEIGHT: ${profile.weight||'—'}${profile.weightUnit||'kg'} → Class: ${targetKg?targetKg+'kg':'—'} | Cut needed: ${toCut.toFixed(1)}kg
+GOAL: ${profile.goal||'—'} | Weaknesses: ${(profile.weaknesses||[]).join(', ')||'—'} | Injuries: ${profile.injuries||'none'}
+${gf?`LIVE DATA: Resting HR ${gf.heart_rate?.resting||'—'}bpm | Sleep ${gf.sleep?.hours||'—'}h`:''}
+
+Write a fight preparation brief:
+PHASE ASSESSMENT — where they are in camp and what this phase demands
+WEEKLY PRIORITIES — specific training focus week by week for all ${Math.ceil(days/7)} weeks
+WEIGHT MANAGEMENT — cut strategy with day-by-day plan for final week
+PEAK WEEK PROTOCOL — taper, sleep, nutrition and mental prep
+FIGHT DAY CHECKLIST — warm-up, nutrition timing, mental state
+RED FLAGS — what to avoid in the remaining ${days} days
+
+Be direct and specific. Every day counts.`;
+  try{
+    const text=await anthropicCall(prompt,1000);
+    dots.style.display='none'; content.innerHTML=renderCoachOutput(text);
+  }catch(e){ showAIError(content,dots,e.message); }
+}
+
 // ===== MATCH ANALYSIS =====
 let uploadedFiles2=[];
 function handleFiles(files){
@@ -1979,11 +2586,12 @@ Description: ${desc||'No description provided'}
 Focus areas: ${focus||'General analysis'}
 
 Provide a structured breakdown:
-PERFORMANCE SCORES — rate 1-5 for: Takedown offense, Takedown defense, Guard work, Striking, Cardio, Tactics
-KEY STRENGTHS — 2-3 specific things done well
-CRITICAL IMPROVEMENTS — top 3 areas, specific and actionable
-TRAINING DRILLS — 4 specific drills to address weaknesses
+PERFORMANCE SCORES — rate 1-5: Takedown offense, Takedown defense, Guard work, Striking, Cardio, Tactics
+KEY STRENGTHS — 2-3 specific things done well with examples
+CRITICAL IMPROVEMENTS — top 3 areas, specific and actionable with drills
+TRAINING DRILLS — 4 specific drills to address the biggest gaps
 TACTICAL ADJUSTMENTS — fight-specific changes for next time
+${document.getElementById('ma-scout')?.value==='yes'?'OPPONENT PATTERNS — based on the description, what patterns did the opponent show and how to counter them':''}
 
 Be direct and technical. Real fighters need real feedback.`;
   userContent.push({type:'text',text:prompt});
@@ -1991,20 +2599,28 @@ Be direct and technical. Real fighters need real feedback.`;
     const key=getAPIKey(); if(!key){openKeyModal();throw new Error('no_key');}
     const resp=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'anthropic-version':'2023-06-01',
-        'x-api-key':key,
-        'anthropic-dangerous-direct-browser-access':'true',
-      },
+      headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01','x-api-key':key,'anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:userContent}]})
     });
     if(!resp.ok){const err=await resp.json().catch(()=>({}));throw new Error(err.error?.message||resp.statusText);}
     const data=await resp.json();
     const text=data.content?.map(b=>b.text||'').join('')||'Analysis failed.';
-    loading.style.display='none';content.style.display='block';
+    loading.style.display='none'; content.style.display='block';
     content.innerHTML=renderCoachOutput(text);
-    saveCoachBrief(text);
+    // Save to match history
+    const history=getMatchHistory();
+    history.unshift({
+      date:todayStr(),
+      type:document.getElementById('ma-type').value,
+      result:document.getElementById('ma-result').value,
+      finish:document.getElementById('ma-finish').value,
+      opponent:document.getElementById('ma-opponent')?.value||'',
+      event:document.getElementById('ma-event')?.value||'',
+      analysis:text.slice(0,1000)
+    });
+    saveMatchHistory(history.slice(0,20));
+    renderMatchRecord();
+    renderMatchHistory();
   }catch(e){showAIError(content,loading,e.message);}
 }
 
@@ -2352,6 +2968,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   initTheme();
   updateKeyStatus();
   renderSavedBriefs();
+  renderMatchRecord();
+  renderMatchHistory();
+  renderTrainingLog();
   initGoogleFit();
   initBodyParts();
   loadCalEvents(); // load saved events BEFORE rendering
