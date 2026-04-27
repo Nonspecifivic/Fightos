@@ -78,9 +78,18 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:'DM Sans
 .nb .dot{width:6px;height:6px;border-radius:50%;}
 
 /* CONTENT */
-.content{flex:1;overflow-y:auto;padding:14px;padding-bottom:env(safe-area-inset-bottom, 24px);-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+.content{flex:1;overflow-y:auto;padding:14px;padding-bottom:env(safe-area-inset-bottom,24px);-webkit-overflow-scrolling:touch;overscroll-behavior-y:auto;}
 /* Extra bottom padding on mobile so content isn't hidden behind browser chrome */
 @media(max-width:768px){.content{padding-bottom:80px;}}
+/* Pull-to-refresh indicator */
+#ptr-indicator{position:fixed;top:0;left:0;right:0;z-index:9999;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--surf);border-bottom:1px solid var(--bdr);font-size:12px;color:var(--mut2);font-family:'DM Sans',sans-serif;height:0;overflow:hidden;transition:height .2s ease,color .15s;}
+#ptr-indicator.ptr-visible{height:48px;}
+#ptr-indicator.ptr-ready{color:var(--acc);}
+#ptr-indicator.ptr-refreshing{color:var(--acc);}
+#ptr-spinner{width:16px;height:16px;border:2px solid var(--bdr2);border-top-color:var(--acc);border-radius:50%;display:none;animation:spin .6s linear infinite;}
+#ptr-indicator.ptr-refreshing #ptr-spinner{display:block;}
+#ptr-arrow{transition:transform .25s ease;font-size:15px;display:inline-block;}
+#ptr-indicator.ptr-ready #ptr-arrow{transform:rotate(180deg);}
 .tab{display:none;}.tab.active{display:block;}
 
 /* COMMON */
@@ -646,6 +655,13 @@ textarea{resize:vertical;min-height:70px;}
   </div>
 </div>
 <!-- ==================== END ONBOARDING ==================== -->
+
+<!-- Pull-to-refresh indicator -->
+<div id="ptr-indicator">
+  <span id="ptr-arrow">↓</span>
+  <span id="ptr-label">Pull down to refresh</span>
+  <div id="ptr-spinner"></div>
+</div>
 
 <!-- ==================== API KEY MODAL ==================== -->
 <div id="apikey-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2000;align-items:center;justify-content:center;padding:20px">
@@ -5832,6 +5848,72 @@ function renderDashAIBanner(){
   }
   el.innerHTML=`<div class="${type}" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="flex:1">${msg}</div><button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;flex-shrink:0;margin-left:10px" onclick="showTab('coach')">Get brief ↗</button></div>`;
 }
+
+// ===== PULL TO REFRESH =====
+(function(){
+  if(!('ontouchstart' in window)) return; // desktop: do nothing
+
+  const THRESHOLD = 72;   // px of pull needed to trigger
+  const MAX_PULL  = 110;  // px max visual travel
+  const indicator = document.getElementById('ptr-indicator');
+  const arrow     = document.getElementById('ptr-arrow');
+  const label     = document.getElementById('ptr-label');
+  if(!indicator) return;
+
+  let startY=0, pulling=false, triggered=false;
+
+  function scrollEl(){ return document.querySelector('.content'); }
+
+  document.addEventListener('touchstart', e=>{
+    const el=scrollEl();
+    if(el && el.scrollTop===0){
+      startY=e.touches[0].clientY; pulling=true; triggered=false;
+    }
+  },{passive:true});
+
+  document.addEventListener('touchmove', e=>{
+    if(!pulling) return;
+    const el=scrollEl();
+    if(el && el.scrollTop>0){ pulling=false; hidePTR(); return; }
+    const dy=Math.max(0, e.touches[0].clientY - startY);
+    if(dy<=2){ hidePTR(); return; }
+    // Rubber-band resistance
+    const pull=Math.min(MAX_PULL, dy*0.42);
+    indicator.classList.add('ptr-visible');
+    indicator.style.height=Math.min(48, pull)+'px';
+    if(pull>=THRESHOLD){
+      if(!triggered){ triggered=true; if(window.navigator.vibrate) window.navigator.vibrate(10); }
+      indicator.classList.add('ptr-ready');
+      label.textContent='Release to refresh';
+    } else {
+      triggered=false;
+      indicator.classList.remove('ptr-ready');
+      label.textContent='Pull down to refresh';
+    }
+  },{passive:true});
+
+  document.addEventListener('touchend', ()=>{
+    if(!pulling) return;
+    pulling=false;
+    if(triggered){
+      indicator.classList.add('ptr-refreshing');
+      indicator.classList.remove('ptr-ready');
+      indicator.style.height='48px';
+      label.textContent='Refreshing…';
+      arrow.style.display='none';
+      setTimeout(()=>window.location.reload(), 700);
+    } else {
+      hidePTR();
+    }
+  },{passive:true});
+
+  function hidePTR(){
+    indicator.classList.remove('ptr-visible','ptr-ready','ptr-refreshing');
+    indicator.style.height='0';
+    arrow.style.display='inline-block';
+    label.textContent='Pull down to refresh';
+  }
+})();
 </script>
 </body>
 </html>
