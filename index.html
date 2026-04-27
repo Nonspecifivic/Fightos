@@ -820,36 +820,105 @@ textarea{resize:vertical;min-height:70px;}
 
 <!-- ==================== DASHBOARD ==================== -->
 <div class="tab active" id="tab-dashboard">
+
+  <!-- Smart alert banner — driven by real logged data -->
   <div id="dash-ai-banner"></div>
-  <div class="stat-grid" id="dash-stat-grid">
-    <!-- populated by renderDashboard() after profile loads -->
-  </div>
-  <!-- TDEE / BMR panel - populated dynamically -->
+
+  <!-- Top stat row — from profile -->
+  <div class="stat-grid" id="dash-stat-grid"></div>
+
+  <!-- Energy balance — from profile BMR/TDEE -->
   <div class="card" id="tdee-card" style="display:none">
     <div class="card-header"><h3>Energy balance</h3><span id="tdee-badge" class="pill"></span></div>
     <div class="card-body" id="tdee-body"></div>
   </div>
-  <div class="card">
-    <div class="card-header"><h3>Today's readiness</h3><span class="pill pill-grn">READY</span></div>
-    <div class="card-body">
-      <div class="prog-row"><div class="prog-label"><span>Fatigue load</span><span>Moderate</span></div><div class="bar"><div class="bar-fill" style="width:48%;background:var(--ora)"></div></div></div>
-      <div class="prog-row"><div class="prog-label"><span>Recovery score</span><span>74%</span></div><div class="bar"><div class="bar-fill" style="width:74%;background:var(--grn)"></div></div></div>
-      <div class="prog-row" style="margin-bottom:0"><div class="prog-label"><span>Training load (7d)</span><span>High</span></div><div class="bar"><div class="bar-fill" style="width:78%;background:var(--blu)"></div></div></div>
+
+  <!-- Today's readiness — from body log + training log -->
+  <div class="card" id="dash-readiness-card">
+    <div class="card-header">
+      <h3>Today's readiness</h3>
+      <span class="pill" id="dash-readiness-badge">—</span>
+    </div>
+    <div class="card-body" id="dash-readiness-body">
+      <div style="color:var(--mut2);font-size:13px">Log a body check-in to see your readiness score.</div>
     </div>
   </div>
-  <div class="card">
-    <div class="card-header"><h3>This week</h3><span style="font-size:11px;color:var(--mut2)">5 sessions</span></div>
-    <div class="row"><span>Monday — BJJ drilling</span><span class="pill pill-blu">RPE 6</span></div>
-    <div class="row"><span>Tuesday — Strength & conditioning</span><span class="pill pill-acc">RPE 8</span></div>
-    <div class="row"><span>Wednesday — Sparring</span><span class="pill pill-red">RPE 9</span></div>
-    <div class="row"><span>Thursday — REST</span><span class="pill pill-grn">Recovery</span></div>
-    <div class="row"><span>Friday — Wrestling</span><span class="pill pill-blu">RPE 7</span></div>
+
+  <!-- Google Fit live data — shown only when connected -->
+  <div class="card" id="dash-gfit-card" style="display:none">
+    <div class="card-header">
+      <h3>🏃 Live health data</h3>
+      <span style="font-size:10px;color:var(--mut2)" id="dash-gfit-sync">Google Fit</span>
+    </div>
+    <div class="stat-grid" id="dash-gfit-grid" style="grid-template-columns:repeat(auto-fit,minmax(80px,1fr));margin:0"></div>
   </div>
-  <div class="card">
-    <div class="card-header"><h3>Next competition</h3><span class="pill pill-red">22 days</span></div>
-    <div class="row"><span style="font-weight:500">Regional MMA Championship</span><span style="font-size:11px;color:var(--mut2)">17 May</span></div>
-    <div class="row"><span style="font-size:12px;color:var(--mut2)">City Arena · Weigh-in 16 May</span><span class="pill pill-ora">3.3kg to cut</span></div>
+
+  <!-- Hydration today — from water log -->
+  <div class="card" id="dash-hydration-card">
+    <div class="card-header">
+      <h3>💧 Hydration today</h3>
+      <button class="btn btn-ghost" style="font-size:11px;padding:4px 9px" onclick="showTab('hydration')">Log →</button>
+    </div>
+    <div class="card-body" id="dash-hydration-body"></div>
   </div>
+
+  <!-- Nutrition today — from food log -->
+  <div class="card" id="dash-nutrition-card">
+    <div class="card-header">
+      <h3>🥗 Nutrition today</h3>
+      <button class="btn btn-ghost" style="font-size:11px;padding:4px 9px" onclick="showTab('nutrition')">Log →</button>
+    </div>
+    <div class="card-body" id="dash-nutrition-body"></div>
+  </div>
+
+  <!-- This week's training — from training log -->
+  <div class="card">
+    <div class="card-header">
+      <h3>This week's training</h3>
+      <span style="font-size:11px;color:var(--mut2)" id="dash-week-sub"></span>
+    </div>
+    <div id="dash-week-body"></div>
+  </div>
+
+  <!-- Weight trend — from weight log -->
+  <div class="card" id="dash-weight-card">
+    <div class="card-header">
+      <h3>⚖️ Weight trend</h3>
+      <button class="btn btn-ghost" style="font-size:11px;padding:4px 9px" onclick="showTab('weight')">Log →</button>
+    </div>
+    <div class="card-body" id="dash-weight-body"></div>
+  </div>
+
+  <!-- Next competition — from calendar events -->
+  <div class="card" id="dash-comp-card" style="display:none">
+    <div class="card-header">
+      <h3>🏆 Next competition</h3>
+      <span class="pill pill-red" id="dash-comp-days"></span>
+    </div>
+    <div id="dash-comp-body"></div>
+  </div>
+
+  <!-- Upcoming calendar events — from calendar -->
+  <div class="card">
+    <div class="card-header">
+      <h3>📅 Upcoming events</h3>
+      <button class="btn btn-ghost" style="font-size:11px;padding:4px 9px" onclick="showTab('calendar')">View calendar →</button>
+    </div>
+    <div id="dash-upcoming-body"></div>
+  </div>
+
+  <!-- Quick log shortcuts -->
+  <div class="card">
+    <div class="card-header"><h3>Quick log</h3></div>
+    <div class="card-body" style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost" onclick="showTab('training')">+ Training session</button>
+      <button class="btn btn-ghost" onclick="showTab('body')">+ Body check-in</button>
+      <button class="btn btn-ghost" onclick="showTab('nutrition')">+ Food</button>
+      <button class="btn btn-ghost" onclick="showTab('weight')">+ Weight</button>
+      <button class="btn btn-ghost" onclick="showTab('hydration')">+ Water</button>
+    </div>
+  </div>
+
 </div>
 
 <!-- ==================== TRAINING LOG ==================== -->
@@ -1820,7 +1889,7 @@ function showTab(id){
   if(id==='techniques') renderTechGrid();
   if(id==='calendar'){ renderCal(); renderCompCountdown(); }
   if(id==='weight') renderWeightChart();
-  if(id==='dashboard') renderDashAIBanner();
+  if(id==='dashboard') renderDashboard();
   if(id==='analysis'){ renderMatchRecord(); renderMatchHistory(); }
   if(id==='nutrition'){ renderNutritionStats(); renderFoodLog(); }
 }
@@ -1843,7 +1912,11 @@ function selMood(el,m){
 
 // ===== TRAINING LOG — persistent, editable =====
 function getTrainingLog(){ try{ return JSON.parse(localStorage.getItem('fos_training_log')||'[]'); }catch(e){ return []; } }
-function saveTrainingLog(log){ try{ localStorage.setItem('fos_training_log',JSON.stringify(log)); debouncedSync(); }catch(e){} }
+function saveTrainingLog(log){
+  try{ localStorage.setItem('fos_training_log',JSON.stringify(log)); debouncedSync(); }catch(e){}
+  // Refresh dashboard if visible
+  if(document.getElementById('tab-dashboard')?.classList.contains('active')) renderDashboard();
+}
 
 function saveTraining(){
   const type=document.getElementById('tr-type').value;
@@ -2029,18 +2102,29 @@ function updateSorenessColor(v){
   el.className='slider-val '+(v>=8?'red':v>=5?'ora':'acc');
 }
 function saveBodyCheckIn(){
-  const sor=document.getElementById('soreness-slider').value;
-  const sleep=document.getElementById('sleep-q').value;
-  const sh=document.getElementById('sleep-h').value;
+  const sor = parseInt(document.getElementById('soreness-slider').value)||0;
+  const sleep = document.getElementById('sleep-q').value;
+  const sh = document.getElementById('sleep-h').value;
+  const injuries = document.getElementById('injury-notes')?.value||'';
+  const entry = { date:todayStr(), soreness:sor, sleepQuality:sleep, sleepHours:sh, injuries };
+  // Save to localStorage
+  const bodyLog = JSON.parse(localStorage.getItem('fos_body_log')||'[]');
+  bodyLog.unshift(entry);
+  try{ localStorage.setItem('fos_body_log', JSON.stringify(bodyLog.slice(0,30))); debouncedSync(); }catch(e){}
+  // Update the log display
   const pill=sor>=7?'pill-red':sor>=4?'pill-ora':'pill-grn';
   const label=sor>=7?'High':sor>=4?'Monitor':'Good';
-  const today=new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
-  document.getElementById('body-log-list').insertAdjacentHTML('afterbegin',`<div class="row"><div><div style="font-weight:500;font-size:13px">${today} — Soreness: ${sor}/10</div><div style="font-size:11px;color:var(--mut2)">Sleep ${sh||'?'}h ${sleep.toLowerCase()}</div></div><span class="pill ${pill}">${label}</span></div>`);
+  const list=document.getElementById('body-log-list');
+  if(list.querySelector('[style*="mut2"]')) list.innerHTML=''; // clear empty state
+  list.insertAdjacentHTML('afterbegin',`<div class="row"><div><div style="font-weight:500;font-size:13px">${fmtDate(todayStr())} — Soreness: ${sor}/10</div><div style="font-size:11px;color:var(--mut2)">Sleep ${sh||'?'}h · ${sleep}${injuries?' · '+injuries.slice(0,30):''}</div></div><span class="pill ${pill}">${label}</span></div>`);
+  // Refresh dashboard
+  renderDashboard();
 }
 
 // ===== HYDRATION =====
 function addWater(ml){
   waterML+=ml;
+  try{ localStorage.setItem('fos_water_today', String(waterML)); }catch(e){}
   const profile=loadProfile()||{};
   const goalML=((profile.waterTarget||3.5)*1000);
   const pct=Math.min(100,Math.round(waterML/goalML*100));
@@ -2048,41 +2132,49 @@ function addWater(ml){
   document.getElementById('w-goal-disp').textContent='of '+(profile.waterTarget||3.5)+'L';
   document.getElementById('w-fill').style.height=pct+'%';
   document.getElementById('w-pct').textContent=pct+'% of daily goal';
-  // Log entry
   const now=new Date();
   const timeStr=now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
   const wlog=document.getElementById('water-log');
-  if(wlog.querySelector('.row[style*="mut2"]')) wlog.innerHTML=''; // clear empty state
+  if(wlog.querySelector('.row[style*="mut2"]')) wlog.innerHTML='';
   wlog.insertAdjacentHTML('afterbegin',`<div class="row"><span style="font-size:12px;color:var(--mut2)">${timeStr} — Added</span><span class="blu" style="font-size:13px">${ml>=1000?(ml/1000)+'L':ml+'ml'}</span></div>`);
 }
 
 // ===== WEIGHT =====
 function renderWeightChart(){
+  const wLog=JSON.parse(localStorage.getItem('fos_weight_log')||'[]');
   const chart=document.getElementById('wt-chart');
   const labels=document.getElementById('wt-labels');
-  const min=Math.min(...weightData)-0.3;
-  const max=Math.max(...weightData)+0.1;
-  chart.innerHTML=weightData.map((w,i)=>{
-    const pct=((w-min)/(max-min))*100;
-    const col=i===weightData.length-1?'var(--acc2)':'var(--blu)';
-    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="width:100%;height:${Math.round(pct)}%;background:${col};border-radius:3px 3px 0 0;min-height:4px"></div></div>`;
-  }).join('');
-  labels.innerHTML=weightDays.map(d=>`<div style="flex:1;text-align:center;font-size:9px;color:var(--mut2)">${d}</div>`).join('');
   const hist=document.getElementById('wt-history');
-  hist.innerHTML=[...weightData].reverse().map((w,i)=>{
-    const d=weightDays[weightData.length-1-i];
-    return `<div class="row"><span style="color:var(--mut2);font-size:12px">${d}</span><span style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${i===0?'var(--acc2)':'var(--txt)'}">${w}kg</span></div>`;
+  if(!wLog.length){
+    if(chart) chart.innerHTML='<div style="color:var(--mut2);font-size:12px;text-align:center;padding:10px">No weight entries yet</div>';
+    if(labels) labels.innerHTML='';
+    if(hist) hist.innerHTML='<div class="row" style="color:var(--mut2);font-size:13px">No weight logged yet.</div>';
+    return;
+  }
+  const last7=wLog.slice(-7);
+  const vals=last7.map(w=>w.val);
+  const mn=Math.min(...vals)-0.3, mx=Math.max(...vals)+0.1;
+  if(chart) chart.innerHTML=last7.map((w,i)=>{
+    const pct=Math.max(4,Math.round(((w.val-mn)/(mx-mn))*100));
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center"><div style="width:100%;height:${pct}%;background:${i===last7.length-1?'var(--acc2)':'var(--blu)'};border-radius:3px 3px 0 0;min-height:4px"></div></div>`;
   }).join('');
+  if(labels) labels.innerHTML=last7.map(w=>`<div style="flex:1;text-align:center;font-size:9px;color:var(--mut2)">${w.date.slice(5)}</div>`).join('');
+  if(hist) hist.innerHTML=[...wLog].reverse().slice(0,10).map((w,i)=>`<div class="row"><span style="color:var(--mut2);font-size:12px">${fmtDate(w.date)}</span><span style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${i===0?'var(--acc2)':'var(--txt)'}">${w.val}${loadProfile()?.weightUnit||'kg'}</span></div>`).join('');
 }
+
 function logWeight(){
   const val=parseFloat(document.getElementById('wt-input').value);
-  if(!val)return;
-  weightData.push(val);weightData.shift();
-  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const today=days[new Date().getDay()===0?6:new Date().getDay()-1];
-  weightDays.push(today);weightDays.shift();
+  if(!val) return;
+  const wLog=JSON.parse(localStorage.getItem('fos_weight_log')||'[]');
+  wLog.push({date:todayStr(),val});
+  try{ localStorage.setItem('fos_weight_log',JSON.stringify(wLog)); }catch(e){}
+  // Update profile weight
+  const profile=loadProfile();
+  if(profile){ profile.weight=val; saveProfile(profile); }
   renderWeightChart();
   document.getElementById('wt-input').value='';
+  renderDashboard();
+  debouncedSync();
 }
 
 // ===== CALENDAR — interactive, shows training sessions =====
@@ -2431,13 +2523,26 @@ function toggleAddFood(){
   f.style.display=f.style.display==='none'?'block':'none';
 }
 function addFoodEntry(){
-  const name=document.getElementById('f-name').value||'Unknown';
-  const cal=document.getElementById('f-cal').value||0;
-  const pro=document.getElementById('f-pro').value||0;
-  const carb=document.getElementById('f-carb').value||0;
-  const fat=document.getElementById('f-fat').value||0;
-  document.getElementById('food-log').insertAdjacentHTML('afterbegin',`<div style="padding:7px 13px;border-bottom:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center"><div><div class="meal-name">${name}</div><div class="meal-macros">${pro}P · ${carb}C · ${fat}F</div></div><div class="meal-kcal">${cal}</div></div>`);
+  const name = document.getElementById('f-name').value||'Unknown';
+  const cal  = parseInt(document.getElementById('f-cal').value)||0;
+  const pro  = parseInt(document.getElementById('f-pro').value)||0;
+  const carb = parseInt(document.getElementById('f-carb').value)||0;
+  const fat  = parseInt(document.getElementById('f-fat').value)||0;
+  const entry = { date:todayStr(), name, cal, pro, carb, fat };
+  // Persist to localStorage
+  const foodLog = JSON.parse(localStorage.getItem('fos_food_log')||'[]');
+  foodLog.unshift(entry);
+  try{ localStorage.setItem('fos_food_log', JSON.stringify(foodLog.slice(0,100))); debouncedSync(); }catch(e){}
+  // Update food log display
+  const logEl = document.getElementById('food-log');
+  if(logEl.querySelector('[style*="mut2"]')) logEl.innerHTML='';
+  logEl.insertAdjacentHTML('afterbegin',`<div class="row"><div><div class="meal-name">${name}</div><div class="meal-macros">${pro}P · ${carb}C · ${fat}F</div></div><div class="meal-kcal">${cal}</div></div>`);
   document.getElementById('add-food-form').style.display='none';
+  // Clear form
+  ['f-name','f-cal','f-pro','f-carb','f-fat'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  // Refresh dashboard
+  renderNutritionStats();
+  renderDashboard();
 }
 
 // ===== NUTRITION STATS FROM PROFILE =====
@@ -3638,10 +3743,11 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   initGooglePhotosUI();
   initBodyParts();
   loadCalEvents();
+  waterML = parseInt(localStorage.getItem('fos_water_today')||'0');
   renderWeightChart();
   renderCal();
   renderPhaseBar(28,5);
-  renderDashAIBanner();
+  renderDashboard();
   const today=todayStr();
   document.getElementById('tr-date').value=today;
   document.getElementById('ev-date').value=today;
@@ -4145,13 +4251,217 @@ function enterApp(){
   showTab('dashboard');
 }
 
+// ===== DASHBOARD — fully dynamic from all data sources =====
+function renderDashboard(){
+  const profile = loadProfile() || {};
+  const trainingLog = getTrainingLog();
+  const bodyLog = JSON.parse(localStorage.getItem('fos_body_log') || '[]');
+  const foodLog = JSON.parse(localStorage.getItem('fos_food_log') || '[]');
+  const weightLog = JSON.parse(localStorage.getItem('fos_weight_log') || '[]');
+  const waterML = parseInt(localStorage.getItem('fos_water_today') || '0');
+  const calEvts = JSON.parse(localStorage.getItem('fos_cal_events') || '[]');
+  const now = new Date(); now.setHours(0,0,0,0);
+  const todayS = todayStr();
+
+  // ── Top stat grid (profile targets) ──
+  const wclassKg = (profile.wclass||'').match(/≤(\d+)/);
+  const targetKg = wclassKg ? parseInt(wclassKg[1]) : null;
+  const curWt = weightLog.length ? weightLog[weightLog.length-1].val : parseFloat(profile.weight)||null;
+  const toCut = (targetKg && curWt) ? Math.max(0, curWt - targetKg).toFixed(1) : null;
+  document.getElementById('dash-stat-grid').innerHTML = `
+    <div class="stat"><div class="stat-l">Weight</div>
+      <div class="stat-v ${toCut>0?'red':'grn'}">${curWt||'—'}<span style="font-size:11px">${profile.weightUnit||'kg'}</span></div>
+      <div class="stat-s">${toCut!==null?(toCut>0?toCut+'kg to cut':'On weight'):'Not logged'}</div></div>
+    <div class="stat"><div class="stat-l">Cal target</div>
+      <div class="stat-v acc">${profile.calTarget?fmtNum(profile.calTarget):'—'}</div>
+      <div class="stat-s">kcal/day</div></div>
+    <div class="stat"><div class="stat-l">Protein</div>
+      <div class="stat-v" style="color:var(--pur)">${profile.proteinTarget||'—'}<span style="font-size:11px">g</span></div>
+      <div class="stat-s">daily target</div></div>
+    <div class="stat"><div class="stat-l">Water</div>
+      <div class="stat-v blu">${profile.waterTarget||'—'}<span style="font-size:11px">L</span></div>
+      <div class="stat-s">daily target</div></div>
+    <div class="stat"><div class="stat-l">Sessions/wk</div>
+      <div class="stat-v ora">${profile.sessionsPerWeek||'—'}</div>
+      <div class="stat-s">target</div></div>
+    <div class="stat"><div class="stat-l">Sleep</div>
+      <div class="stat-v pnk">${profile.sleepHours||'—'}<span style="font-size:11px">h</span></div>
+      <div class="stat-s">target</div></div>`;
+
+  // ── Readiness (from body log + training load) ──
+  const lastBody = bodyLog[0];
+  const recentSessions = trainingLog.slice(0, 7);
+  const avgRPE = recentSessions.length
+    ? recentSessions.reduce((s,t)=>s+(t.rpe||5),0)/recentSessions.length : 0;
+  const soreness = lastBody ? lastBody.soreness : 0;
+  const loadScore = Math.min(100, Math.round(avgRPE * 10));
+  const recovScore = Math.max(0, 100 - soreness * 10);
+  const overallScore = Math.round((recovScore * 0.6) + ((100 - loadScore) * 0.4));
+  const readinessBadge = document.getElementById('dash-readiness-badge');
+  let readinessLabel, readinessColor;
+  if(soreness >= 8 || avgRPE >= 9){ readinessLabel='REST DAY'; readinessColor='p-red'; }
+  else if(soreness >= 6 || avgRPE >= 7.5){ readinessLabel='MODERATE'; readinessColor='p-ora'; }
+  else if(trainingLog.length === 0 && bodyLog.length === 0){ readinessLabel='NO DATA'; readinessColor=''; }
+  else { readinessLabel='READY'; readinessColor='p-grn'; }
+  readinessBadge.textContent = readinessLabel;
+  readinessBadge.className = 'pill ' + readinessColor;
+  document.getElementById('dash-readiness-body').innerHTML = trainingLog.length || bodyLog.length ? `
+    <div class="prog-row"><div class="prog-label"><span>Soreness</span><span>${soreness}/10</span></div><div class="bar"><div class="bar-fill" style="width:${soreness*10}%;background:${soreness>=7?'var(--acc2)':soreness>=4?'var(--ora)':'var(--grn)'}"></div></div></div>
+    <div class="prog-row"><div class="prog-label"><span>Training load (7-day avg RPE)</span><span>${avgRPE?avgRPE.toFixed(1)+'/10':'—'}</span></div><div class="bar"><div class="bar-fill" style="width:${loadScore}%;background:${loadScore>=80?'var(--acc2)':loadScore>=60?'var(--ora)':'var(--grn)'}"></div></div></div>
+    <div class="prog-row" style="margin-bottom:0"><div class="prog-label"><span>Recovery score</span><span>${recovScore}%</span></div><div class="bar"><div class="bar-fill" style="width:${recovScore}%;background:var(--grn)"></div></div></div>
+    ${lastBody?`<div style="font-size:11px;color:var(--mut2);margin-top:8px">Last check-in: ${fmtDate(lastBody.date)} · Sleep ${lastBody.sleepHours||'?'}h ${lastBody.sleepQuality||''}</div>`:''}
+  ` : '<div style="color:var(--mut2);font-size:13px">Log a body check-in to track your readiness.</div>';
+
+  // ── Google Fit live data ──
+  const gf = window.gfitLiveData;
+  const gfCard = document.getElementById('dash-gfit-card');
+  if(gf && (gf.heart_rate?.resting || gf.sleep?.hours || gf.steps)){
+    gfCard.style.display = 'block';
+    document.getElementById('dash-gfit-sync').textContent = 'Google Fit · ' + (window._gfitSyncTime||'synced');
+    document.getElementById('dash-gfit-grid').innerHTML = `
+      ${gf.heart_rate?.resting?`<div class="stat"><div class="stat-l">Resting HR</div><div class="stat-v blu">${gf.heart_rate.resting}<span style="font-size:11px">bpm</span></div></div>`:''}
+      ${gf.sleep?.hours?`<div class="stat"><div class="stat-l">Sleep</div><div class="stat-v ${gf.sleep.hours>=7?'grn':'ora'}">${gf.sleep.hours}<span style="font-size:11px">h</span></div></div>`:''}
+      ${gf.steps?`<div class="stat"><div class="stat-l">Steps</div><div class="stat-v" style="color:var(--pur)">${fmtNum(gf.steps)}</div></div>`:''}
+      ${gf.calories?.active?`<div class="stat"><div class="stat-l">Active cal</div><div class="stat-v ora">${fmtNum(gf.calories.active)}</div></div>`:''}
+      ${gf.weight?.kg?`<div class="stat"><div class="stat-l">Scale wt</div><div class="stat-v acc">${gf.weight.kg}<span style="font-size:11px">kg</span></div></div>`:''}`;
+  } else {
+    gfCard.style.display = 'none';
+  }
+
+  // ── Hydration ──
+  const goalML = (profile.waterTarget || 3.5) * 1000;
+  const pct = Math.min(100, Math.round(waterML / goalML * 100));
+  document.getElementById('dash-hydration-body').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="flex:1">
+        <div class="prog-row" style="margin-bottom:6px"><div class="prog-label"><span>${(waterML/1000).toFixed(1)}L consumed</span><span>${(goalML/1000).toFixed(1)}L goal</span></div><div class="bar"><div class="bar-fill" style="width:${pct}%;background:var(--blu)"></div></div></div>
+        <div style="font-size:11px;color:var(--mut2)">${pct}% of daily goal${waterML===0?' — tap Hydration to log your intake':''}</div>
+      </div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--blu);flex-shrink:0">${pct}%</div>
+    </div>`;
+
+  // ── Nutrition today ──
+  const todayFood = foodLog.filter(f=>f.date===todayS);
+  const tCal = todayFood.reduce((s,f)=>s+(f.cal||0),0);
+  const tPro = todayFood.reduce((s,f)=>s+(f.pro||0),0);
+  const tCarb = todayFood.reduce((s,f)=>s+(f.carb||0),0);
+  const tFat = todayFood.reduce((s,f)=>s+(f.fat||0),0);
+  const calTarget = profile.calTarget || 2000;
+  const calPct = Math.min(100, Math.round(tCal/calTarget*100));
+  document.getElementById('dash-nutrition-body').innerHTML = todayFood.length ? `
+    <div class="prog-row"><div class="prog-label"><span>${fmtNum(tCal)} kcal eaten</span><span>${fmtNum(calTarget)} target</span></div><div class="bar"><div class="bar-fill" style="width:${calPct}%;background:var(--acc)"></div></div></div>
+    <div style="display:flex;gap:12px;font-size:11px;color:var(--mut2);margin-top:6px">
+      <span>Protein <strong style="color:var(--txt)">${tPro}g</strong></span>
+      <span>Carbs <strong style="color:var(--txt)">${tCarb}g</strong></span>
+      <span>Fat <strong style="color:var(--txt)">${tFat}g</strong></span>
+      <span>${todayFood.length} item${todayFood.length!==1?'s':''} logged</span>
+    </div>` : `<div style="color:var(--mut2);font-size:13px">No food logged today — use the Nutrition tab or AI Meal Planner.</div>`;
+
+  // ── This week's training ──
+  const weekStart = new Date(now); weekStart.setDate(now.getDate() - ((now.getDay()+6)%7));
+  const weekSessions = trainingLog.filter(s=>{ try{ return parseDate(s.date)>=weekStart&&parseDate(s.date)<=now; }catch(e){return false;} });
+  document.getElementById('dash-week-sub').textContent = weekSessions.length + ' session' + (weekSessions.length!==1?'s':'') + ' this week';
+  document.getElementById('dash-week-body').innerHTML = weekSessions.length
+    ? weekSessions.map(s=>`
+        <div class="row">
+          <div><div style="font-size:13px;font-weight:500">${s.type} · ${s.dur} min</div>
+          <div style="font-size:11px;color:var(--mut2)">${fmtDate(s.date)} · ${s.mood||''}${s.coach?' · '+s.coach:''}</div></div>
+          <span class="pill ${s.rpe>=8?'pill-red':s.rpe>=6?'pill-acc':'pill-blu'}">RPE ${s.rpe}</span>
+        </div>`).join('')
+    : '<div class="row" style="color:var(--mut2);font-size:13px">No sessions this week — log your first in the Training tab.</div>';
+
+  // ── Weight trend ──
+  const weightCard = document.getElementById('dash-weight-body');
+  if(weightLog.length){
+    const latest = weightLog[weightLog.length-1];
+    const prev = weightLog.length > 1 ? weightLog[weightLog.length-2] : null;
+    const diff = prev ? (latest.val - prev.val).toFixed(1) : null;
+    const trend = diff ? (diff > 0 ? '▲ +'+diff : '▼ '+diff) : '';
+    weightCard.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div><div style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--acc);line-height:1">${latest.val}<span style="font-size:16px">${profile.weightUnit||'kg'}</span></div>
+        <div style="font-size:11px;color:var(--mut2);margin-top:2px">${fmtDate(latest.date)}${diff?` · <span style="color:${diff>0?'var(--acc2)':'var(--grn)'}">${trend}${profile.weightUnit||'kg'}</span>`:''}</div></div>
+        ${targetKg?`<div style="text-align:right"><div style="font-size:11px;color:var(--mut2)">Target class</div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--mut2)">${targetKg}kg</div>${toCut>0?`<div style="font-size:11px;color:var(--ora)">${toCut}kg to cut</div>`:'<div style="font-size:11px;color:var(--grn)">✅ On weight</div>'}</div>`:''}
+      </div>
+      <div style="display:flex;gap:3px;margin-top:8px;align-items:flex-end;height:30px" id="dash-wt-mini-chart">
+        ${weightLog.slice(-7).map((w,i,arr)=>{ const mn=Math.min(...arr.map(x=>x.val)), mx=Math.max(...arr.map(x=>x.val)); const h=mx===mn?50:Math.max(10,Math.round((w.val-mn)/(mx-mn)*100)); return `<div style="flex:1;height:${h}%;background:${i===arr.length-1?'var(--acc)':'var(--bdr2)'};border-radius:2px 2px 0 0;min-height:3px"></div>`; }).join('')}
+      </div>`;
+  } else {
+    weightCard.innerHTML = '<div style="color:var(--mut2);font-size:13px">No weight logged — use the Weight tab to track your progress.</div>';
+  }
+
+  // ── Next competition ──
+  const comps = calEvts.filter(e=>{ try{ return e.type==='competition'&&parseDate(e.date)>=now; }catch(ex){return false;} }).sort((a,b)=>parseDate(a.date)-parseDate(b.date));
+  const compCard = document.getElementById('dash-comp-card');
+  if(comps.length){
+    const comp = comps[0];
+    const dl = daysBetween(now, parseDate(comp.date));
+    compCard.style.display = 'block';
+    document.getElementById('dash-comp-days').textContent = dl === 0 ? 'TODAY' : dl + ' days';
+    document.getElementById('dash-comp-body').innerHTML = `
+      <div class="row"><span style="font-weight:500;font-size:13px">${comp.name}</span><span style="font-size:11px;color:var(--mut2)">${fmtDate(comp.date)}</span></div>
+      ${comp.loc?`<div class="row"><span style="font-size:12px;color:var(--mut2)">${comp.loc}</span>${toCut>0?`<span class="pill pill-ora">${toCut}kg to cut</span>`:''}</div>`:''}
+      ${dl<=14?`<div style="padding:8px 13px"><div class="prog-row" style="margin-bottom:0"><div class="prog-label"><span>Camp progress</span><span>${14-dl} of 14 days</span></div><div class="bar"><div class="bar-fill" style="width:${Math.min(100,Math.round((14-dl)/14*100))}%;background:var(--acc2)"></div></div></div></div>`:''}`;
+  } else {
+    compCard.style.display = 'none';
+  }
+
+  // ── Upcoming calendar events ──
+  const upcoming = calEvts.filter(e=>{ try{ return parseDate(e.date)>=now; }catch(ex){return false;} }).sort((a,b)=>parseDate(a.date)-parseDate(b.date)).slice(0,5);
+  const typeColors2={competition:'#FF3B30',camp:'#E8FF00','weigh-in':'#FF9500',training:'#448AFF',recovery:'#00E676'};
+  document.getElementById('dash-upcoming-body').innerHTML = upcoming.length
+    ? upcoming.map(e=>{ const dl=daysBetween(now,parseDate(e.date)); return `
+        <div class="row" style="gap:8px">
+          <div style="width:7px;height:7px;border-radius:2px;background:${typeColors2[e.type]||'#888'};flex-shrink:0;margin-top:4px"></div>
+          <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.name}</div>
+          <div style="font-size:11px;color:var(--mut2)">${fmtDate(e.date)}${e.loc?' · '+e.loc:''}</div></div>
+          <span style="font-size:11px;color:${dl<=7?'var(--ora)':'var(--mut2)'};flex-shrink:0">${dl===0?'Today':dl===1?'Tomorrow':'in '+dl+'d'}</span>
+        </div>`;}).join('')
+    : '<div class="row" style="color:var(--mut2);font-size:13px">No upcoming events — add one in the Calendar tab.</div>';
+
+  // ── Smart alert banner ──
+  renderDashAIBanner();
+}
+
 // Override renderDashAIBanner to use profile name
 function renderDashAIBanner(){
-  const profile=loadProfile()||obData;
-  const name=profile.firstName?`, ${profile.firstName}`:'';
-  const el=document.getElementById('dash-ai-banner');
-  if(!el)return;
-  el.innerHTML=`<div class="warn" style="display:flex;justify-content:space-between;align-items:center"><div><strong>AI Coach alert${name}:</strong> 5 consecutive hard sessions this week. HRV trending down. Consider a recovery day today.</div><button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;flex-shrink:0;margin-left:10px" onclick="showTab('coach')">Full brief ↗</button></div>`;
+  const el = document.getElementById('dash-ai-banner');
+  if(!el) return;
+  const profile = loadProfile() || {};
+  const trainingLog = getTrainingLog();
+  const bodyLog = JSON.parse(localStorage.getItem('fos_body_log')||'[]');
+  const lastBody = bodyLog[0];
+  const recentSessions = trainingLog.slice(0,5);
+  const highRPE = recentSessions.filter(s=>s.rpe>=8).length;
+  const soreness = lastBody?.soreness || 0;
+  const name = profile.firstName ? ', '+profile.firstName : '';
+
+  let msg='', type='tip';
+  if(highRPE>=3&&soreness>=6){
+    msg=`⚠️ High load alert${name}: ${highRPE} hard sessions recently plus soreness at ${soreness}/10. Recovery day recommended.`;
+    type='warn';
+  } else if(highRPE>=4){
+    msg=`⚠️ Load alert${name}: ${highRPE} consecutive hard sessions. Consider a deload or technique-only session.`;
+    type='warn';
+  } else if(soreness>=7){
+    msg=`😴 High soreness${name}: ${soreness}/10 today. Prioritise sleep, hydration and a light session.`;
+    type='warn';
+  } else if(trainingLog.length===0){
+    msg=`👋 Welcome${name}! Start by logging your first training session.`;
+    type='tip';
+  } else if(trainingLog.length>0){
+    const last=trainingLog[0];
+    const daysSince=daysBetween(parseDate(last.date),new Date());
+    if(daysSince>=3){
+      msg=`📅 It's been ${daysSince} days since your last session${name}. Time to get back at it.`;
+      type='tip';
+    } else {
+      el.innerHTML=''; return; // no alert needed — all looks good
+    }
+  } else {
+    el.innerHTML=''; return;
+  }
+  el.innerHTML=`<div class="${type}" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="flex:1">${msg}</div><button class="btn btn-ghost" style="font-size:11px;padding:4px 10px;flex-shrink:0;margin-left:10px" onclick="showTab('coach')">Get brief ↗</button></div>`;
 }
 </script>
 </body>
