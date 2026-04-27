@@ -1661,13 +1661,28 @@ textarea{resize:vertical;min-height:70px;}
       <div id="gfit-connected" style="display:none">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
           <div style="font-size:13px;color:var(--mut2)" id="gfit-sync-label">Syncing…</div>
-          <div style="display:flex;gap:8px">
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
             <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px" onclick="syncGoogleFit()">↻ Refresh</button>
+            <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px" onclick="showGfitDebug()">🔍 Debug</button>
             <button class="btn" style="font-size:11px;padding:5px 10px;background:transparent;border:1px solid rgba(255,59,48,.25);color:var(--acc2)" onclick="disconnectGoogleFit()">Disconnect</button>
           </div>
         </div>
         <div id="gfit-data-grid" class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(90px,1fr))"></div>
         <div id="gfit-data-rows"></div>
+        <!-- Debug panel — shows raw API response -->
+        <div id="gfit-debug-panel" style="display:none;margin-top:12px;background:var(--surf2);border:1px solid var(--bdr);border-radius:8px;padding:12px">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);margin-bottom:8px">🔍 Raw API response</div>
+          <pre id="gfit-debug-content" style="font-size:10px;font-family:monospace;color:var(--mut2);white-space:pre-wrap;word-break:break-all;margin:0;line-height:1.6;max-height:200px;overflow-y:auto"></pre>
+          <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--bdr)">
+            <div style="font-size:12px;font-weight:500;margin-bottom:6px">If all values show 0 or null:</div>
+            <div style="font-size:12px;color:var(--mut2);line-height:1.7">
+              1. Your Google Fit OAuth token may be missing fitness scopes — tap <strong>Force reconnect</strong> below<br>
+              2. Make sure Fitbit → Health Connect → Google Fit sync is complete<br>
+              3. Open Google Fit app and check Journal for HR readings
+            </div>
+            <button class="btn btn-acc btn-full" onclick="reconnectGoogleFit()" style="font-size:12px;margin-top:10px">🔄 Force reconnect with fresh permissions</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -4348,26 +4363,86 @@ async function ensureGfitToken(){
   return data.access_token;
 }
 
-// Fetch all Google Fit data from backend proxy
 async function syncGoogleFit(){
   if(!gfitConnected()){ renderGfitDisconnectedState(); return; }
   const label = document.getElementById('gfit-sync-label');
   if(label) label.textContent = 'Syncing…';
+
   try{
     const token      = await ensureGfitToken();
     const backendUrl = gfitBackendUrl();
     const res = await fetch(`${backendUrl}/api/fit/data?type=all`, {
       headers: { 'Authorization': `Bearer ${token}` },
     });
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    // Surface the actual API error clearly
+    if(!res.ok){
+      const errBody = await res.json().catch(()=>({}));
+      const errMsg  = errBody.error?.message || errBody.error || `HTTP ${res.status}`;
+
+      if(res.status === 401 || res.status === 403){
+        // Token invalid or missing scopes — prompt reconnect
+        if(label) label.textContent = 'Auth expired — reconnect needed';
+        showGfitReconnectPrompt();
+        return;
+      }
+      throw new Error(errMsg);
+    }
+
     const data = await res.json();
+
+    // Check if API returned data or all nulls
+    const hasData = data.steps || data.heart_rate?.resting || data.sleep?.hours || data.calories?.active;
+    if(!hasData && label){
+      label.textContent = 'Connected — no data yet (check Google Fit app)';
+    } else if(label){
+      label.textContent = 'Synced · ' + new Date().toLocaleTimeString(userLocale,{hour:'2-digit',minute:'2-digit'});
+    }
+
     localStorage.setItem('gfit_latest', JSON.stringify(data));
     renderGfitData(data);
-    if(label) label.textContent = 'Synced · ' + new Date().toLocaleTimeString(userLocale,{hour:'2-digit',minute:'2-digit'});
+
   }catch(e){
     if(label) label.textContent = 'Sync failed — ' + e.message;
-    // If 401, tokens are invalid — disconnect
-    if(e.message.includes('401')) disconnectGoogleFit();
+    console.error('Google Fit sync error:', e);
+  }
+}
+
+function showGfitReconnectPrompt(){
+  const rows = document.getElementById('gfit-data-rows');
+  if(!rows) return;
+  rows.innerHTML = `
+    <div style="background:rgba(255,149,0,.08);border:1px solid rgba(255,149,0,.25);border-radius:8px;padding:12px;margin-top:10px">
+      <div style="font-size:13px;font-weight:500;color:var(--ora);margin-bottom:6px">⚠️ Google Fit authorisation expired</div>
+      <div style="font-size:12px;color:var(--mut2);line-height:1.6;margin-bottom:10px">
+        Your Google Fit access token has expired or is missing the required fitness data scopes.
+        You need to reconnect to grant fresh permissions.
+      </div>
+      <button class="btn btn-acc" onclick="reconnectGoogleFit()" style="font-size:12px">Reconnect Google Fit →</button>
+    </div>`;
+}
+
+async function reconnectGoogleFit(){
+  ['gfit_access_token','gfit_refresh_token','gfit_expires_at','gfit_latest'].forEach(k=>localStorage.removeItem(k));
+  const backendUrl = gfitBackendUrl();
+  if(!backendUrl){ alert('Enter your backend URL first.'); return; }
+  window.location.href = `${backendUrl}/api/auth/google`;
+}
+
+async function showGfitDebug(){
+  const panel   = document.getElementById('gfit-debug-panel');
+  const content = document.getElementById('gfit-debug-content');
+  if(panel.style.display==='block'){ panel.style.display='none'; return; }
+  panel.style.display='block';
+  content.textContent = 'Fetching raw API response…';
+  try{
+    const token      = await ensureGfitToken();
+    const backendUrl = gfitBackendUrl();
+    const res  = await fetch(`${backendUrl}/api/fit/data?type=all`, { headers:{ 'Authorization':`Bearer ${token}` } });
+    const data = await res.json();
+    content.textContent = JSON.stringify(data, null, 2);
+  }catch(e){
+    content.textContent = 'Error: ' + e.message;
   }
 }
 
