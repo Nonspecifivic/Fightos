@@ -803,6 +803,7 @@ textarea{resize:vertical;min-height:70px;}
 <!-- NAV -->
 <nav class="nav" id="nav">
   <button class="nb active" onclick="showTab('dashboard')"><span class="dot" style="background:#E8FF00"></span>Dashboard</button>
+  <button class="nb" onclick="showTab('profile')"><span class="dot" style="background:#E8FF00"></span>Profile</button>
   <button class="nb" onclick="showTab('training')"><span class="dot" style="background:#448AFF"></span>Training</button>
   <button class="nb" onclick="showTab('body')"><span class="dot" style="background:#FF3B30"></span>Body & Recovery</button>
   <button class="nb" onclick="showTab('nutrition')"><span class="dot" style="background:#00E676"></span>Nutrition</button>
@@ -920,6 +921,185 @@ textarea{resize:vertical;min-height:70px;}
       <button class="btn btn-ghost" onclick="showTab('hydration')">+ Water</button>
     </div>
   </div>
+
+</div>
+
+<!-- ==================== PROFILE ==================== -->
+<div class="tab" id="tab-profile">
+
+  <!-- Header with save status -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px">My Profile</div>
+      <div style="font-size:11px;color:var(--mut2)" id="profile-save-status">Changes save automatically</div>
+    </div>
+    <button class="btn btn-acc" onclick="saveProfileEdits()" style="font-size:12px;padding:7px 14px">Save changes</button>
+  </div>
+
+  <!-- GOALS -->
+  <div class="card">
+    <div class="card-header"><h3>🎯 Fight goals</h3></div>
+    <div class="card-body">
+      <div class="fg"><label class="lbl">Primary goal</label>
+        <div class="ob-chips" id="pe-goal-chips" style="gap:7px;flex-wrap:wrap">
+          <button class="ob-chip" onclick="peChip(this,'goal')">Win my next competition</button>
+          <button class="ob-chip" onclick="peChip(this,'goal')">Get my first win</button>
+          <button class="ob-chip" onclick="peChip(this,'goal')">Improve my skills</button>
+          <button class="ob-chip" onclick="peChip(this,'goal')">Cut to my weight class</button>
+          <button class="ob-chip" onclick="peChip(this,'goal')">Build strength & power</button>
+          <button class="ob-chip" onclick="peChip(this,'goal')">Improve cardio</button>
+          <button class="ob-chip" onclick="peChip(this,'goal')">Train injury-free</button>
+          <button class="ob-chip" onclick="peChip(this,'goal')">Turn professional</button>
+        </div>
+      </div>
+      <div class="fg"><label class="lbl">Target weight class</label>
+        <div class="ob-chips" id="pe-wclass-chips" style="gap:7px;flex-wrap:wrap">
+          <button class="ob-chip" onclick="peChip(this,'wclass')">Strawweight ≤52kg</button>
+          <button class="ob-chip" onclick="peChip(this,'wclass')">Flyweight ≤57kg</button>
+          <button class="ob-chip" onclick="peChip(this,'wclass')">Bantamweight ≤61kg</button>
+          <button class="ob-chip" onclick="peChip(this,'wclass')">Featherweight ≤66kg</button>
+          <button class="ob-chip" onclick="peChip(this,'wclass')">Lightweight ≤70kg</button>
+          <button class="ob-chip" onclick="peChip(this,'wclass')">Welterweight ≤77kg</button>
+          <button class="ob-chip" onclick="peChip(this,'wclass')">Middleweight ≤84kg</button>
+          <button class="ob-chip" onclick="peChip(this,'wclass')">Light Heavyweight ≤93kg</button>
+          <button class="ob-chip" onclick="peChip(this,'wclass')">Heavyweight ≤120kg</button>
+          <button class="ob-chip" onclick="peChip(this,'wclass')">Open weight</button>
+        </div>
+      </div>
+      <div class="f2 fg">
+        <div><label class="lbl">Sessions per week</label>
+          <div style="display:flex;align-items:center;gap:10px">
+            <input type="number" id="pe-sessions" min="1" max="20" placeholder="e.g. 5" style="width:80px">
+            <span style="font-size:12px;color:var(--mut2)">sessions target</span>
+          </div>
+        </div>
+        <div><label class="lbl">Sleep target (hrs)</label>
+          <input type="number" id="pe-sleep" min="4" max="12" step="0.5" placeholder="e.g. 8">
+        </div>
+      </div>
+      <div class="fg"><label class="lbl">Weaknesses to address (multi-select)</label>
+        <div class="ob-chips" id="pe-weak-chips" style="gap:7px;flex-wrap:wrap">
+          <button class="ob-chip" onclick="peMultiChip(this,'weak')">Cardio / gas tank</button>
+          <button class="ob-chip" onclick="peMultiChip(this,'weak')">Takedowns</button>
+          <button class="ob-chip" onclick="peMultiChip(this,'weak')">Ground game</button>
+          <button class="ob-chip" onclick="peMultiChip(this,'weak')">Striking</button>
+          <button class="ob-chip" onclick="peMultiChip(this,'weak')">Clinch</button>
+          <button class="ob-chip" onclick="peMultiChip(this,'weak')">Submissions</button>
+          <button class="ob-chip" onclick="peMultiChip(this,'weak')">Mental toughness</button>
+          <button class="ob-chip" onclick="peMultiChip(this,'weak')">Consistency</button>
+          <button class="ob-chip" onclick="peMultiChip(this,'weak')">Recovery</button>
+          <button class="ob-chip" onclick="peMultiChip(this,'weak')">Nutrition</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEIGHT & BODY -->
+  <div class="card">
+    <div class="card-header"><h3>⚖️ Weight & body</h3></div>
+    <div class="card-body">
+      <div class="f2 fg">
+        <div><label class="lbl">Current weight</label>
+          <div style="display:flex;gap:6px">
+            <input type="number" id="pe-weight" placeholder="e.g. 80" step="0.1" style="flex:1">
+            <select id="pe-weight-unit" style="width:60px"><option>kg</option><option>lbs</option></select>
+          </div>
+        </div>
+        <div><label class="lbl">Height</label>
+          <div style="display:flex;gap:6px">
+            <input type="number" id="pe-height" placeholder="e.g. 178" style="flex:1">
+            <select id="pe-height-unit" style="width:60px"><option>cm</option><option>in</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="fg"><label class="lbl">Weight cut method</label>
+        <div class="ob-chips" id="pe-cut-chips" style="gap:7px;flex-wrap:wrap">
+          <button class="ob-chip" onclick="peChip(this,'cut')">Gradual diet — no water cut</button>
+          <button class="ob-chip" onclick="peChip(this,'cut')">Mild water cut 1–3kg</button>
+          <button class="ob-chip" onclick="peChip(this,'cut')">Heavy water cut 3–6kg</button>
+          <button class="ob-chip" onclick="peChip(this,'cut')">Not sure yet</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SPORT & TRAINING -->
+  <div class="card">
+    <div class="card-header"><h3>🥋 Sport & training</h3></div>
+    <div class="card-body">
+      <div class="fg"><label class="lbl">Primary sport</label>
+        <div class="ob-chips" id="pe-sport-chips" style="gap:7px;flex-wrap:wrap">
+          <button class="ob-chip" onclick="peChip(this,'sport')">MMA</button>
+          <button class="ob-chip" onclick="peChip(this,'sport')">BJJ</button>
+          <button class="ob-chip" onclick="peChip(this,'sport')">Wrestling</button>
+          <button class="ob-chip" onclick="peChip(this,'sport')">Boxing</button>
+          <button class="ob-chip" onclick="peChip(this,'sport')">Muay Thai</button>
+          <button class="ob-chip" onclick="peChip(this,'sport')">Kickboxing</button>
+          <button class="ob-chip" onclick="peChip(this,'sport')">Judo</button>
+          <button class="ob-chip" onclick="peChip(this,'sport')">Submission Grappling</button>
+        </div>
+      </div>
+      <div class="fg"><label class="lbl">Experience level</label>
+        <div class="ob-chips" id="pe-exp-chips" style="gap:7px;flex-wrap:wrap">
+          <button class="ob-chip" onclick="peChip(this,'exp')">Beginner (0–1 yr)</button>
+          <button class="ob-chip" onclick="peChip(this,'exp')">Intermediate (1–3 yrs)</button>
+          <button class="ob-chip" onclick="peChip(this,'exp')">Advanced (3–7 yrs)</button>
+          <button class="ob-chip" onclick="peChip(this,'exp')">Elite / Pro (7+ yrs)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HEALTH & LIFESTYLE -->
+  <div class="card">
+    <div class="card-header"><h3>💪 Health & lifestyle</h3></div>
+    <div class="card-body">
+      <div class="fg"><label class="lbl">Current injuries or niggles</label>
+        <textarea id="pe-injuries" placeholder="e.g. Right shoulder impingement, left knee niggle. Update whenever something changes." style="min-height:70px;resize:vertical"></textarea>
+      </div>
+      <div class="fg"><label class="lbl">Dietary preference</label>
+        <div class="ob-chips" id="pe-diet-chips" style="gap:7px;flex-wrap:wrap">
+          <button class="ob-chip" onclick="peChip(this,'diet')">No restrictions</button>
+          <button class="ob-chip" onclick="peChip(this,'diet')">High protein</button>
+          <button class="ob-chip" onclick="peChip(this,'diet')">Vegetarian</button>
+          <button class="ob-chip" onclick="peChip(this,'diet')">Vegan</button>
+          <button class="ob-chip" onclick="peChip(this,'diet')">Halal</button>
+          <button class="ob-chip" onclick="peChip(this,'diet')">Gluten-free</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PERSONAL DETAILS -->
+  <div class="card">
+    <div class="card-header"><h3>👤 Personal details</h3></div>
+    <div class="card-body">
+      <div class="f2 fg">
+        <div><label class="lbl">First name</label><input type="text" id="pe-fname" placeholder="Your first name"></div>
+        <div><label class="lbl">Last name</label><input type="text" id="pe-lname" placeholder="Your last name"></div>
+      </div>
+      <div class="f2 fg">
+        <div><label class="lbl">Date of birth</label><input type="date" id="pe-dob"></div>
+        <div><label class="lbl">Country</label><input type="text" id="pe-country" placeholder="e.g. Canada"></div>
+      </div>
+      <div class="fg"><label class="lbl">Biological sex</label>
+        <select id="pe-sex"><option>Male</option><option>Female</option><option>Other</option></select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recalculate targets -->
+  <div class="card">
+    <div class="card-header"><h3>⚡ Recalculate targets</h3></div>
+    <div class="card-body">
+      <p style="font-size:13px;color:var(--mut2);line-height:1.6;margin-bottom:12px">After saving your changes, tap this to recalculate your BMR, TDEE, calorie target, protein, carbs and fat based on your updated profile.</p>
+      <div id="pe-targets-preview" style="display:none;background:var(--surf2);border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px;line-height:1.9"></div>
+      <button class="btn btn-ghost btn-full" onclick="recalcTargets()" style="font-size:13px">Recalculate my nutrition targets →</button>
+    </div>
+  </div>
+
+  <button class="btn btn-acc btn-full btn-hero" onclick="saveProfileEdits()" style="margin-top:4px">SAVE ALL CHANGES</button>
+  <div id="profile-saved-msg" style="display:none;text-align:center;padding:10px;font-size:13px;color:var(--grn)">✅ Profile updated successfully</div>
 
 </div>
 
@@ -1896,7 +2076,7 @@ function showTab(id){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
-  const tabs=['dashboard','training','body','nutrition','hydration','weight','calendar','womens','trackers','coach','strength','mobility','techniques','analysis'];
+  const tabs=['dashboard','profile','training','body','nutrition','hydration','weight','calendar','womens','trackers','coach','strength','mobility','techniques','analysis'];
   document.querySelectorAll('.nb')[tabs.indexOf(id)]?.classList.add('active');
   if(id==='techniques') renderTechGrid();
   if(id==='calendar'){ renderCal(); renderCompCountdown(); }
@@ -1904,6 +2084,7 @@ function showTab(id){
   if(id==='dashboard') renderDashboard();
   if(id==='analysis'){ renderMatchRecord(); renderMatchHistory(); }
   if(id==='nutrition'){ renderNutritionStats(); renderFoodLog(); }
+  if(id==='profile') renderProfileTab();
 }
 
 function resetProfile(){
@@ -3813,7 +3994,225 @@ function initGoogleFit(){
   }
 }
 
-// ===== CROSSFIT SESSION TYPE TOGGLE =====
+// ===== PROFILE EDITOR =====
+// Tracks edits before saving
+const peEdits = {};
+
+function peChip(el, field){
+  // Single-select chip
+  el.closest('.ob-chips').querySelectorAll('.ob-chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  peEdits[field] = el.textContent.trim();
+}
+
+function peMultiChip(el, field){
+  el.classList.toggle('sel-multi');
+  const selected = [...el.closest('.ob-chips').querySelectorAll('.sel-multi')].map(c=>c.textContent.trim());
+  peEdits[field] = selected;
+}
+
+function renderProfileTab(){
+  const p = loadProfile() || {};
+
+  // Helper to pre-select a chip
+  function preselect(containerId, value){
+    if(!value) return;
+    const chips = document.querySelectorAll(`#${containerId} .ob-chip`);
+    chips.forEach(c=>{ c.classList.remove('sel'); if(c.textContent.trim()===value) c.classList.add('sel'); });
+  }
+
+  // Helper to pre-select multi chips
+  function preselectMulti(containerId, values){
+    if(!values||!values.length) return;
+    const chips = document.querySelectorAll(`#${containerId} .ob-chip`);
+    chips.forEach(c=>{ c.classList.remove('sel-multi'); if(values.includes(c.textContent.trim())) c.classList.add('sel-multi'); });
+  }
+
+  // Goals
+  preselect('pe-goal-chips',  p.goal);
+  preselect('pe-wclass-chips', p.wclass);
+  preselectMulti('pe-weak-chips', p.weak||p.weaknesses||[]);
+
+  const sessEl = document.getElementById('pe-sessions');
+  if(sessEl) sessEl.value = p.sessionsPerWeek||'';
+  const sleepEl = document.getElementById('pe-sleep');
+  if(sleepEl) sleepEl.value = p.sleepHours||'';
+
+  // Weight & body
+  const wtEl = document.getElementById('pe-weight');
+  if(wtEl) wtEl.value = p.weight||'';
+  const wtuEl = document.getElementById('pe-weight-unit');
+  if(wtuEl) wtuEl.value = p.weightUnit||'kg';
+  const htEl = document.getElementById('pe-height');
+  if(htEl) htEl.value = p.height||'';
+  const htuEl = document.getElementById('pe-height-unit');
+  if(htuEl) htuEl.value = p.heightUnit||p.htu||'cm';
+  preselect('pe-cut-chips', p.cut);
+
+  // Sport & training
+  preselect('pe-sport-chips', p.sport);
+  preselect('pe-exp-chips',   p.exp);
+
+  // Health
+  const injEl = document.getElementById('pe-injuries');
+  if(injEl) injEl.value = p.injuries||'';
+  preselect('pe-diet-chips', p.diet);
+
+  // Personal
+  const fnEl = document.getElementById('pe-fname');
+  if(fnEl) fnEl.value = p.firstName||'';
+  const lnEl = document.getElementById('pe-lname');
+  if(lnEl) lnEl.value = p.lastName||'';
+  const dobEl = document.getElementById('pe-dob');
+  if(dobEl) dobEl.value = p.dob||'';
+  const ctEl = document.getElementById('pe-country');
+  if(ctEl) ctEl.value = p.country||'';
+  const sexEl = document.getElementById('pe-sex');
+  if(sexEl) sexEl.value = p.sex||'Male';
+
+  // Reset save status
+  const statusEl = document.getElementById('profile-save-status');
+  if(statusEl) statusEl.textContent = 'Changes save automatically';
+  document.getElementById('profile-saved-msg').style.display='none';
+}
+
+function saveProfileEdits(){
+  const p = loadProfile() || {};
+
+  // Collect all form values
+  const getVal = id => { const el=document.getElementById(id); return el?el.value.trim():null; };
+  const getChip = id => { const sel=document.querySelector(`#${id} .ob-chip.sel`); return sel?sel.textContent.trim():null; };
+  const getMultiChip = id => [...document.querySelectorAll(`#${id} .ob-chip.sel-multi`)].map(c=>c.textContent.trim());
+
+  // Goals
+  const goal    = getChip('pe-goal-chips')   || p.goal;
+  const wclass  = getChip('pe-wclass-chips') || p.wclass;
+  const weak    = getMultiChip('pe-weak-chips').length ? getMultiChip('pe-weak-chips') : (p.weak||p.weaknesses||[]);
+  const sessions = getVal('pe-sessions') || p.sessionsPerWeek;
+  const sleepH   = getVal('pe-sleep')    || p.sleepHours;
+
+  // Weight & body
+  const weight  = getVal('pe-weight')      || p.weight;
+  const wUnit   = getVal('pe-weight-unit') || p.weightUnit || 'kg';
+  const height  = getVal('pe-height')      || p.height;
+  const hUnit   = getVal('pe-height-unit') || p.heightUnit || 'cm';
+  const cut     = getChip('pe-cut-chips')  || p.cut;
+
+  // Sport
+  const sport   = getChip('pe-sport-chips') || p.sport;
+  const exp     = getChip('pe-exp-chips')   || p.exp;
+
+  // Health
+  const injuries = getVal('pe-injuries') ?? p.injuries;
+  const diet     = getChip('pe-diet-chips') || p.diet;
+
+  // Personal
+  const firstName = getVal('pe-fname')   || p.firstName;
+  const lastName  = getVal('pe-lname')   || p.lastName;
+  const dob       = getVal('pe-dob')     || p.dob;
+  const country   = getVal('pe-country') || p.country;
+  const sex       = getVal('pe-sex')     || p.sex;
+
+  // Recalculate age from DOB
+  let age = p.age;
+  if(dob){
+    const b=new Date(dob), now=new Date();
+    let a=now.getFullYear()-b.getFullYear();
+    if(now.getMonth()<b.getMonth()||(now.getMonth()===b.getMonth()&&now.getDate()<b.getDate())) a--;
+    if(a>0) age=a;
+  }
+
+  // Merge into profile
+  const updated = {
+    ...p,
+    goal, wclass, weak, weaknesses:weak,
+    sessionsPerWeek:sessions, sleepHours:sleepH,
+    weight, weightUnit:wUnit, height, heightUnit:hUnit, htu:hUnit, cut,
+    sport, exp,
+    injuries, diet,
+    firstName, lastName, dob, age, country, sex,
+  };
+
+  // Recompute nutrition targets if weight/age/sex/sessions changed
+  if(weight || age || sex || sessions){
+    updated.bmr       = computeBMR(updated);
+    const {tdee}      = computeTDEE(updated);
+    updated.tdee      = tdee;
+    updated.calTarget = computeCalTarget(updated);
+    updated.proteinTarget = Math.round((parseFloat(weight)||80)*2.2);
+    updated.carbTarget    = Math.round(updated.calTarget*0.45/4);
+    updated.fatTarget     = Math.round(updated.calTarget*0.25/9);
+    updated.waterTarget   = Math.max(2.5, Math.round((parseFloat(weight)||80)*0.04*10)/10);
+  }
+
+  saveProfile(updated);
+  applyProfile(updated);
+  renderDashboard();
+  debouncedSync();
+
+  // Show saved confirmation
+  const msg = document.getElementById('profile-saved-msg');
+  const statusEl = document.getElementById('profile-save-status');
+  if(msg){ msg.style.display='block'; setTimeout(()=>msg.style.display='none', 3000); }
+  if(statusEl){ statusEl.textContent='✅ Saved just now'; statusEl.style.color='var(--grn)'; setTimeout(()=>{ statusEl.textContent='Changes save automatically'; statusEl.style.color=''; },3000); }
+
+  // Scroll to top of profile tab
+  document.getElementById('tab-profile')?.scrollTo({top:0, behavior:'smooth'});
+}
+
+function recalcTargets(){
+  // Read current form values (don't need to save first)
+  const getVal = id => { const el=document.getElementById(id); return el?el.value.trim():null; };
+  const getChip = id => { const sel=document.querySelector(`#${id} .ob-chip.sel`); return sel?sel.textContent.trim():null; };
+  const p = loadProfile() || {};
+  const weight = parseFloat(getVal('pe-weight')||p.weight)||80;
+  const height = parseFloat(getVal('pe-height')||p.height)||178;
+  const hUnit  = getVal('pe-height-unit')||p.heightUnit||'cm';
+  const sex    = getVal('pe-sex')||p.sex||'Male';
+  const dob    = getVal('pe-dob')||p.dob;
+  const goal   = getChip('pe-goal-chips')||p.goal||'';
+  const sessions = parseInt(getVal('pe-sessions')||p.sessionsPerWeek)||5;
+  let age = p.age||25;
+  if(dob){
+    const b=new Date(dob),now=new Date();
+    let a=now.getFullYear()-b.getFullYear();
+    if(now.getMonth()<b.getMonth()||(now.getMonth()===b.getMonth()&&now.getDate()<b.getDate())) a--;
+    if(a>0) age=a;
+  }
+  const mock = {weight,height,heightUnit:hUnit,htu:hUnit,sex,age,goal,sessionsPerWeek:sessions};
+  const bmr  = computeBMR(mock);
+  const {tdee, label} = computeTDEE(mock);
+  const cal  = computeCalTarget(mock);
+  const prot = Math.round(weight*2.2);
+  const carb = Math.round(cal*0.45/4);
+  const fat  = Math.round(cal*0.25/9);
+  const water= Math.max(2.5,Math.round(weight*0.04*10)/10);
+
+  const preview = document.getElementById('pe-targets-preview');
+  preview.style.display='block';
+  preview.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px">
+      <div><span style="color:var(--mut2)">BMR</span> <strong>${fmtNum(bmr)} kcal</strong></div>
+      <div><span style="color:var(--mut2)">TDEE</span> <strong>${fmtNum(tdee)} kcal</strong> <span style="font-size:10px;color:var(--mut2)">(${label})</span></div>
+      <div><span style="color:var(--mut2)">Cal target</span> <strong style="color:var(--acc)">${fmtNum(cal)} kcal</strong></div>
+      <div><span style="color:var(--mut2)">Water</span> <strong>${water}L</strong></div>
+      <div><span style="color:var(--mut2)">Protein</span> <strong>${prot}g</strong></div>
+      <div><span style="color:var(--mut2)">Carbs</span> <strong>${carb}g</strong> / <strong>Fat ${fat}g</strong></div>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:var(--mut2)">Based on: ${weight}kg · ${age}yrs · ${sex} · ${sessions} sessions/week · Goal: ${goal||'—'}</div>
+    <button class="btn btn-acc btn-full" onclick="applyRecalcTargets(${bmr},${tdee},${cal},${prot},${carb},${fat},${water})" style="margin-top:10px;font-size:12px">Apply these targets →</button>`;
+}
+
+function applyRecalcTargets(bmr,tdee,cal,prot,carb,fat,water){
+  const p = loadProfile()||{};
+  p.bmr=bmr; p.tdee=tdee; p.calTarget=cal;
+  p.proteinTarget=prot; p.carbTarget=carb; p.fatTarget=fat; p.waterTarget=water;
+  saveProfile(p);
+  applyProfile(p);
+  renderDashboard();
+  debouncedSync();
+  document.getElementById('pe-targets-preview').innerHTML+=`<div style="color:var(--grn);font-size:12px;margin-top:8px">✅ Targets applied to your profile</div>`;
+}
 function onSessionTypeChange(val){
   const cf=document.getElementById('cf-fields');
   if(!cf) return;
