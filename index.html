@@ -90,7 +90,9 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:'DM Sans
 #ptr-indicator.ptr-refreshing #ptr-spinner{display:block;}
 #ptr-arrow{transition:transform .25s ease;font-size:15px;display:inline-block;}
 #ptr-indicator.ptr-ready #ptr-arrow{transform:rotate(180deg);}
-.tab{display:none;}.tab.active{display:block;}
+.focus-chip{padding:6px 13px;border-radius:20px;border:1px solid var(--bdr2);background:var(--surf);color:var(--mut2);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0;}
+.focus-chip:hover{border-color:var(--acc);color:var(--acc);}
+.focus-chip.active-chip{background:rgba(232,255,0,.12);border-color:var(--acc);color:var(--acc);font-weight:500;}
 
 /* COMMON */
 .sec-title{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--mut2);margin-bottom:8px;}
@@ -840,97 +842,123 @@ textarea{resize:vertical;min-height:70px;}
 <!-- ==================== DASHBOARD ==================== -->
 <div class="tab active" id="tab-dashboard">
 
-  <!-- Smart alert banner — driven by real logged data -->
+  <!-- ── AI Coach Brief — front and centre ── -->
+  <div id="dash-coach-section" style="margin-bottom:12px">
+
+    <!-- Brief header with athlete name + time context -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px" id="dash-greeting">YOUR COACH BRIEF</div>
+        <div style="font-size:11px;color:var(--mut2)" id="dash-brief-context">Tap to get today's personalised brief</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span id="dash-brief-freshness" style="font-size:10px;color:var(--mut2)"></span>
+        <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;white-space:nowrap" onclick="refreshDashCoach()">↻ Refresh</button>
+      </div>
+    </div>
+
+    <!-- Quick focus selector -->
+    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:none" id="dash-focus-chips">
+      <button class="focus-chip active-chip" onclick="setDashFocus(this,'Today')">Today</button>
+      <button class="focus-chip" onclick="setDashFocus(this,'Tomorrow')">Tomorrow</button>
+      <button class="focus-chip" onclick="setDashFocus(this,'This week')">This week</button>
+      <button class="focus-chip" onclick="setDashFocus(this,'Training load')">Training load</button>
+      <button class="focus-chip" onclick="setDashFocus(this,'Weight cut')">Weight cut</button>
+      <button class="focus-chip" onclick="setDashFocus(this,'Nutrition')">Nutrition</button>
+      <button class="focus-chip" onclick="setDashFocus(this,'Competition prep')">Competition prep</button>
+      <button class="focus-chip" onclick="setDashFocus(this,'Recovery')">Recovery</button>
+    </div>
+
+    <!-- Anything to add input -->
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <input type="text" id="dash-coach-extra" placeholder="Anything to add? e.g. I feel tired today, missed sleep…" style="flex:1;font-size:12px;padding:8px 12px">
+      <button class="btn btn-acc" onclick="getDashCoachBrief()" id="dash-coach-btn" style="font-size:13px;padding:8px 16px;white-space:nowrap;font-family:'Bebas Neue',sans-serif;letter-spacing:1px">GET BRIEF</button>
+    </div>
+
+    <!-- Output area -->
+    <div id="dash-coach-output">
+      <!-- Initial state — show last saved brief or prompt -->
+      <div id="dash-coach-empty" style="background:linear-gradient(135deg,rgba(232,255,0,.05),rgba(232,255,0,.02));border:1px solid rgba(232,255,0,.15);border-radius:12px;padding:18px;text-align:center">
+        <div style="font-size:28px;margin-bottom:8px">🥊</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:1px;margin-bottom:6px">YOUR AI COACH IS READY</div>
+        <div style="font-size:13px;color:var(--mut2);line-height:1.6;max-width:280px;margin:0 auto">Tap <strong>GET BRIEF</strong> for a personalised plan based on everything you've logged so far.</div>
+      </div>
+      <div class="dots-loading" id="dash-coach-loading" style="display:none;justify-content:center;padding:20px"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+      <div id="dash-coach-content" style="display:none"></div>
+    </div>
+
+  </div>
+
+  <!-- ── Divider ── -->
+  <div style="height:1px;background:var(--bdr);margin:4px 0 12px"></div>
+
+  <!-- ── Smart alert banner ── -->
   <div id="dash-ai-banner"></div>
 
-  <!-- Top stat row — from profile -->
+  <!-- ── Top stat row ── -->
   <div class="stat-grid" id="dash-stat-grid"></div>
 
-  <!-- Energy balance — from profile BMR/TDEE -->
+  <!-- ── Energy balance ── -->
   <div class="card" id="tdee-card" style="display:none">
     <div class="card-header"><h3>Energy balance</h3><span id="tdee-badge" class="pill"></span></div>
     <div class="card-body" id="tdee-body"></div>
   </div>
 
-  <!-- Today's readiness — from body log + training log -->
+  <!-- ── Today's readiness ── -->
   <div class="card" id="dash-readiness-card">
-    <div class="card-header">
-      <h3>Today's readiness</h3>
-      <span class="pill" id="dash-readiness-badge">—</span>
-    </div>
+    <div class="card-header"><h3>Today's readiness</h3><span class="pill" id="dash-readiness-badge">—</span></div>
     <div class="card-body" id="dash-readiness-body">
       <div style="color:var(--mut2);font-size:13px">Log a body check-in to see your readiness score.</div>
     </div>
   </div>
 
-  <!-- Google Fit live data — shown only when connected -->
+  <!-- ── Google Fit live data ── -->
   <div class="card" id="dash-gfit-card" style="display:none">
-    <div class="card-header">
-      <h3>🏃 Live health data</h3>
-      <span style="font-size:10px;color:var(--mut2)" id="dash-gfit-sync">Google Fit</span>
-    </div>
+    <div class="card-header"><h3>🏃 Live health data</h3><span style="font-size:10px;color:var(--mut2)" id="dash-gfit-sync">Google Fit</span></div>
     <div class="stat-grid" id="dash-gfit-grid" style="grid-template-columns:repeat(auto-fit,minmax(80px,1fr));margin:0"></div>
   </div>
 
-  <!-- Hydration today — from water log -->
+  <!-- ── Hydration ── -->
   <div class="card" id="dash-hydration-card">
-    <div class="card-header">
-      <h3>💧 Hydration today</h3>
-      <button class="btn btn-ghost" style="font-size:11px;padding:4px 9px" onclick="showTab('hydration')">Log →</button>
-    </div>
+    <div class="card-header"><h3>💧 Hydration today</h3><button class="btn btn-ghost" style="font-size:11px;padding:4px 9px" onclick="showTab('hydration')">Log →</button></div>
     <div class="card-body" id="dash-hydration-body"></div>
   </div>
 
-  <!-- Nutrition today — from food log -->
+  <!-- ── Nutrition today ── -->
   <div class="card" id="dash-nutrition-card">
-    <div class="card-header">
-      <h3>🥗 Nutrition today</h3>
-      <button class="btn btn-ghost" style="font-size:11px;padding:4px 9px" onclick="showTab('nutrition')">Log →</button>
-    </div>
+    <div class="card-header"><h3>🥗 Nutrition today</h3><button class="btn btn-ghost" style="font-size:11px;padding:4px 9px" onclick="showTab('nutrition')">Log →</button></div>
     <div class="card-body" id="dash-nutrition-body"></div>
   </div>
 
-  <!-- This week's training — from training log -->
+  <!-- ── This week's training ── -->
   <div class="card">
-    <div class="card-header">
-      <h3>This week's training</h3>
-      <span style="font-size:11px;color:var(--mut2)" id="dash-week-sub"></span>
-    </div>
+    <div class="card-header"><h3>This week's training</h3><span style="font-size:11px;color:var(--mut2)" id="dash-week-sub"></span></div>
     <div id="dash-week-body"></div>
   </div>
 
-  <!-- Weight trend — from weight log -->
+  <!-- ── Weight trend ── -->
   <div class="card" id="dash-weight-card">
-    <div class="card-header">
-      <h3>⚖️ Weight trend</h3>
-      <button class="btn btn-ghost" style="font-size:11px;padding:4px 9px" onclick="showTab('weight')">Log →</button>
-    </div>
+    <div class="card-header"><h3>⚖️ Weight trend</h3><button class="btn btn-ghost" style="font-size:11px;padding:4px 9px" onclick="showTab('weight')">Log →</button></div>
     <div class="card-body" id="dash-weight-body"></div>
   </div>
 
-  <!-- Next competition — from calendar events -->
+  <!-- ── Next competition ── -->
   <div class="card" id="dash-comp-card" style="display:none">
-    <div class="card-header">
-      <h3>🏆 Next competition</h3>
-      <span class="pill pill-red" id="dash-comp-days"></span>
-    </div>
+    <div class="card-header"><h3>🏆 Next competition</h3><span class="pill pill-red" id="dash-comp-days"></span></div>
     <div id="dash-comp-body"></div>
   </div>
 
-  <!-- Upcoming calendar events — from calendar -->
+  <!-- ── Upcoming events ── -->
   <div class="card">
-    <div class="card-header">
-      <h3>📅 Upcoming events</h3>
-      <button class="btn btn-ghost" style="font-size:11px;padding:4px 9px" onclick="showTab('calendar')">View calendar →</button>
-    </div>
+    <div class="card-header"><h3>📅 Upcoming events</h3><button class="btn btn-ghost" style="font-size:11px;padding:4px 9px" onclick="showTab('calendar')">View calendar →</button></div>
     <div id="dash-upcoming-body"></div>
   </div>
 
-  <!-- Quick log shortcuts -->
+  <!-- ── Quick log ── -->
   <div class="card">
     <div class="card-header"><h3>Quick log</h3></div>
     <div class="card-body" style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-ghost" onclick="showTab('training')">+ Training session</button>
+      <button class="btn btn-ghost" onclick="showTab('training')">+ Training</button>
       <button class="btn btn-ghost" onclick="showTab('body')">+ Body check-in</button>
       <button class="btn btn-ghost" onclick="showTab('nutrition')">+ Food</button>
       <button class="btn btn-ghost" onclick="showTab('weight')">+ Weight</button>
@@ -2203,6 +2231,173 @@ function resetProfile(){
   if(!confirm('Reset your profile and start onboarding again?')) return;
   try{localStorage.removeItem('fightos_profile');}catch(e){}
   location.reload();
+}
+
+// ===== DASHBOARD AI COACH =====
+let dashCoachFocus = 'Today';
+
+function setDashFocus(el, focus){
+  dashCoachFocus = focus;
+  document.querySelectorAll('.focus-chip').forEach(c=>c.classList.remove('active-chip'));
+  el.classList.add('active-chip');
+}
+
+function refreshDashCoach(){ getDashCoachBrief(); }
+
+function buildAthleteContext(){
+  const profile   = loadProfile() || {};
+  const training  = getTrainingLog();
+  const bodyLog   = JSON.parse(localStorage.getItem('fos_body_log')||'[]');
+  const foodLog   = JSON.parse(localStorage.getItem('fos_food_log')||'[]');
+  const weightLog = JSON.parse(localStorage.getItem('fos_weight_log')||'[]');
+  const waterML   = parseInt(localStorage.getItem('fos_water_today')||'0');
+  const calEvents = JSON.parse(localStorage.getItem('fos_cal_events')||'[]');
+  const gf        = window.gfitLiveData;
+  const today     = todayStr();
+  const now       = new Date(); now.setHours(0,0,0,0);
+
+  const recent7   = training.slice(0,7);
+  const wsStart   = new Date(now); wsStart.setDate(wsStart.getDate()-((now.getDay()+6)%7));
+  const thisWeek  = training.filter(s=>{ try{ const d=parseDate(s.date); return d>=wsStart&&d<=now; }catch(e){return false;} });
+  const avgRPE    = recent7.length ? (recent7.reduce((s,t)=>s+(t.rpe||5),0)/recent7.length).toFixed(1) : null;
+  const lastSess  = training[0];
+  const daysSince = lastSess ? Math.round((now-parseDate(lastSess.date))/86400000) : null;
+  const hardCount = recent7.filter(s=>s.rpe>=8).length;
+
+  const lastBody  = bodyLog[0];
+  const todayBody = bodyLog.find(b=>b.date===today);
+  const soreness  = todayBody?.soreness ?? lastBody?.soreness ?? null;
+  const sleepH    = todayBody?.sleepHours ?? lastBody?.sleepHours ?? null;
+  const sleepQ    = todayBody?.sleepQuality ?? lastBody?.sleepQuality ?? null;
+
+  const todayFood = foodLog.filter(f=>f.date===today);
+  const tCal = todayFood.reduce((s,f)=>s+(f.cal||0),0);
+  const tPro = todayFood.reduce((s,f)=>s+(f.pro||0),0);
+  const yday  = new Date(now); yday.setDate(yday.getDate()-1);
+  const ydStr = yday.toISOString().split('T')[0];
+  const yCal  = foodLog.filter(f=>f.date===ydStr).reduce((s,f)=>s+(f.cal||0),0);
+
+  const latestWt = weightLog.length ? weightLog[weightLog.length-1] : null;
+  const wclassKg = (profile.wclass||'').match(/≤(\d+)/);
+  const targetKg = wclassKg ? parseInt(wclassKg[1]) : null;
+  const toCut    = (targetKg && latestWt) ? Math.max(0, latestWt.val - targetKg).toFixed(1) : null;
+
+  const nextComp = calEvents.filter(e=>{ try{ return e.type==='competition'&&parseDate(e.date)>=now; }catch(x){return false;} }).sort((a,b)=>parseDate(a.date)-parseDate(b.date))[0];
+  const daysToComp = nextComp ? Math.round((parseDate(nextComp.date)-now)/86400000) : null;
+
+  let cycleCtx = '';
+  try{
+    const cd = JSON.parse(localStorage.getItem('fos_cycle')||'null');
+    if(cd?.lastDate && profile.sex==='Female'){
+      const ci = getCurrentPhase(cd.lastDate, cd.cycleLen||28, cd.periodLen||5);
+      if(ci) cycleCtx = `\nCycle: ${ci.phase} phase, Day ${ci.dayInCycle}/${ci.cycleLen}`;
+    }
+  }catch(e){}
+
+  const upcoming = calEvents.filter(e=>{ try{ const d=parseDate(e.date); const ws=new Date(now); ws.setDate(ws.getDate()+7); return d>=now&&d<=ws; }catch(x){return false;} }).slice(0,4).map(e=>`${e.name} (${fmtDate(e.date)})`).join(', ');
+
+  return `ATHLETE: ${profile.firstName||'Fighter'}${profile.lastName?' '+profile.lastName:''} | ${profile.sport||'MMA'} | ${profile.exp||'—'} | Age ${profile.age||'—'}
+Weight: ${latestWt?latestWt.val:profile.weight||'—'}${profile.weightUnit||'kg'} → ${targetKg?targetKg+'kg class':'open weight'}${toCut>0?' · '+toCut+'kg to cut':''}
+Goals: ${profile.goal||'—'} | Sessions target: ${profile.sessionsPerWeek||5}/wk | Injuries: ${profile.injuries||'none'}
+Cal target: ${profile.calTarget||'—'} kcal | Protein: ${profile.proteinTarget||'—'}g${cycleCtx}
+
+TODAY (${today}):
+Sleep: ${sleepH?sleepH+'h'+(sleepQ?' '+sleepQ:''):'not logged'} | Soreness: ${soreness!==null?soreness+'/10':'not logged'}
+Water: ${(waterML/1000).toFixed(1)}L/${profile.waterTarget||3.5}L | Nutrition: ${tCal?tCal+' kcal, '+tPro+'g protein':'not logged yet'}
+${gf?`HR: ${gf.heart_rate?.resting||'—'}bpm resting | Steps: ${gf.steps?fmtNum(gf.steps):'—'} | Tracker sleep: ${gf.sleep?.hours||'—'}h`:''}
+
+YESTERDAY: ${yCal?yCal+' kcal':'not logged'}
+
+TRAINING (last 7 sessions):
+This week: ${thisWeek.length} sessions | Days since last: ${daysSince!==null?daysSince:'unknown'} | Hard sessions (RPE≥8): ${hardCount}/7 | Avg RPE: ${avgRPE||'—'}
+${recent7.slice(0,5).map(s=>`• ${fmtDate(s.date)}: ${s.type} RPE ${s.rpe} ${s.dur}min${s.focus?' – '+s.focus.slice(0,35):''}`).join('\n')||'No sessions logged'}
+
+COMPETITION: ${nextComp?`${nextComp.name} in ${daysToComp} days (${fmtDate(nextComp.date)})`:'none scheduled'}
+UPCOMING: ${upcoming||'nothing this week'}`;
+}
+
+async function getDashCoachBrief(){
+  const empty   = document.getElementById('dash-coach-empty');
+  const loading = document.getElementById('dash-coach-loading');
+  const content = document.getElementById('dash-coach-content');
+  const btn     = document.getElementById('dash-coach-btn');
+  if(empty)   empty.style.display='none';
+  loading.style.display='flex'; content.style.display='none'; content.innerHTML='';
+  btn.disabled=true; btn.textContent='…';
+
+  const profile   = loadProfile()||{};
+  const extra     = document.getElementById('dash-coach-extra').value;
+  const now       = new Date();
+  const timeOfDay = now.getHours()<12?'morning':now.getHours()<17?'afternoon':'evening';
+  const dayName   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][now.getDay()];
+  const context   = buildAthleteContext();
+
+  const focusPlan = {
+    'Today':           `What should ${profile.firstName||'this athlete'} do TODAY (${dayName} ${timeOfDay})? Exact training or recovery prescription for the rest of today.`,
+    'Tomorrow':        `Plan ${profile.firstName||'this athlete'}'s TOMORROW specifically — session type, intensity, duration, nutrition and recovery.`,
+    'This week':       `Day-by-day plan for the REST of this week (${dayName} onwards). Specific training, nutrition and recovery for each remaining day.`,
+    'Training load':   `Analyse training load and fatigue. Is the current load appropriate? What should change about volume and intensity?`,
+    'Weight cut':      `Weight cut strategy: current weight vs target class, daily deficit needed, realistic timeline, safest cut method given the timeframe.`,
+    'Nutrition':       `Nutrition optimisation: analyse today and yesterday vs targets, specific food and macro adjustments for today and this week.`,
+    'Competition prep':`Competition preparation week by week from now until fight day. What must happen each week?`,
+    'Recovery':        `Recovery optimisation: specific protocols for today based on current soreness, sleep data and training load.`,
+  };
+
+  const hasComp = (()=>{ try{ const calEvents=JSON.parse(localStorage.getItem('fos_cal_events')||'[]'); const n=new Date(); n.setHours(0,0,0,0); const c=calEvents.filter(e=>e.type==='competition'&&parseDate(e.date)>=n).sort((a,b)=>parseDate(a.date)-parseDate(b.date))[0]; return c?`\nCOMPETITION STATUS\nIs ${profile.firstName||'this athlete'} on track for ${c.name} in ${Math.round((parseDate(c.date)-n)/86400000)} days? Cut status and what must happen.`:''; }catch(e){return '';} })();
+
+  const prompt = `You are an elite AI fight coach. Be direct, specific and data-driven. Use actual numbers from the data. Address by name.
+
+${context}
+${extra?`\nNOTE FROM ATHLETE: ${extra}\n`:''}
+FOCUS: ${focusPlan[dashCoachFocus]||focusPlan['Today']}
+
+Use these exact section headers on their own lines in CAPS:
+
+READINESS ASSESSMENT
+Single verdict: READY / CAUTION / REST — one sentence with the key reason from their data
+
+KEY FINDINGS
+3-4 specific observations using their actual numbers (reference RPE, soreness, cal intake, sleep hours, etc.)
+
+TODAY'S RECOMMENDATION
+Exact prescription: session type + duration + intensity, or specific recovery protocol. Not generic.
+
+PRIORITY ACTIONS
+3 numbered actions ranked by urgency for ${dashCoachFocus==='This week'?'this week':'the next 24–48 hours'}
+${hasComp}
+
+No generic advice. Every sentence must reference something specific from their data.`;
+
+  try{
+    const text = await anthropicCall(prompt, 1000);
+    loading.style.display='none'; content.style.display='block';
+    content.innerHTML = renderCoachOutput(text);
+    const fresh = document.getElementById('dash-brief-freshness');
+    if(fresh) fresh.textContent = 'Updated ' + new Date().toLocaleTimeString(userLocale,{hour:'2-digit',minute:'2-digit'});
+    saveCoachBrief(text);
+    if(window.innerWidth<768) content.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }catch(e){
+    loading.style.display='none'; content.style.display='block';
+    content.innerHTML=`<div class="warn">Could not load brief — ${e.message}. Make sure your API key is set (🔑 button).</div>`;
+  }
+  btn.disabled=false; btn.textContent='GET BRIEF';
+}
+
+function loadLastCoachBrief(){
+  try{
+    const briefs = JSON.parse(localStorage.getItem('fos_briefs')||'[]');
+    if(!briefs.length) return;
+    const last  = briefs[0];
+    const empty = document.getElementById('dash-coach-empty');
+    const cont  = document.getElementById('dash-coach-content');
+    const fresh = document.getElementById('dash-brief-freshness');
+    const ctx   = document.getElementById('dash-brief-context');
+    if(empty) empty.style.display='none';
+    cont.style.display='block';
+    cont.innerHTML = renderCoachOutput(last.text);
+    if(fresh) fresh.textContent = 'From ' + fmtDate(last.date);
+    if(ctx)   ctx.textContent   = 'Tap Refresh for a new brief based on today\'s data';
+  }catch(e){}
 }
 
 // ===== RPE & MOOD SELECTORS =====
@@ -5863,6 +6058,21 @@ function renderDashboard(){
   const calEvts = JSON.parse(localStorage.getItem('fos_cal_events') || '[]');
   const now = new Date(); now.setHours(0,0,0,0);
   const todayS = todayStr();
+
+  // ── Greeting ──
+  const now2     = new Date();
+  const timeGreet= now2.getHours()<12?'Morning':'afternoon'<'5'?'Afternoon':now2.getHours()<17?'Afternoon':'Evening';
+  const greetEl  = document.getElementById('dash-greeting');
+  const ctxEl    = document.getElementById('dash-brief-context');
+  if(greetEl) greetEl.textContent = `${timeGreet.toUpperCase()}${profile.firstName?', '+profile.firstName.toUpperCase():''}`;
+  if(ctxEl && !document.getElementById('dash-coach-content')?.textContent?.trim()){
+    ctxEl.textContent = 'Select a focus above then tap Get Brief';
+  }
+
+  // Load last saved brief if no brief is showing yet
+  if(!document.getElementById('dash-coach-content')?.textContent?.trim()){
+    loadLastCoachBrief();
+  }
 
   // ── Top stat grid (profile targets) ──
   const wclassKg = (profile.wclass||'').match(/≤(\d+)/);
