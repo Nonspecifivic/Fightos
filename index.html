@@ -1475,30 +1475,72 @@ textarea{resize:vertical;min-height:70px;}
 
 <!-- ==================== WOMEN'S HEALTH ==================== -->
 <div class="tab" id="tab-womens">
-  <div class="tip">Track your cycle to understand how hormonal phases affect your training performance, recovery, energy, and mood. Your AI coach uses this data to optimise your training plan around your cycle.</div>
-  <div class="card">
-    <div class="card-header"><h3>Cycle overview</h3><span class="pill pill-pnk" id="current-phase-badge">Follicular phase</span></div>
-    <div class="card-body">
-      <div class="phase-bar" id="phase-bar"></div>
-      <div class="phase-legend">
-        <div class="phase-item"><div class="phase-dot" style="background:#FF6B9D"></div>Menstrual</div>
-        <div class="phase-item"><div class="phase-dot" style="background:#FF9500"></div>Follicular</div>
-        <div class="phase-item"><div class="phase-dot" style="background:#E8FF00"></div>Ovulation</div>
-        <div class="phase-item"><div class="phase-dot" style="background:#BF5FFF"></div>Luteal</div>
+
+  <!-- ── Hero: Current phase & countdown ── -->
+  <div id="wh-hero" style="background:linear-gradient(135deg,rgba(255,107,157,.1),rgba(191,95,255,.08));border:1px solid rgba(255,107,157,.2);border-radius:12px;padding:16px;margin-bottom:10px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+      <div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--mut2);margin-bottom:3px">Current phase</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px" id="wh-phase-name">—</div>
+        <div style="font-size:12px;color:var(--mut2);margin-top:2px" id="wh-phase-sub">Set your last period date below</div>
       </div>
-      <div class="f3 fg">
-        <div><label class="lbl">Cycle length</label><input type="number" id="cycle-len" value="28" placeholder="days"></div>
-        <div><label class="lbl">Period length</label><input type="number" id="period-len" value="5" placeholder="days"></div>
-        <div><label class="lbl">Last period start</label><input type="date" id="last-period"></div>
+      <div style="text-align:right">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:42px;line-height:1;color:#FF6B9D" id="wh-day-num">—</div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2)">day of cycle</div>
       </div>
-      <button class="btn btn-acc" onclick="updateCycle()">Update cycle</button>
+    </div>
+    <!-- Phase progress bar -->
+    <div style="margin-bottom:8px">
+      <div style="background:var(--surf2);border-radius:4px;height:8px;overflow:hidden;position:relative">
+        <div id="wh-progress-bar" style="height:100%;border-radius:4px;transition:width .5s;background:#FF6B9D;width:0%"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px">
+        <div style="font-size:9px;color:var(--mut2)">Day 1</div>
+        <div style="font-size:9px;color:var(--mut2)" id="wh-cycle-len-label">Day 28</div>
+      </div>
+    </div>
+    <!-- Phase timeline chips -->
+    <div style="display:flex;gap:4px" id="wh-phase-chips"></div>
+  </div>
+
+  <!-- ── Upcoming predictions ── -->
+  <div class="card" style="margin-bottom:10px">
+    <div class="card-header"><h3>📅 Predictions</h3><span class="pill pill-pnk" id="wh-next-badge"></span></div>
+    <div id="wh-predictions" style="padding:0">
+      <div class="row" style="color:var(--mut2);font-size:13px">Set your last period date to see predictions.</div>
     </div>
   </div>
-  <div class="card">
-    <div class="card-header"><h3>Today's log</h3></div>
+
+  <!-- ── Cycle settings ── -->
+  <div class="card" style="margin-bottom:10px">
+    <div class="card-header"><h3>⚙️ Cycle settings</h3></div>
+    <div class="card-body">
+      <div class="f3 fg">
+        <div><label class="lbl">Last period start</label><input type="date" id="last-period" onchange="updateCycle()"></div>
+        <div><label class="lbl">Cycle length (days)</label><input type="number" id="cycle-len" value="28" min="20" max="45" onchange="updateCycle()"></div>
+        <div><label class="lbl">Period length (days)</label><input type="number" id="period-len" value="5" min="1" max="10" onchange="updateCycle()"></div>
+      </div>
+      <button class="btn btn-acc btn-full" onclick="updateCycle()">Update cycle</button>
+    </div>
+  </div>
+
+  <!-- ── Phase guide — dynamic, changes per phase ── -->
+  <div class="card" style="margin-bottom:10px">
+    <div class="card-header">
+      <h3 id="wh-guide-title">Phase guide</h3>
+      <span class="pill pill-pnk" id="wh-guide-badge"></span>
+    </div>
+    <div id="wh-phase-guide" style="padding:13px;font-size:13px;line-height:1.7;color:var(--mut2)">
+      Set your last period date to see personalised guidance for your current phase.
+    </div>
+  </div>
+
+  <!-- ── Today's log ── -->
+  <div class="card" style="margin-bottom:10px">
+    <div class="card-header"><h3>📝 Today's log</h3><span style="font-size:11px;color:var(--mut2)" id="wh-log-date"></span></div>
     <div class="card-body">
       <div class="fg">
-        <label class="lbl">Mood today</label>
+        <label class="lbl">Mood</label>
         <div class="mood-row">
           <button class="mood-btn" onclick="selWMood(this,'😰')">😰</button>
           <button class="mood-btn" onclick="selWMood(this,'😢')">😢</button>
@@ -1522,29 +1564,67 @@ textarea{resize:vertical;min-height:70px;}
           <button class="tog" onclick="togTag(this)">Anxiety</button>
           <button class="tog" onclick="togTag(this)">Focus issues</button>
           <button class="tog" onclick="togTag(this)">Strong / powerful</button>
+          <button class="tog" onclick="togTag(this)">Insomnia</button>
+          <button class="tog" onclick="togTag(this)">Back pain</button>
+          <button class="tog" onclick="togTag(this)">Mood swings</button>
+          <button class="tog" onclick="togTag(this)">Food cravings</button>
         </div>
       </div>
-      <div class="fg">
-        <label class="lbl">Energy level (1–10)</label>
-        <div class="slider-wrap">
-          <input type="range" min="1" max="10" value="7" id="energy-slider" oninput="document.getElementById('energy-val').textContent=this.value">
-          <div class="slider-val pnk" id="energy-val">7</div>
+      <div class="f2 fg">
+        <div>
+          <label class="lbl">Energy (1–10)</label>
+          <div class="slider-wrap">
+            <input type="range" min="1" max="10" value="7" id="energy-slider" oninput="document.getElementById('energy-val').textContent=this.value">
+            <div class="slider-val pnk" id="energy-val">7</div>
+          </div>
+        </div>
+        <div><label class="lbl">Flow intensity</label>
+          <select id="flow-intensity"><option>N/A</option><option>Spotting</option><option>Light</option><option>Moderate</option><option>Heavy</option></select>
         </div>
       </div>
-      <div class="fg">
-        <label class="lbl">Flow intensity (if menstruating)</label>
-        <select id="flow-intensity"><option>N/A</option><option>Spotting</option><option>Light</option><option>Moderate</option><option>Heavy</option></select>
-      </div>
-      <button class="btn btn-acc btn-full" onclick="saveWomensLog()">SAVE LOG</button>
+      <div class="fg"><label class="lbl">Notes</label><textarea id="wh-notes" placeholder="How are you feeling today? Any observations about training performance?" style="min-height:55px"></textarea></div>
+      <button class="btn btn-acc btn-full" onclick="saveWomensLog()">SAVE TODAY'S LOG</button>
     </div>
   </div>
+
+  <!-- ── AI cycle coaching ── -->
+  <div class="card" style="margin-bottom:10px">
+    <div class="card-header"><h3>🧠 AI cycle coaching</h3><span class="pill pill-pnk">Personalised</span></div>
+    <div class="card-body">
+      <p style="font-size:13px;color:var(--mut2);line-height:1.6;margin-bottom:12px">Get a personalised coaching plan for your current phase — specific training recommendations, nutrition adjustments and recovery strategies based on where you are in your cycle.</p>
+      <div class="f2 fg">
+        <div><label class="lbl">Focus area</label>
+          <select id="wh-ai-focus">
+            <option>Full phase overview</option>
+            <option>Training recommendations</option>
+            <option>Nutrition & fuelling</option>
+            <option>Recovery & sleep</option>
+            <option>Mental performance</option>
+          </select>
+        </div>
+        <div><label class="lbl">Sport</label>
+          <select id="wh-ai-sport">
+            <option>MMA</option><option>BJJ</option><option>Wrestling</option>
+            <option>Boxing</option><option>Muay Thai</option><option>Grappling</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-acc btn-full btn-hero" onclick="getWomensAICoach()">GET PHASE COACHING BRIEF</button>
+    </div>
+    <div id="wh-ai-output" style="display:none">
+      <div class="dots-loading" id="wh-ai-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+      <div id="wh-ai-content" style="display:none;padding:13px"></div>
+    </div>
+  </div>
+
+  <!-- ── Cycle history log ── -->
   <div class="card">
-    <div class="card-header"><h3>Phase training guide</h3></div>
-    <div id="phase-guide">
-      <div class="row"><div><div style="font-weight:500;font-size:13px">Follicular phase tips</div><div style="font-size:11px;color:var(--mut2);line-height:1.5;margin-top:2px">Oestrogen rising — great time for high-intensity training, sparring & strength work. Your pain tolerance is higher. Push hard this week.</div></div></div>
-    </div>
+    <div class="card-header"><h3>History</h3><button class="btn btn-ghost" style="font-size:11px;padding:3px 9px" onclick="toggleWHHistory()">Show</button></div>
+    <div id="wh-history-list" style="display:none"></div>
   </div>
+
 </div>
+
 
 <!-- ==================== TRACKERS ==================== -->
 <div class="tab" id="tab-trackers">
@@ -2085,6 +2165,7 @@ function showTab(id){
   if(id==='analysis'){ renderMatchRecord(); renderMatchHistory(); }
   if(id==='nutrition'){ renderNutritionStats(); renderFoodLog(); }
   if(id==='profile') renderProfileTab();
+  if(id==='womens') renderWomensTab();
 }
 
 function resetProfile(){
@@ -2678,29 +2759,411 @@ function loadCalEvents(){
 }
 
 // ===== WOMEN'S HEALTH =====
-function selWMood(el,m){document.querySelectorAll('#tab-womens .mood-btn').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');selectedWMood=m;}
-function togTag(el){el.classList.toggle('on');}
+const PHASES = {
+  menstrual:  { name:'Menstrual',   color:'#FF6B9D', days:[],   icon:'🌑' },
+  follicular: { name:'Follicular',  color:'#FF9500', days:[],   icon:'🌒' },
+  ovulation:  { name:'Ovulation',   color:'#E8FF00', days:[],   icon:'🌕' },
+  luteal:     { name:'Luteal',      color:'#BF5FFF', days:[],   icon:'🌖' },
+};
+
+// Guide content per phase — training, nutrition, recovery
+const PHASE_GUIDES = {
+  menstrual: {
+    badge: 'Rest & restore',
+    training: [
+      'Low-intensity drilling and technique work — this is not the time to spar hard',
+      'Yoga, stretching and mobility work are excellent choices',
+      'Short walks or light cardio to ease cramps without adding stress',
+      'If you feel good, follow your body — some athletes train normally. Listen to your pain signals.',
+    ],
+    nutrition: [
+      'Increase iron-rich foods: red meat, spinach, lentils, tofu — you\'re losing iron',
+      'Boost magnesium to reduce cramping: dark chocolate, nuts, leafy greens',
+      'Anti-inflammatory foods: turmeric, ginger, omega-3s (salmon, flaxseed)',
+      'Stay warm and well-hydrated — herbal teas are helpful',
+      'Don\'t aggressively restrict calories while menstruating',
+    ],
+    recovery: [
+      'Prioritise 8–9 hours of sleep — progesterone and oestrogen are at their lowest',
+      'Heat therapy for cramps: hot water bottle on the lower abdomen',
+      'Gentle massage and foam rolling to ease tension',
+      'Avoid cold water swimming which can worsen cramps for some athletes',
+    ],
+    mental: 'Energy and pain tolerance are typically lowest. Be kind to yourself — it\'s physiological, not weakness. Use this phase to review footage, study technique, and plan your upcoming training block.',
+  },
+  follicular: {
+    badge: 'Build & sharpen',
+    training: [
+      'Oestrogen is rising — this is your highest pain tolerance phase. Push hard.',
+      'Ideal time for high-intensity sparring, wrestling and live rolling',
+      'Strength training responds best here — great time for personal bests',
+      'Increase drilling complexity: learn new techniques, work weaknesses',
+      'Your coordination and reaction time are at their best',
+    ],
+    nutrition: [
+      'Fuel performance: increase carbohydrates around training sessions',
+      'Lean proteins to support muscle building during the anabolic window',
+      'Pre-training: complex carbs 2–3 hours before, simple carbs 30 min before',
+      'Take advantage of better insulin sensitivity — carbs partition well to muscle',
+      'Fibre and fermented foods to support gut health as oestrogen peaks',
+    ],
+    recovery: [
+      'Recovery is faster in this phase — you can handle higher training volume',
+      'Sleep quality is best now — 7–8 hours is sufficient',
+      'Cold therapy and ice baths are well-tolerated in this phase',
+      'Ideal time to increase training load and frequency',
+    ],
+    mental: 'Motivation, confidence and cognitive sharpness peak with oestrogen. This is the best time for hard conversations with coaches, strategy planning and competition preparation. Your competitive drive is naturally highest.',
+  },
+  ovulation: {
+    badge: 'Peak power window',
+    training: [
+      'You\'re at your physical and mental peak — train at maximum intensity',
+      'Best phase for competition if you can schedule it here',
+      'High-intensity intervals, heavy sparring, competition simulations',
+      'Strength and power output is highest — set training records now',
+      'WARNING: Oestrogen peaks affect ligament laxity — warm up thoroughly and be mindful of ACL risk',
+    ],
+    nutrition: [
+      'Prioritise protein to support peak output: 2.0–2.4g per kg bodyweight',
+      'Carbohydrate timing is critical — load up around sessions',
+      'Stay very well hydrated — your body temperature runs higher',
+      'Zinc-rich foods: oysters, pumpkin seeds, beef — support hormone balance',
+      'Avoid heavy, greasy or processed foods which can cause inflammation',
+    ],
+    recovery: [
+      'Active recovery between sessions works well in this phase',
+      'Be extra diligent with joint warm-up — ligaments are most lax now',
+      'Quality sleep to maintain performance',
+      'Monitor joint feel, especially knees and ankles',
+    ],
+    mental: 'Peak confidence, sociability and competitive drive. Use this energy in competition or hard training. Oestrogen surges mean you\'re more willing to take risks — channel it productively.',
+  },
+  luteal: {
+    badge: 'Manage & maintain',
+    training: [
+      'Progesterone rises — energy drops and body temperature elevates by ~0.3°C',
+      'Moderate intensity training: technical drilling, pad work, technique focus',
+      'Reduce volume in the late luteal phase (days 24–28) — fatigue accumulates quickly',
+      'Strength work is still effective but push intensity to feel, not numbers',
+      'Avoid scheduling competitions in the late luteal phase if possible',
+    ],
+    nutrition: [
+      'Cravings for carbohydrates and sugar are normal — plan for them with wholefood options',
+      'Increase complex carbs to stabilise blood sugar and serotonin: oats, sweet potato, brown rice',
+      'Calcium-rich foods reduce PMS symptoms: dairy, fortified plant milks, almonds',
+      'Reduce caffeine and alcohol — both worsen PMS and disrupt sleep in this phase',
+      'B6 from chickpeas, tuna, turkey helps regulate mood and reduce water retention',
+      'Reduce sodium to minimise bloating',
+    ],
+    recovery: [
+      'Sleep quality deteriorates — prioritise wind-down routine and cool room temperature',
+      'Progesterone raises body temp: extra cooling strategies post-training',
+      'Longer recovery between sessions — don\'t push through fatigue',
+      'Epsom salt baths help with water retention and muscle soreness',
+    ],
+    mental: 'The inner critic gets louder in the late luteal phase. Separate real feedback from hormonal noise. Reduce decision-making pressure, keep sessions structured and predictable. Log symptoms to identify your personal patterns over several cycles.',
+  },
+};
+
+function getCycleData(){
+  try{ return JSON.parse(localStorage.getItem('fos_cycle')||'null'); }catch(e){ return null; }
+}
+function saveCycleData(d){ try{ localStorage.setItem('fos_cycle',JSON.stringify(d)); }catch(e){} }
+
+function getCurrentPhase(lastDate, cycleLen, periodLen){
+  if(!lastDate) return null;
+  const last = parseDate(lastDate);
+  const now  = new Date(); now.setHours(0,0,0,0);
+  const daysSince = Math.floor((now - last) / 86400000);
+  const dayInCycle = ((daysSince % cycleLen) + cycleLen) % cycleLen + 1; // 1-indexed
+
+  const ovDay = Math.round(cycleLen / 2);
+  let phase, daysLeft;
+  if(dayInCycle <= periodLen){
+    phase = 'menstrual'; daysLeft = periodLen - dayInCycle + 1;
+  } else if(dayInCycle < ovDay - 1){
+    phase = 'follicular'; daysLeft = (ovDay - 2) - dayInCycle + 1;
+  } else if(dayInCycle <= ovDay + 1){
+    phase = 'ovulation'; daysLeft = (ovDay + 1) - dayInCycle + 1;
+  } else {
+    phase = 'luteal'; daysLeft = cycleLen - dayInCycle + 1;
+  }
+  return { phase, dayInCycle, daysLeft, daysSince, cycleLen, periodLen, ovDay };
+}
+
 function updateCycle(){
-  const cl=parseInt(document.getElementById('cycle-len').value)||28;
-  const pl=parseInt(document.getElementById('period-len').value)||5;
-  renderPhaseBar(cl,pl);
+  const lastDate  = document.getElementById('last-period').value;
+  const cycleLen  = parseInt(document.getElementById('cycle-len').value) || 28;
+  const periodLen = parseInt(document.getElementById('period-len').value) || 5;
+
+  // Save settings
+  saveCycleData({ lastDate, cycleLen, periodLen });
+  debouncedSync();
+
+  renderWomensTab();
 }
-function renderPhaseBar(cl,pl){
-  const ovDay=Math.round(cl/2);
-  const segs=[
-    {label:'Menstrual',days:pl,color:'#FF6B9D'},
-    {label:'Follicular',days:ovDay-pl-2,color:'#FF9500'},
-    {label:'Ovulation',days:4,color:'#E8FF00'},
-    {label:'Luteal',days:cl-ovDay-2,color:'#BF5FFF'},
+
+function renderWomensTab(){
+  const data = getCycleData();
+  const today = todayStr();
+  document.getElementById('wh-log-date').textContent = fmtDate(today);
+
+  // Restore saved inputs
+  if(data){
+    if(data.lastDate) document.getElementById('last-period').value = data.lastDate;
+    if(data.cycleLen) document.getElementById('cycle-len').value   = data.cycleLen;
+    if(data.periodLen) document.getElementById('period-len').value = data.periodLen;
+  }
+
+  if(!data?.lastDate){
+    // No data set yet — show placeholder
+    document.getElementById('wh-phase-name').textContent = 'Not set';
+    document.getElementById('wh-phase-sub').textContent  = 'Enter your last period start date below';
+    document.getElementById('wh-day-num').textContent    = '—';
+    return;
+  }
+
+  const { phase, dayInCycle, daysLeft, cycleLen, periodLen, ovDay } = getCurrentPhase(data.lastDate, data.cycleLen||28, data.periodLen||5);
+  const phaseInfo = PHASES[phase];
+  const guide     = PHASE_GUIDES[phase];
+
+  // ── Hero card ──
+  document.getElementById('wh-phase-name').textContent    = phaseInfo.icon + ' ' + phaseInfo.name + ' phase';
+  document.getElementById('wh-day-num').textContent       = dayInCycle;
+  document.getElementById('wh-phase-sub').textContent     = `Day ${dayInCycle} of ${cycleLen} · ${daysLeft} day${daysLeft!==1?'s':''} remaining in this phase`;
+  document.getElementById('wh-cycle-len-label').textContent = `Day ${cycleLen}`;
+
+  const pct = Math.round((dayInCycle / cycleLen) * 100);
+  document.getElementById('wh-progress-bar').style.width      = pct + '%';
+  document.getElementById('wh-progress-bar').style.background = phaseInfo.color;
+
+  // Phase chips
+  const phases = [
+    { key:'menstrual',  label:'Menstrual',  start:1,        end:periodLen,    color:'#FF6B9D' },
+    { key:'follicular', label:'Follicular', start:periodLen+1, end:ovDay-2,   color:'#FF9500' },
+    { key:'ovulation',  label:'Ovulation',  start:ovDay-1,  end:ovDay+1,     color:'#E8FF00' },
+    { key:'luteal',     label:'Luteal',     start:ovDay+2,  end:cycleLen,    color:'#BF5FFF' },
   ];
-  const bar=document.getElementById('phase-bar');
-  bar.innerHTML=segs.map(s=>`<div class="phase-seg" style="flex:${s.days};background:${s.color}30;border-right:1px solid var(--bg)"></div>`).join('');
+  document.getElementById('wh-phase-chips').innerHTML = phases.map(p=>`
+    <div style="flex:${p.end-p.start+1};padding:4px 6px;border-radius:5px;text-align:center;background:${p.key===phase?p.color+'30':'var(--surf2)'};border:1px solid ${p.key===phase?p.color+'60':'transparent'}">
+      <div style="font-size:9px;font-weight:${p.key===phase?'700':'400'};color:${p.key===phase?p.color:'var(--mut2)'};">${p.label}</div>
+      <div style="font-size:8px;color:var(--mut2)">${p.start}–${p.end}d</div>
+    </div>`).join('');
+
+  // ── Predictions ──
+  const lastDate = parseDate(data.lastDate);
+  const cl = data.cycleLen || 28;
+  const pl = data.periodLen || 5;
+  const preds = [];
+
+  for(let i = 1; i <= 3; i++){
+    const nextStart = new Date(lastDate.getTime() + i * cl * 86400000);
+    const nextEnd   = new Date(nextStart.getTime() + (pl-1) * 86400000);
+    const nextOv    = new Date(nextStart.getTime() + Math.round(cl/2) * 86400000);
+    const daysTo    = Math.round((nextStart - new Date()) / 86400000);
+    preds.push({ nextStart, nextEnd, nextOv, daysTo, cycle:i });
+  }
+
+  const nextBadge = preds[0].daysTo;
+  document.getElementById('wh-next-badge').textContent =
+    nextBadge <= 0 ? 'Period now' :
+    nextBadge === 1 ? 'Tomorrow' :
+    `In ${nextBadge} days`;
+  document.getElementById('wh-next-badge').style.background = nextBadge <= 3 ? 'rgba(255,107,157,.25)' : '';
+
+  document.getElementById('wh-predictions').innerHTML = preds.map((p,i)=>`
+    <div style="padding:10px 13px;border-bottom:${i<2?'1px solid var(--bdr)':'none'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-size:12px;font-weight:600;color:#FF6B9D">🩸 Period ${i===0?'(next)':'cycle '+(i+1)}</div>
+          <div style="font-size:13px;font-weight:500;margin:2px 0">${fmtDate(p.nextStart.toISOString().split('T')[0])} – ${fmtDate(p.nextEnd.toISOString().split('T')[0])}</div>
+          <div style="font-size:11px;color:var(--mut2)">🟡 Ovulation ~${fmtDate(p.nextOv.toISOString().split('T')[0])}</div>
+        </div>
+        <span style="font-size:11px;color:${p.daysTo<=7?'#FF6B9D':'var(--mut2)'}">
+          ${p.daysTo<0?'Now':p.daysTo===0?'Today':p.daysTo===1?'Tomorrow':'in '+p.daysTo+'d'}
+        </span>
+      </div>
+    </div>`).join('');
+
+  // ── Phase guide ──
+  document.getElementById('wh-guide-title').textContent     = phaseInfo.name + ' phase guide';
+  document.getElementById('wh-guide-badge').textContent     = guide.badge;
+  document.getElementById('wh-guide-badge').style.background = phaseInfo.color + '30';
+  document.getElementById('wh-guide-badge').style.color     = phaseInfo.color;
+
+  document.getElementById('wh-phase-guide').innerHTML = `
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:${phaseInfo.color};font-weight:600;margin-bottom:8px">🏋️ Training</div>
+      ${guide.training.map(t=>`<div style="display:flex;gap:8px;margin-bottom:7px"><div style="width:5px;height:5px;border-radius:50%;background:${phaseInfo.color};flex-shrink:0;margin-top:5px"></div><div style="font-size:13px;line-height:1.6;color:var(--txt)">${t}</div></div>`).join('')}
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:${phaseInfo.color};font-weight:600;margin-bottom:8px">🥗 Nutrition</div>
+      ${guide.nutrition.map(n=>`<div style="display:flex;gap:8px;margin-bottom:7px"><div style="width:5px;height:5px;border-radius:50%;background:${phaseInfo.color};flex-shrink:0;margin-top:5px"></div><div style="font-size:13px;line-height:1.6;color:var(--txt)">${n}</div></div>`).join('')}
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:${phaseInfo.color};font-weight:600;margin-bottom:8px">😴 Recovery</div>
+      ${guide.recovery.map(r=>`<div style="display:flex;gap:8px;margin-bottom:7px"><div style="width:5px;height:5px;border-radius:50%;background:${phaseInfo.color};flex-shrink:0;margin-top:5px"></div><div style="font-size:13px;line-height:1.6;color:var(--txt)">${r}</div></div>`).join('')}
+    </div>
+    <div style="background:${phaseInfo.color}14;border-left:3px solid ${phaseInfo.color};border-radius:0 8px 8px 0;padding:10px 12px">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:${phaseInfo.color};font-weight:600;margin-bottom:5px">🧠 Mental performance</div>
+      <div style="font-size:13px;line-height:1.65;color:var(--txt)">${guide.mental}</div>
+    </div>`;
+
+  // Auto-set sport from profile
+  const profile = loadProfile()||{};
+  const sportEl = document.getElementById('wh-ai-sport');
+  if(sportEl && profile.sport){
+    for(let i=0;i<sportEl.options.length;i++){
+      if(sportEl.options[i].text===profile.sport){ sportEl.selectedIndex=i; break; }
+    }
+  }
+
+  // Load today's log if saved
+  renderWHHistory();
 }
+
+function selWMood(el,m){
+  document.querySelectorAll('#tab-womens .mood-btn').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedWMood=m;
+}
+function togTag(el){ el.classList.toggle('on'); }
+
 function saveWomensLog(){
-  const energy=document.getElementById('energy-slider').value;
-  const mood=selectedWMood||'😐';
-  const symptoms=[...document.querySelectorAll('#symptom-tags .tog.on')].map(t=>t.textContent).join(', ');
-  alert(`Log saved. Energy: ${energy}/10, Mood: ${mood}${symptoms?', Symptoms: '+symptoms:''}`);
+  const data     = getCycleData();
+  const phase    = data ? getCurrentPhase(data.lastDate, data.cycleLen||28, data.periodLen||5) : null;
+  const energy   = document.getElementById('energy-slider').value;
+  const mood     = selectedWMood || '😐';
+  const flow     = document.getElementById('flow-intensity').value;
+  const notes    = document.getElementById('wh-notes').value;
+  const symptoms = [...document.querySelectorAll('#symptom-tags .tog.on')].map(t=>t.textContent.trim());
+
+  const entry = {
+    date:todayStr(),
+    phase: phase?.phase || 'unknown',
+    dayInCycle: phase?.dayInCycle || '—',
+    energy: parseInt(energy),
+    mood,
+    flow,
+    symptoms,
+    notes,
+  };
+
+  // Save to localStorage
+  const logs = JSON.parse(localStorage.getItem('fos_womens_log')||'[]');
+  const existing = logs.findIndex(l=>l.date===todayStr());
+  if(existing>=0) logs[existing]=entry; else logs.unshift(entry);
+  try{ localStorage.setItem('fos_womens_log', JSON.stringify(logs.slice(0,90))); debouncedSync(); }catch(e){}
+
+  // Reset form
+  document.querySelectorAll('#symptom-tags .tog').forEach(t=>t.classList.remove('on'));
+  selectedWMood=null;
+  document.querySelectorAll('#tab-womens .mood-btn').forEach(b=>b.classList.remove('sel'));
+  document.getElementById('wh-notes').value='';
+
+  // Confirm
+  const btn=document.querySelector('#tab-womens .btn-hero');
+  if(btn){ const orig=btn.textContent; btn.textContent='✅ LOG SAVED'; setTimeout(()=>btn.textContent=orig,1500); }
+
+  renderWHHistory();
+  debouncedSync();
+}
+
+function renderWHHistory(){
+  const logs = JSON.parse(localStorage.getItem('fos_womens_log')||'[]');
+  const el   = document.getElementById('wh-history-list');
+  if(!el) return;
+  if(!logs.length){ el.innerHTML='<div class="row" style="color:var(--mut2);font-size:13px">No logs yet.</div>'; return; }
+  el.innerHTML = logs.slice(0,14).map(l=>{
+    const phaseColor = {menstrual:'#FF6B9D',follicular:'#FF9500',ovulation:'#E8FF00',luteal:'#BF5FFF'}[l.phase]||'#888';
+    return `<div class="row" style="align-items:flex-start;gap:8px">
+      <div style="width:6px;height:6px;border-radius:50%;background:${phaseColor};flex-shrink:0;margin-top:5px"></div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:500">${fmtDate(l.date)} · ${l.mood} Energy ${l.energy}/10</div>
+        <div style="font-size:11px;color:var(--mut2)">${l.phase} · Day ${l.dayInCycle}${l.symptoms?.length?' · '+l.symptoms.join(', '):''}</div>
+        ${l.notes?`<div style="font-size:11px;color:var(--mut2);margin-top:2px;font-style:italic">${l.notes.slice(0,80)}${l.notes.length>80?'…':''}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleWHHistory(){
+  const el  = document.getElementById('wh-history-list');
+  const btn = document.querySelector('#tab-womens .card:last-child .btn-ghost');
+  if(el.style.display==='none'){ el.style.display='block'; renderWHHistory(); if(btn) btn.textContent='Hide'; }
+  else{ el.style.display='none'; if(btn) btn.textContent='Show'; }
+}
+
+async function getWomensAICoach(){
+  const out     = document.getElementById('wh-ai-output');
+  const dots    = document.getElementById('wh-ai-dots');
+  const content = document.getElementById('wh-ai-content');
+  out.style.display='block'; dots.style.display='flex'; content.style.display='none'; content.innerHTML='';
+  out.scrollIntoView({behavior:'smooth',block:'nearest'});
+
+  const cycleData = getCycleData();
+  const profile   = loadProfile()||{};
+  const focus     = document.getElementById('wh-ai-focus').value;
+  const sport     = document.getElementById('wh-ai-sport').value;
+
+  let phaseInfo = null;
+  if(cycleData?.lastDate){
+    phaseInfo = getCurrentPhase(cycleData.lastDate, cycleData.cycleLen||28, cycleData.periodLen||5);
+  }
+
+  // Recent cycle logs for context
+  const logs = JSON.parse(localStorage.getItem('fos_womens_log')||'[]').slice(0,5);
+  const recentSymptoms = logs.flatMap(l=>l.symptoms||[]).filter((v,i,a)=>a.indexOf(v)===i).slice(0,5).join(', ');
+  const avgEnergy = logs.length ? Math.round(logs.reduce((s,l)=>s+(l.energy||7),0)/logs.length) : 7;
+
+  const prompt = `You are an elite sports nutritionist and performance coach specialising in female athlete physiology and the menstrual cycle. Provide a comprehensive, evidence-based coaching brief.
+
+ATHLETE PROFILE:
+Name: ${profile.firstName||'Athlete'}
+Sport: ${sport}
+Experience: ${profile.exp||'—'} | Competition level: ${profile.clvl||'Amateur'}
+Weight: ${profile.weight||'—'}${profile.weightUnit||'kg'} | Weight class: ${profile.wclass||'—'}
+Goal: ${profile.goal||'—'}
+Training: ${profile.sessionsPerWeek||5} sessions/week
+
+CYCLE DATA:
+${phaseInfo ? `Phase: ${phaseInfo.phase} (Day ${phaseInfo.dayInCycle} of ${phaseInfo.cycleLen})
+Days remaining in this phase: ${phaseInfo.daysLeft}
+Period length: ${phaseInfo.periodLen} days
+Ovulation day: ~Day ${phaseInfo.ovDay}` : 'Cycle data not set'}
+Recent average energy: ${avgEnergy}/10
+Common symptoms: ${recentSymptoms||'none logged'}
+
+FOCUS: ${focus}
+
+Provide a detailed coaching brief using these exact section headers on their own lines in CAPS:
+
+PHASE ASSESSMENT
+What is happening hormonally right now and what it means for athletic performance
+
+TRAINING RECOMMENDATIONS
+Specific session types, intensities and volumes appropriate for this phase and this sport
+
+NUTRITION & FUELLING
+Specific foods, macronutrient adjustments and timing recommendations for this phase
+
+RECOVERY STRATEGIES
+Sleep, active recovery and stress management specific to this hormonal phase
+
+MENTAL PERFORMANCE
+How hormones affect mood, focus and competitive drive — and how to work with them
+
+NEXT PHASE PREPARATION
+What to expect next and how to prepare training and nutrition to transition well
+
+Be specific, evidence-based and direct. Use ${profile.firstName||'their'} name. Reference actual cycle day and phase characteristics.`;
+
+  try{
+    const text = await anthropicCall(prompt, 1200);
+    dots.style.display='none'; content.style.display='block';
+    content.innerHTML = renderCoachOutput(text);
+  }catch(e){ showAIError(content, dots, e.message); }
 }
 
 // ===== TRACKERS =====
@@ -4514,7 +4977,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   waterML = parseInt(localStorage.getItem('fos_water_today')||'0');
   renderWeightChart();
   renderCal();
-  renderPhaseBar(28,5);
+  renderWomensTab();
   renderDashboard();
   const today=todayStr();
   document.getElementById('tr-date').value=today;
