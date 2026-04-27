@@ -1541,17 +1541,12 @@ textarea{resize:vertical;min-height:70px;}
     <div class="card-body">
 
       <!-- Google Photos button — only shown when connected -->
-      <div id="gphotos-btn-wrap" style="display:none;margin-bottom:10px">
+      <div id="gphotos-btn-wrap" style="margin-bottom:10px">
         <button class="btn btn-full" onclick="openGooglePhotosPicker()" style="background:rgba(66,133,244,.1);border:1px solid rgba(66,133,244,.3);color:#4285F4;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#4285F4"/><path d="M12 7a5 5 0 100 10A5 5 0 0012 7z" fill="white"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
           Pick from Google Photos
         </button>
-        <div style="font-size:10px;color:var(--mut2);text-align:center;margin-top:4px">Opens your Google Photos library — select match screenshots or clips</div>
-      </div>
-
-      <!-- Not connected notice -->
-      <div id="gphotos-connect-notice" style="display:none;padding:9px 12px;background:rgba(255,149,0,.07);border:1px solid rgba(255,149,0,.2);border-radius:7px;margin-bottom:10px;font-size:12px;color:var(--ora)">
-        📸 Connect Google Fit in the <strong>Trackers</strong> tab to also enable Google Photos picking
+        <div style="font-size:10px;color:var(--mut2);text-align:center;margin-top:4px">Opens photo library on mobile · Download guide on desktop</div>
       </div>
 
       <!-- Local file drop zone -->
@@ -2743,107 +2738,77 @@ function renderCoachOutput(text){
 let gPhotosSelected = []; // array of {base64, mimeType, name}
 
 function initGooglePhotosUI(){
-  // Show/hide the Google Photos button based on connection state
-  const btnWrap  = document.getElementById('gphotos-btn-wrap');
-  const notice   = document.getElementById('gphotos-connect-notice');
-  if(!btnWrap || !notice) return;
-  if(gfitConnected()){
-    btnWrap.style.display  = 'block';
-    notice.style.display   = 'none';
-  } else {
-    btnWrap.style.display  = 'none';
-    notice.style.display   = 'block';
-  }
+  // Always show the Google Photos button — it works via native file picker on mobile
+  // and shows download instructions on desktop
+  const btnWrap = document.getElementById('gphotos-btn-wrap');
+  const notice  = document.getElementById('gphotos-connect-notice');
+  if(btnWrap) btnWrap.style.display = 'block';
+  if(notice)  notice.style.display  = 'none';
 }
 
 async function openGooglePhotosPicker(){
-  // The Google Photos Picker API is loaded dynamically via a script tag
-  // It's only available in supported browsers (Chrome, Edge, Safari 16+)
-  if(!window.google?.photos?.picker){
-    await loadPickerScript();
-  }
+  // The official Google Photos JavaScript Picker SDK is not publicly available.
+  // The correct approach is to use the native file input which on iOS/Android
+  // opens the system photo library (including Google Photos if it's the default).
+  // For desktop Chrome, we use the File System Access API or fall back to input.
 
   const token = await ensureGfitToken().catch(()=>null);
-  if(!token){
-    alert('Google not connected. Go to Trackers tab and connect Google Fit first.');
+
+  // On mobile — trigger the native file picker which opens Google Photos on Android
+  // and the Photos library on iPhone. This is the most reliable cross-device approach.
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  if(isMobile){
+    // Trigger the hidden file input — on mobile this opens Google Photos / Camera Roll
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    // On Android, this opens Google Photos directly
+    input.capture = false;
+    input.onchange = (e) => { if(e.target.files.length) handleGPhotosFiles(e.target.files, token); };
+    input.click();
     return;
   }
 
-  try{
-    // Create the picker session using Google's Photos Picker API
-    const session = await google.photos.picker.create({
-      authToken: token,
-    });
-
-    // Open the picker UI
-    session.on('cancel', () => {});
-    session.on('done', async (result) => {
-      const mediaItems = result.mediaItems || [];
-      if(!mediaItems.length) return;
-
-      const backendUrl = gfitBackendUrl();
-      if(!backendUrl){
-        alert('Enter your Vercel backend URL in the Trackers tab first.');
-        return;
-      }
-
-      // Show loading state
-      const thumbs = document.getElementById('gphotos-thumbs');
-      const countEl = document.getElementById('gphotos-count');
-      const prev = document.getElementById('gphotos-preview');
-      prev.style.display = 'block';
-      countEl.textContent = `Fetching ${mediaItems.length} image${mediaItems.length>1?'s':''} from Google Photos…`;
-      thumbs.innerHTML = '';
-      gPhotosSelected = [];
-
-      for(const item of mediaItems.slice(0, 5)){ // max 5 images
-        try{
-          // Proxy through our Vercel backend to avoid CORS
-          const proxyUrl = `${backendUrl}/api/photos/proxy?url=${encodeURIComponent(item.baseUrl)}`;
-          const res = await fetch(proxyUrl, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if(!res.ok) throw new Error(`HTTP ${res.status}`);
-
-          const blob      = await res.blob();
-          const mimeType  = blob.type || 'image/jpeg';
-          const base64    = await blobToBase64(blob);
-
-          gPhotosSelected.push({ base64, mimeType, name: item.filename || 'photo.jpg' });
-
-          // Show thumbnail
-          const img = document.createElement('img');
-          img.src = `data:${mimeType};base64,${base64}`;
-          img.style.cssText = 'width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--bdr2)';
-          thumbs.appendChild(img);
-
-        }catch(e){
-          console.error('Failed to fetch photo:', e);
-        }
-      }
-
-      countEl.textContent = `${gPhotosSelected.length} photo${gPhotosSelected.length!==1?'s':''} selected from Google Photos`;
-    });
-
-    session.open();
-
-  }catch(e){
-    // Picker API not supported in this browser — fall back to guidance
-    alert('Google Photos Picker is not supported in this browser.\n\nTip: Download the image from Google Photos, then drop it into the upload zone below.');
-  }
+  // On desktop — show the upload zone with a helpful message
+  // The Google Photos Picker JS SDK requires Google Cloud approval and an
+  // OAuth web flow that doesn't work in a static HTML file.
+  const prev = document.getElementById('gphotos-preview');
+  const count = document.getElementById('gphotos-count');
+  prev.style.display = 'block';
+  count.innerHTML = `
+    <div style="background:rgba(66,133,244,.08);border:1px solid rgba(66,133,244,.2);border-radius:8px;padding:12px;font-size:12px;line-height:1.7;color:var(--txt)">
+      <strong style="color:#4285F4">📸 Google Photos on desktop</strong><br>
+      1. Open <a href="https://photos.google.com" target="_blank" style="color:#4285F4">photos.google.com</a> in a new tab<br>
+      2. Find your match footage or screenshots<br>
+      3. Click the three-dot menu → <strong>Download</strong><br>
+      4. Drop the downloaded file into the upload zone above<br><br>
+      <em style="color:var(--mut2)">On iPhone/Android, tap "Pick from Google Photos" to open your photo library directly.</em>
+    </div>`;
 }
 
-function loadPickerScript(){
-  return new Promise((resolve, reject) => {
-    if(window.google?.photos?.picker){ resolve(); return; }
-    const s = document.createElement('script');
-    s.src = 'https://apis.google.com/js/api.js';
-    s.onload = () => {
-      gapi.load('photos.picker', { callback: resolve, onerror: reject });
-    };
-    s.onerror = reject;
-    document.head.appendChild(s);
-  });
+async function handleGPhotosFiles(files, token){
+  const thumbs = document.getElementById('gphotos-thumbs');
+  const countEl = document.getElementById('gphotos-count');
+  const prev = document.getElementById('gphotos-preview');
+  prev.style.display = 'block';
+  countEl.textContent = `Loading ${files.length} photo${files.length>1?'s':''}…`;
+  thumbs.innerHTML = '';
+  gPhotosSelected = [];
+
+  for(const file of Array.from(files).slice(0, 5)){
+    try{
+      const mimeType = file.type || 'image/jpeg';
+      const base64 = await blobToBase64(file);
+      gPhotosSelected.push({ base64, mimeType, name: file.name || 'photo.jpg' });
+      const img = document.createElement('img');
+      img.src = `data:${mimeType};base64,${base64}`;
+      img.style.cssText = 'width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--bdr2)';
+      thumbs.appendChild(img);
+    }catch(e){ console.error('Failed to load photo:', e); }
+  }
+  countEl.textContent = `${gPhotosSelected.length} photo${gPhotosSelected.length!==1?'s':''} selected`;
 }
 
 function blobToBase64(blob){
