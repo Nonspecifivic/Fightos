@@ -3340,49 +3340,87 @@ function showSignedInPanel(){
   updateSyncBadge();
 }
 
-// ── Social login — redirects to provider via Vercel backend ──
+// ── Social login — uses Supabase implicit flow directly ──
+// Supabase handles the OAuth and redirects back to this page with tokens in the fragment
 function socialLogin(provider){
-  const backendUrl=ACCT.backendUrl||gfitBackendUrl();
+  const backendUrl = ACCT.backendUrl || gfitBackendUrl();
   if(!backendUrl){
     document.getElementById('acct-error').textContent='Enter your Vercel backend URL in the Trackers tab first.';
     document.getElementById('acct-error').style.display='block';
     return;
   }
   // Show pending state
-  const icons={google:'🔵',azure:'🟦',apple:'⚫'};
-  const labels={google:'Redirecting to Google…',azure:'Redirecting to Microsoft…',apple:'Redirecting to Apple…'};
+  const icons  = {google:'🔵', azure:'🟦', apple:'⚫'};
+  const labels = {google:'Redirecting to Google…', azure:'Redirecting to Microsoft…', apple:'Redirecting to Apple…'};
   document.getElementById('acct-auth-panel').style.display='none';
   document.getElementById('acct-social-pending').style.display='block';
-  document.getElementById('acct-social-icon').textContent=icons[provider]||'🔄';
-  document.getElementById('acct-social-msg').textContent=labels[provider]||'Redirecting…';
-  // Redirect after brief delay so user sees the message
-  setTimeout(()=>{ window.location.href=`${backendUrl}/api/account/oauth-start?provider=${provider}`; },600);
+  document.getElementById('acct-social-icon').textContent = icons[provider]  || '🔄';
+  document.getElementById('acct-social-msg').textContent  = labels[provider] || 'Redirecting…';
+  // Redirect to Vercel backend which starts the OAuth flow
+  // Supabase will redirect back to this page (nonspecifivic.github.io/Fightos)
+  // with access_token in the URL fragment
+  setTimeout(()=>{ window.location.href=`${backendUrl}/api/account/oauth-start?provider=${provider}`; }, 600);
 }
 
-// ── Handle OAuth callback on page load (tokens arrive in URL fragment) ──
+// ── Handle OAuth callback on page load ──
+// Supabase implicit flow sends: #access_token=...&refresh_token=...&token_type=bearer
+// Our custom Vercel callback sends: #acct_access_token=...
 function handleAccountOAuthCallback(){
-  const hash=window.location.hash;
-  if(!hash||!hash.includes('acct_')) return;
-  const params=new URLSearchParams(hash.slice(1));
+  const hash = window.location.hash;
+  if(!hash || hash.length < 2) return;
+  const params = new URLSearchParams(hash.slice(1));
 
+  // Handle error from either flow
   if(params.has('acct_error')){
-    const msg=decodeURIComponent(params.get('acct_error'));
+    const msg = decodeURIComponent(params.get('acct_error'));
     window.history.replaceState(null,'',window.location.pathname);
-    // Show account modal with error
+    setTimeout(()=>{ openAccountModal(); document.getElementById('acct-error').textContent=msg; document.getElementById('acct-error').style.display='block'; },500);
+    return;
+  }
+  if(params.has('error_description')){
+    const msg = decodeURIComponent(params.get('error_description'));
+    window.history.replaceState(null,'',window.location.pathname);
     setTimeout(()=>{ openAccountModal(); document.getElementById('acct-error').textContent=msg; document.getElementById('acct-error').style.display='block'; },500);
     return;
   }
 
-  if(params.has('acct_access_token')){
-    ACCT.user={ id:params.get('acct_user_id'), email:params.get('acct_email'), provider:params.get('acct_provider')||'email' };
-    ACCT.accessToken=params.get('acct_access_token');
-    ACCT.refreshToken=params.get('acct_refresh_token');
-    ACCT.expiresAt=Date.now()+(parseInt(params.get('acct_expires_in')||'3600'))*1000;
-    ACCT.backendUrl=localStorage.getItem('gfit_backend_url')||'';
+  // ── Path 1: Supabase implicit flow (tokens arrive directly in fragment) ──
+  // This happens when Supabase redirects straight to APP_ORIGIN with tokens
+  if(params.has('access_token') && params.get('token_type')==='bearer'){
+    const accessToken  = params.get('access_token');
+    const refreshToken = params.get('refresh_token') || '';
+    const expiresIn    = parseInt(params.get('expires_in') || '3600');
+    // Decode user info from the JWT (middle segment is base64 JSON)
+    let email='', userId='', provider='email';
+    try{
+      const payload = JSON.parse(atob(accessToken.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+      email    = payload.email || '';
+      userId   = payload.sub  || '';
+      provider = payload.app_metadata?.provider || 'email';
+    }catch(e){}
+
+    ACCT.user        = { id:userId, email, provider };
+    ACCT.accessToken = accessToken;
+    ACCT.refreshToken= refreshToken;
+    ACCT.expiresAt   = Date.now() + expiresIn * 1000;
+    ACCT.backendUrl  = localStorage.getItem('gfit_backend_url') || '';
     window.history.replaceState(null,'',window.location.pathname);
     saveAccountSession();
     updateAccountBtn();
-    // Load cloud data
+    loadFromCloud().then(()=>{ openAccountModal(); });
+    return;
+  }
+
+  // ── Path 2: Our custom Vercel callback (acct_ prefixed tokens) ──
+  if(params.has('acct_access_token')){
+    ACCT.user        = { id:params.get('acct_user_id'), email:params.get('acct_email'), provider:params.get('acct_provider')||'email' };
+    ACCT.accessToken = params.get('acct_access_token');
+    ACCT.refreshToken= params.get('acct_refresh_token');
+    ACCT.expiresAt   = Date.now() + (parseInt(params.get('acct_expires_in')||'3600')) * 1000;
+    ACCT.backendUrl  = localStorage.getItem('gfit_backend_url') || '';
+    window.history.replaceState(null,'',window.location.pathname);
+    saveAccountSession();
+    updateAccountBtn();
     loadFromCloud().then(()=>{ openAccountModal(); });
   }
 }
