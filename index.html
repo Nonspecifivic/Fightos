@@ -172,7 +172,7 @@ textarea{resize:vertical;min-height:70px;line-height:1.6;}
 /* MISC */
 .sec-title{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--mut2);margin-bottom:8px;font-weight:600;}
 /* ONBOARDING */
-#onboarding{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;flex-direction:column;overflow:hidden;}
+#onboarding{position:fixed;inset:0;background:var(--bg);z-index:1000;flex-direction:column;overflow:hidden;}
 .ob-progress{height:2px;background:var(--surf2);flex-shrink:0;}
 .ob-progress-fill{height:100%;background:var(--acc);transition:width .4s ease;}
 .ob-body{flex:1;overflow-y:auto;padding:24px 20px;display:flex;flex-direction:column;}
@@ -261,7 +261,7 @@ input:focus,select:focus,textarea:focus{border-color:rgba(232,255,0,.4);backgrou
 <body>
 
 <!-- ==================== ONBOARDING ==================== -->
-<div id="onboarding" style="display:none;flex-direction:column;height:100vh;background:var(--bg);">
+<div id="onboarding" style="display:none;">
   <div class="ob-progress" id="ob-progress-bar" style="display:none"><div class="ob-progress-fill" id="ob-prog" style="width:12.5%"></div></div>
   <div class="ob-body" id="ob-body">
 
@@ -5483,106 +5483,100 @@ function renderMarkdown(text){
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', async ()=>{
-  initTheme();
-  loadAccountSession();
-  updateAccountBtn();
-  syncBottomBar('dashboard');
-  handleAccountOAuthCallback(); // check if returning from social login
-  updateKeyStatus();
-  renderSavedBriefs();
-  renderMatchRecord();
-  renderMatchHistory();
-  renderTrainingLog();
-  renderFoodLog();
-  initGoogleFit();
-  initGooglePhotosUI();
-  initBodyParts();
-  loadCalEvents();
+  // Failsafe: if nothing is shown after 3s, force show onboarding
+  window._fosBoot = setTimeout(()=>{
+    const ob = document.getElementById('onboarding');
+    const app = document.getElementById('main-app');
+    if(ob && app){
+      const obHidden = !ob.style.display || ob.style.display === 'none';
+      const appHidden = !app.style.display || app.style.display === 'none';
+      if(obHidden && appHidden){
+        console.warn('FightOS failsafe: showing onboarding after timeout');
+        ob.style.display = 'flex';
+      }
+    }
+  }, 3000);
+  try{ initTheme(); }catch(e){}
+  try{ loadAccountSession(); updateAccountBtn(); }catch(e){}
+  try{ syncBottomBar('dashboard'); }catch(e){}
+  try{ updateKeyStatus(); }catch(e){}
+  try{ loadCalEvents(); }catch(e){}
   waterML = parseInt(localStorage.getItem('fos_water_today')||'0');
-  renderWeightChart();
-  renderCal();
-  renderWomensTab();
-  renderDashboard();
+
+  // Pre-fill today's date fields
   const today=todayStr();
-  document.getElementById('tr-date').value=today;
-  document.getElementById('ev-date').value=today;
-  const ltEl=document.getElementById('last-period');
-  if(ltEl) ltEl.value=today;
-  const wtEl=document.getElementById('wt-time');
-  if(wtEl) wtEl.value=new Date().toTimeString().slice(0,5);
+  const trDate=document.getElementById('tr-date'); if(trDate) trDate.value=today;
+  const evDate=document.getElementById('ev-date'); if(evDate) evDate.value=today;
+  const ltEl=document.getElementById('last-period'); if(ltEl) ltEl.value=today;
+  const wtEl=document.getElementById('wt-time'); if(wtEl) wtEl.value=new Date().toTimeString().slice(0,5);
 
-  // ── Boot priority ──
-  // 1. Local profile exists → use it immediately (fastest)
-  // 2. No local profile but signed in → fetch from cloud → skip onboarding
-  // 3. Neither → show onboarding
-
+  // ── Step 2: Decide what to show ──
   const profile = loadProfile();
 
   if(profile){
-    // Profile found locally — apply it and show the app
-    if(!profile.bmr) profile.bmr=computeBMR(profile);
-    if(!profile.tdee){ const r=computeTDEE(profile); profile.tdee=r.tdee; }
-    if(!profile.calTarget) profile.calTarget=computeCalTarget(profile);
-    if(!profile.proteinTarget) profile.proteinTarget=Math.round((parseFloat(profile.weight)||80)*2.2);
-    if(!profile.carbTarget) profile.carbTarget=Math.round(profile.calTarget*0.45/4);
-    if(!profile.fatTarget) profile.fatTarget=Math.round(profile.calTarget*0.25/9);
-    if(!profile.waterTarget) profile.waterTarget=Math.max(2.5,Math.round((parseFloat(profile.weight)||80)*0.04*10)/10);
-    if(profile.compDate && !calEvents.some(e=>e.type==='competition')){
-      calEvents.push({id:nextEvtId++,name:'My Competition',date:profile.compDate,end:'',type:'competition',loc:''});
-      saveCalEvents();
-    }
-    applyProfile(profile);
-    renderTDEECard(profile);
-    renderNutritionStats(profile);
-    renderWeightStats(profile);
+    // Existing user — show app immediately, render in background
+    try{
+      if(!profile.bmr) profile.bmr=computeBMR(profile);
+      if(!profile.tdee){ const r=computeTDEE(profile); profile.tdee=r.tdee||r; }
+      if(!profile.calTarget) profile.calTarget=computeCalTarget(profile);
+      if(!profile.proteinTarget) profile.proteinTarget=Math.round((parseFloat(profile.weight)||80)*2.2);
+      if(!profile.carbTarget) profile.carbTarget=Math.round(profile.calTarget*0.45/4);
+      if(!profile.fatTarget) profile.fatTarget=Math.round(profile.calTarget*0.25/9);
+      if(!profile.waterTarget) profile.waterTarget=Math.max(2.5,Math.round((parseFloat(profile.weight)||80)*0.04*10)/10);
+      if(profile.compDate && !calEvents.some(e=>e.type==='competition')){
+        calEvents.push({id:nextEvtId++,name:'My Competition',date:profile.compDate,end:'',type:'competition',loc:''});
+        saveCalEvents();
+      }
+      applyProfile(profile);
+    }catch(e){ console.error('Profile apply error:',e); }
+
+    // Show app
     hideOnboarding();
-    // Also sync from cloud in background to pick up any changes from other devices
-    if(isSignedIn()) loadFromCloud().catch(()=>{});
+
+    // Render tabs (deferred so UI paints first)
+    setTimeout(()=>{
+      try{ renderDashboard(); }catch(e){ console.error('renderDashboard:',e); }
+      try{ renderCal(); }catch(e){}
+      try{ renderTrainingLog(); }catch(e){}
+      try{ renderFoodLog(); }catch(e){}
+      try{ renderMatchRecord(); renderMatchHistory(); }catch(e){}
+      try{ renderSavedBriefs(); }catch(e){}
+      try{ renderWomensTab(); }catch(e){}
+      try{ renderWeightChart(); }catch(e){}
+      try{ renderTDEECard(profile); renderNutritionStats(profile); }catch(e){}
+      try{ initGoogleFit(); initGooglePhotosUI(); }catch(e){}
+      try{ initBodyParts(); }catch(e){}
+      try{ handleAccountOAuthCallback(); }catch(e){}
+      if(isSignedIn()) loadFromCloud().catch(()=>{});
+    }, 0);
 
   } else if(isSignedIn()){
-    // No local profile but user has a cloud account — show loading state then fetch
+    // Signed in but no local profile — show app shell, load from cloud
     document.getElementById('onboarding').style.display='none';
     document.getElementById('main-app').style.display='flex';
-    // Show a loading indicator on dashboard while we fetch
-    const dashAlert=document.getElementById('dash-ai-banner');
-    if(dashAlert) dashAlert.innerHTML=`<div class="tip" style="display:flex;align-items:center;gap:10px"><div class="dots"><div class="dot-a"></div><div class="dot-a"></div><div class="dot-a"></div></div><span>Loading your profile from cloud…</span></div>`;
     try{
       await loadFromCloud();
       const cloudProfile=loadProfile();
       if(cloudProfile){
-        // Successfully loaded — apply profile
         applyProfile(cloudProfile);
-        renderTDEECard(cloudProfile);
-        renderNutritionStats(cloudProfile);
-        renderWeightStats(cloudProfile);
-        renderDashAIBanner();
-        renderTrainingLog();
-        renderCal();
-        renderMatchRecord();
-        renderMatchHistory();
+        setTimeout(()=>{
+          try{ renderDashboard(); renderCal(); renderTrainingLog(); renderFoodLog(); }catch(e){}
+          try{ renderMatchRecord(); renderMatchHistory(); renderSavedBriefs(); }catch(e){}
+          try{ initGoogleFit(); initBodyParts(); }catch(e){}
+        }, 0);
       } else {
-        // Cloud account exists but no profile saved yet — show onboarding
         document.getElementById('main-app').style.display='none';
         showOnboarding();
       }
     }catch(e){
-      // Cloud fetch failed — show onboarding with option to retry
       document.getElementById('main-app').style.display='none';
       showOnboarding();
-      // Show a retry notice on the first onboarding screen
-      const ob1=document.querySelector('#ob-step-1');
-      if(ob1){
-        const notice=document.createElement('div');
-        notice.className='warn';
-        notice.style.marginTop='12px';
-        notice.innerHTML=`Couldn't load your profile from cloud. <button onclick="location.reload()" style="background:transparent;border:none;color:var(--acc);cursor:pointer;text-decoration:underline;font-size:12px">Retry</button>`;
-        ob1.appendChild(notice);
-      }
     }
 
   } else {
-    // No local profile, not signed in → show account screen first
+    // New user — show onboarding
     showOnboarding();
+    try{ handleAccountOAuthCallback(); }catch(e){}
   }
 });
 
