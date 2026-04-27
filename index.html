@@ -1537,10 +1537,13 @@ textarea{resize:vertical;min-height:70px;}
 
   <!-- Upload zone -->
   <div class="card" style="margin-bottom:10px">
-    <div class="card-header"><h3>📹 Upload footage or screenshots</h3><span class="pill pill-blu">AI Visual Analysis</span></div>
+    <div class="card-header">
+      <h3>📹 Media files</h3>
+      <span id="ma-file-count" class="pill pill-blu" style="display:none">0 files</span>
+    </div>
     <div class="card-body">
 
-      <!-- Google Photos button — only shown when connected -->
+      <!-- Google Photos button -->
       <div id="gphotos-btn-wrap" style="margin-bottom:10px">
         <button class="btn btn-full" onclick="openGooglePhotosPicker()" style="background:rgba(66,133,244,.1);border:1px solid rgba(66,133,244,.3);color:#4285F4;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px">
           <svg width="16" height="16" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
@@ -1549,25 +1552,30 @@ textarea{resize:vertical;min-height:70px;}
         <div style="font-size:10px;color:var(--mut2);text-align:center;margin-top:4px">Opens photo library on mobile · Download guide on desktop</div>
       </div>
 
-      <!-- Local file drop zone -->
-      <div style="border:2px dashed var(--bdr2);border-radius:10px;padding:22px 16px;text-align:center;margin-bottom:10px;position:relative;cursor:pointer;transition:border-color .2s" id="upload-zone" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-        <input type="file" accept="image/*,video/*" multiple onchange="handleFiles(this.files)" style="position:absolute;inset:0;opacity:0;cursor:pointer">
-        <div style="font-size:26px;margin-bottom:6px">🎬</div>
-        <div style="font-size:14px;font-weight:500;margin-bottom:3px">Drop footage or screenshots here</div>
-        <div style="font-size:11px;color:var(--mut2);margin-bottom:8px">Or click to browse from your device</div>
-        <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">
-          <span class="pill pill-blu">JPG/PNG</span><span class="pill pill-blu">MP4/MOV</span><span class="pill pill-blu">Screenshots</span>
-        </div>
+      <!-- Drop zone — always additive, never replaces existing files -->
+      <div style="border:2px dashed var(--bdr2);border-radius:10px;padding:18px 16px;text-align:center;position:relative;cursor:pointer;transition:border-color .2s,background .2s" id="upload-zone" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+        <input type="file" accept="image/*,video/*" multiple id="ma-file-input" onchange="handleFiles(this.files)" style="position:absolute;inset:0;opacity:0;cursor:pointer">
+        <div style="font-size:22px;margin-bottom:5px">📎</div>
+        <div style="font-size:13px;font-weight:500;margin-bottom:2px">Add more files</div>
+        <div style="font-size:11px;color:var(--mut2)">Click or drag — JPG, PNG, MP4, MOV · up to 10 files total</div>
       </div>
-      <div id="file-preview" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
 
-      <!-- Google Photos selected images preview -->
-      <div id="gphotos-preview" style="display:none;margin-bottom:10px">
+      <!-- Thumbnail grid — shows all added files with individual remove buttons -->
+      <div id="ma-thumb-grid" style="display:none;margin-top:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:11px;color:var(--mut2)" id="ma-thumb-label">0 files selected</span>
+          <button onclick="clearAllFiles()" style="padding:2px 8px;border-radius:5px;border:1px solid rgba(255,59,48,.25);background:transparent;color:var(--acc2);font-size:11px;cursor:pointer">Clear all</button>
+        </div>
+        <div id="ma-thumbs" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      </div>
+
+      <!-- Google Photos selected preview -->
+      <div id="gphotos-preview" style="display:none;margin-top:10px">
         <div style="font-size:11px;color:var(--mut2);margin-bottom:6px" id="gphotos-count"></div>
         <div id="gphotos-thumbs" style="display:flex;gap:6px;flex-wrap:wrap"></div>
       </div>
 
-      <div class="tip" style="margin-bottom:0;font-size:11px">💡 <strong>Best results:</strong> Screenshot key moments — takedown attempts, submission setups, positions. The AI analyses body position and technique from images.</div>
+      <div class="tip" style="margin-bottom:0;font-size:11px;margin-top:10px">💡 <strong>Best results:</strong> Add multiple screenshots of key moments — takedowns, submissions, positions, striking exchanges. The AI analyses all images together.</div>
     </div>
   </div>
 
@@ -2709,28 +2717,162 @@ Tone: direct, coach-to-athlete. Use their first name. Reference actual numbers. 
   }catch(e){ showAIError(content, loading, e.message); }
 }
 
-function renderCoachOutput(text){
-  const sections={
-    'READINESS ASSESSMENT':'grn','KEY FINDINGS':'blu','RECOMMENDATION FOR TODAY':'acc',
-    'PRIORITY ACTIONS':'ora','COMPETITION COUNTDOWN':'red'
-  };
-  let html='';let current='';let currentTitle='';let currentColor='';
-  const lines=text.split('\n');
-  for(const line of lines){
-    let matched=false;
-    for(const[title,color] of Object.entries(sections)){
-      if(line.toUpperCase().includes(title)){
-        if(current){html+=`<div class="result-card"><h4 style="color:var(--${currentColor})">${currentTitle}</h4><div style="font-size:13px;line-height:1.65">${current}</div></div>`;}
-        currentTitle=title;currentColor=color;current='';matched=true;break;
+function renderCoachOutput(text, context='coach'){
+  // Section definitions — each has a label, icon, accent colour and display style
+  const SECTIONS = [
+    // Match analysis sections
+    {keys:['PERFORMANCE SCORE'],     icon:'📊', color:'var(--blu)',  style:'scores'},
+    {keys:['KEY STRENGTH'],          icon:'💪', color:'var(--grn)',  style:'list'},
+    {keys:['CRITICAL IMPROVEMENT','CRITICAL AREA'], icon:'🎯', color:'var(--acc2)', style:'list'},
+    {keys:['TRAINING DRILL'],        icon:'🏋️', color:'var(--pur)',  style:'list'},
+    {keys:['TACTICAL ADJUSTMENT','TACTICAL CHANGE'], icon:'♟️', color:'var(--ora)', style:'list'},
+    {keys:['OPPONENT PATTERN'],      icon:'🔍', color:'var(--mut2)', style:'list'},
+    {keys:['VISUAL OBSERVATION'],    icon:'👁',  color:'var(--blu)',  style:'list'},
+    // Coach brief sections
+    {keys:['READINESS ASSESSMENT','READINESS'],   icon:'🟢', color:'var(--grn)',  style:'highlight'},
+    {keys:['KEY FINDING'],           icon:'📋', color:'var(--blu)',  style:'list'},
+    {keys:['TODAY\'S RECOMMENDATION','RECOMMENDATION FOR TODAY','TODAY\'S REC'], icon:'✅', color:'var(--acc)', style:'highlight'},
+    {keys:['PRIORITY ACTION'],       icon:'⚡', color:'var(--ora)',  style:'numbered'},
+    {keys:['COMPETITION STATUS','COMPETITION COUNTDOWN'], icon:'🏆', color:'var(--acc2)', style:'highlight'},
+    // Fight prep sections
+    {keys:['PHASE ASSESSMENT'],      icon:'📅', color:'var(--blu)',  style:'highlight'},
+    {keys:['WEEKLY PRIORIT'],        icon:'📆', color:'var(--pur)',  style:'list'},
+    {keys:['WEIGHT MANAGEMENT'],     icon:'⚖️', color:'var(--ora)',  style:'list'},
+    {keys:['PEAK WEEK'],             icon:'🔥', color:'var(--acc2)', style:'list'},
+    {keys:['FIGHT DAY'],             icon:'🥊', color:'var(--acc)',  style:'list'},
+    {keys:['RED FLAG'],              icon:'🚩', color:'var(--acc2)', style:'list'},
+    // Nutrition sections
+    {keys:['ADHERENCE SUMMARY'],     icon:'📊', color:'var(--blu)',  style:'highlight'},
+    {keys:['KEY PATTERN'],           icon:'🔍', color:'var(--pur)',  style:'list'},
+    {keys:['PERFORMANCE IMPACT'],    icon:'⚡', color:'var(--grn)',  style:'highlight'},
+    {keys:['PROBLEM AREA'],          icon:'⚠️', color:'var(--acc2)', style:'list'},
+    {keys:['RECOMMENDATION'],        icon:'✅', color:'var(--acc)',  style:'list'},
+    {keys:['FIGHT CAMP ADJUST'],     icon:'🏕️', color:'var(--ora)',  style:'list'},
+  ];
+
+  // Parse text into sections
+  const parsed = []; // [{title, icon, color, style, lines[]}]
+  let currentSection = null;
+  let introLines = [];
+
+  for(const rawLine of text.split('\n')){
+    const line = rawLine.trim();
+    if(!line) continue;
+
+    // Check if this line is a section header
+    let matched = false;
+    for(const sec of SECTIONS){
+      if(sec.keys.some(k=>line.toUpperCase().includes(k))){
+        if(currentSection) parsed.push(currentSection);
+        else if(introLines.length) parsed.push({title:'',icon:'',color:'',style:'intro',lines:introLines});
+        // Extract title — remove markdown noise
+        const title = line.replace(/^#+\s*/,'').replace(/\*\*/g,'').replace(/^[-:]+\s*/,'').replace(/\s*[-:]+\s*$/,'').trim();
+        currentSection = { title, icon:sec.icon, color:sec.color, style:sec.style, lines:[] };
+        introLines = [];
+        matched = true;
+        break;
       }
     }
-    if(!matched&&currentTitle&&line.trim()){
-      const cleaned=line.replace(/^[-*•\d.]+\s*/,'').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
-      if(cleaned)current+=`<p style="margin-bottom:5px">${cleaned}</p>`;
+    if(matched) continue;
+
+    // Check for performance score lines (e.g. "Takedown offense: 3/5")
+    const scoreMatch = line.match(/^(.+?)[\s:]+(\d)\s*\/\s*5/i);
+    if(currentSection?.style==='scores' && scoreMatch){
+      currentSection.lines.push({ type:'score', label:scoreMatch[1].trim(), val:parseInt(scoreMatch[2]) });
+      continue;
     }
+
+    // Regular content line
+    const clean = line
+      .replace(/^[-•*]\s+/,'')
+      .replace(/^\d+\.\s+/,'')
+      .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g,'<em>$1</em>');
+
+    if(currentSection) currentSection.lines.push({ type:'text', text:clean });
+    else introLines.push({ type:'text', text:clean });
   }
-  if(current)html+=`<div class="result-card"><h4 style="color:var(--${currentColor})">${currentTitle}</h4><div style="font-size:13px;line-height:1.65">${current}</div></div>`;
-  return html||`<div class="result-card"><p style="font-size:13px;line-height:1.65">${text}</p></div>`;
+  if(currentSection) parsed.push(currentSection);
+  else if(introLines.length) parsed.push({title:'',icon:'',color:'',style:'intro',lines:introLines});
+
+  if(!parsed.length) return `<div class="result-card"><p style="font-size:13px;line-height:1.7">${text}</p></div>`;
+
+  // Render each section
+  return parsed.map(sec=>{
+    if(sec.style==='intro'){
+      return `<div style="font-size:14px;line-height:1.75;color:var(--txt);padding:4px 0 12px">
+        ${sec.lines.map(l=>l.text?`<p style="margin-bottom:6px">${l.text}</p>`:'').join('')}
+      </div>`;
+    }
+
+    if(sec.style==='scores'){
+      const scoreLines = sec.lines.filter(l=>l.type==='score');
+      const textLines  = sec.lines.filter(l=>l.type==='text');
+      return `<div style="background:var(--surf);border:1px solid var(--bdr);border-radius:12px;padding:14px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <span style="font-size:18px">${sec.icon}</span>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;color:${sec.color}">${sec.title}</div>
+        </div>
+        ${scoreLines.map(s=>{
+          const pct=s.val*20;
+          const col=s.val>=4?'var(--grn)':s.val>=3?'var(--acc)':s.val>=2?'var(--ora)':'var(--acc2)';
+          return `<div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <span style="font-size:13px">${s.label}</span>
+              <span style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:${col}">${s.val}/5</span>
+            </div>
+            <div style="background:var(--surf2);border-radius:4px;height:6px;overflow:hidden">
+              <div style="width:${pct}%;height:100%;background:${col};border-radius:4px;transition:width .5s"></div>
+            </div>
+          </div>`;
+        }).join('')}
+        ${textLines.map(l=>`<p style="font-size:12px;color:var(--mut2);line-height:1.6;margin-top:6px">${l.text}</p>`).join('')}
+      </div>`;
+    }
+
+    if(sec.style==='highlight'){
+      return `<div style="background:${sec.color}14;border:1px solid ${sec.color}35;border-left:3px solid ${sec.color};border-radius:0 10px 10px 0;padding:14px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+          <span style="font-size:16px">${sec.icon}</span>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;color:${sec.color}">${sec.title}</div>
+        </div>
+        <div style="font-size:13px;line-height:1.75;color:var(--txt)">
+          ${sec.lines.map(l=>l.type==='text'?`<p style="margin-bottom:4px">${l.text}</p>`:'').join('')}
+        </div>
+      </div>`;
+    }
+
+    if(sec.style==='numbered'){
+      let num=0;
+      return `<div style="background:var(--surf);border:1px solid var(--bdr);border-radius:12px;padding:14px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <span style="font-size:18px">${sec.icon}</span>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;color:${sec.color}">${sec.title}</div>
+        </div>
+        ${sec.lines.filter(l=>l.type==='text').map(l=>{
+          num++;
+          return `<div style="display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--bdr)">
+            <div style="width:26px;height:26px;border-radius:50%;background:${sec.color};color:#000;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${num}</div>
+            <div style="font-size:13px;line-height:1.65;padding-top:3px">${l.text}</div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }
+
+    // Default: list style
+    return `<div style="background:var(--surf);border:1px solid var(--bdr);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-size:18px">${sec.icon}</span>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;color:${sec.color}">${sec.title}</div>
+      </div>
+      ${sec.lines.filter(l=>l.type==='text').map(l=>`
+        <div style="display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--bdr)">
+          <div style="width:5px;height:5px;border-radius:50%;background:${sec.color};flex-shrink:0;margin-top:6px"></div>
+          <div style="font-size:13px;line-height:1.65">${l.text}</div>
+        </div>`).join('')}
+    </div>`;
+
+  }).join('');
 }
 
 // ===== GOOGLE PHOTOS PICKER =====
@@ -2789,26 +2931,23 @@ async function openGooglePhotosPicker(){
 }
 
 async function handleGPhotosFiles(files, token){
-  const thumbs = document.getElementById('gphotos-thumbs');
   const countEl = document.getElementById('gphotos-count');
   const prev = document.getElementById('gphotos-preview');
   prev.style.display = 'block';
   countEl.textContent = `Loading ${files.length} photo${files.length>1?'s':''}…`;
-  thumbs.innerHTML = '';
-  gPhotosSelected = [];
 
   for(const file of Array.from(files).slice(0, 5)){
     try{
-      const mimeType = file.type || 'image/jpeg';
-      const base64 = await blobToBase64(file);
-      gPhotosSelected.push({ base64, mimeType, name: file.name || 'photo.jpg' });
-      const img = document.createElement('img');
-      img.src = `data:${mimeType};base64,${base64}`;
-      img.style.cssText = 'width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--bdr2)';
-      thumbs.appendChild(img);
+      if(uploadedFiles2.length >= 10) break;
+      uploadedFiles2.push(file);
     }catch(e){ console.error('Failed to load photo:', e); }
   }
-  countEl.textContent = `${gPhotosSelected.length} photo${gPhotosSelected.length!==1?'s':''} selected`;
+
+  countEl.textContent = `${files.length} photo${files.length!==1?'s':''} added from Google Photos`;
+  updateThumbGrid();
+
+  // Auto-hide the gphotos-preview after a moment
+  setTimeout(()=>{ prev.style.display='none'; }, 2000);
 }
 
 function blobToBase64(blob){
@@ -2824,6 +2963,9 @@ function clearGPhotosSelection(){
   gPhotosSelected = [];
   const prev = document.getElementById('gphotos-preview');
   if(prev){ prev.style.display='none'; document.getElementById('gphotos-thumbs').innerHTML=''; }
+  // Also clear from main upload list
+  uploadedFiles2 = uploadedFiles2.filter(f=>f._fromGPhotos!==true);
+  updateThumbGrid();
 }
 
 // ===== MACROFACTOR CSV IMPORT =====
@@ -2999,17 +3141,90 @@ Be direct and specific. Every day counts.`;
   }catch(e){ showAIError(content,dots,e.message); }
 }
 
-// ===== MATCH ANALYSIS =====
-let uploadedFiles2=[];
+// ===== MATCH ANALYSIS FILE HANDLING =====
+let uploadedFiles2 = []; // persists across multiple add operations
+
 function handleFiles(files){
-  uploadedFiles2=Array.from(files);
-  const prev=document.getElementById('file-preview');
-  prev.style.display='flex';
-  prev.innerHTML=uploadedFiles2.map(f=>`<div style="background:var(--surf);border:1px solid var(--bdr);border-radius:6px;padding:5px 10px;font-size:11px;display:flex;align-items:center;gap:5px">${f.type.startsWith('image/')?'🖼️':'🎬'} ${f.name}</div>`).join('');
+  const newFiles = Array.from(files);
+  // Add to existing list (don't replace)
+  for(const f of newFiles){
+    if(uploadedFiles2.length >= 10) break; // max 10
+    // Avoid duplicates by name+size
+    if(!uploadedFiles2.some(e=>e.name===f.name&&e.size===f.size)){
+      uploadedFiles2.push(f);
+    }
+  }
+  updateThumbGrid();
+  // Reset file input so same files can be re-added after removal
+  const inp = document.getElementById('ma-file-input');
+  if(inp) inp.value='';
 }
-function handleDrop(e){e.preventDefault();document.getElementById('upload-zone').style.borderColor='';handleFiles(e.dataTransfer.files);}
-function handleDragOver(e){e.preventDefault();document.getElementById('upload-zone').style.borderColor='var(--acc)';}
-function handleDragLeave(){document.getElementById('upload-zone').style.borderColor='';}
+
+function removeFile(idx){
+  uploadedFiles2.splice(idx,1);
+  updateThumbGrid();
+}
+
+function clearAllFiles(){
+  uploadedFiles2=[];
+  updateThumbGrid();
+}
+
+function updateThumbGrid(){
+  const grid = document.getElementById('ma-thumb-grid');
+  const thumbs = document.getElementById('ma-thumbs');
+  const label = document.getElementById('ma-thumb-label');
+  const countBadge = document.getElementById('ma-file-count');
+
+  if(!uploadedFiles2.length){
+    grid.style.display='none';
+    if(countBadge){ countBadge.style.display='none'; }
+    return;
+  }
+
+  grid.style.display='block';
+  if(countBadge){ countBadge.style.display='inline'; countBadge.textContent=uploadedFiles2.length+' file'+(uploadedFiles2.length!==1?'s':''); }
+  label.textContent = uploadedFiles2.length+' file'+(uploadedFiles2.length!==1?'s':'')+' selected'+(uploadedFiles2.length>=10?' (max 10)':'');
+
+  thumbs.innerHTML = uploadedFiles2.map((f,i)=>{
+    const isImg = f.type.startsWith('image/');
+    const sizeKB = Math.round(f.size/1024);
+    return `<div style="position:relative;width:80px" id="thumb-${i}">
+      <div style="width:80px;height:80px;border-radius:8px;overflow:hidden;background:var(--surf2);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:28px">
+        ${isImg?`<img src="" data-idx="${i}" style="width:100%;height:100%;object-fit:cover;border-radius:8px" onerror="this.style.display='none'">`:'🎬'}
+      </div>
+      <div style="font-size:9px;color:var(--mut2);margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px">${f.name}</div>
+      <div style="font-size:9px;color:var(--mut2)">${sizeKB}KB</div>
+      <button onclick="removeFile(${i})" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;border:none;background:var(--acc2);color:#fff;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1">×</button>
+    </div>`;
+  }).join('');
+
+  // Load image previews async
+  uploadedFiles2.forEach((f,i)=>{
+    if(!f.type.startsWith('image/')) return;
+    const img = thumbs.querySelector(`img[data-idx="${i}"]`);
+    if(!img) return;
+    const reader = new FileReader();
+    reader.onload = e => { img.src = e.target.result; };
+    reader.readAsDataURL(f);
+  });
+}
+
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('upload-zone').style.borderColor='';
+  document.getElementById('upload-zone').style.background='';
+  handleFiles(e.dataTransfer.files);
+}
+function handleDragOver(e){
+  e.preventDefault();
+  document.getElementById('upload-zone').style.borderColor='var(--acc)';
+  document.getElementById('upload-zone').style.background='rgba(232,255,0,.03)';
+}
+function handleDragLeave(){
+  document.getElementById('upload-zone').style.borderColor='';
+  document.getElementById('upload-zone').style.background='';
+}
 async function fileToBase64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});}
 async function analyzeMatch(){
   const out=document.getElementById('analysis-output');
@@ -3054,16 +3269,33 @@ Description: ${desc||'No description provided'}
 Focus areas: ${focus||'General analysis'}
 Images: ${imageNote}
 
-Provide a structured breakdown:
-PERFORMANCE SCORES — rate 1-5: Takedown offense, Takedown defense, Guard work, Striking, Cardio, Tactics
-KEY STRENGTHS — 2-3 specific things done well with examples
-CRITICAL IMPROVEMENTS — top 3 areas, specific and actionable with drills
-TRAINING DRILLS — 4 specific drills to address the biggest gaps
-TACTICAL ADJUSTMENTS — fight-specific changes for next time
-${document.getElementById('ma-scout')?.value==='yes'?'OPPONENT PATTERNS — patterns observed and how to counter them in a rematch':''}
-${totalImages>0?'VISUAL OBSERVATIONS — specific technique feedback based on the images provided':''}
+Provide analysis using these exact section headers. Each section on its own line in CAPS:
 
-Be direct and technical. Real fighters need real feedback.`;
+PERFORMANCE SCORES
+Rate each out of 5 (format exactly as "Label: X/5"):
+Takedown offense: X/5
+Takedown defense: X/5
+Guard/Position work: X/5
+Striking: X/5
+Cardio & conditioning: X/5
+Tactical execution: X/5
+
+KEY STRENGTHS
+List 2-3 specific things done well, one per line
+
+CRITICAL IMPROVEMENTS
+Top 3 most important areas to fix, one per line with brief explanation
+
+TRAINING DRILLS
+4 specific drills to address the gaps, one per line
+
+TACTICAL ADJUSTMENTS
+3-4 specific tactical changes for next time
+
+${document.getElementById('ma-scout')?.value==='yes'?'OPPONENT PATTERNS\nPatterns observed and how to counter them\n':''}${totalImages>0?'VISUAL OBSERVATIONS\nSpecific technique feedback from the images provided\n':''}
+
+Be specific and direct. Use their first name. Reference actual moments from the description.`;
+
 
   userContent.push({type:'text',text:prompt});
 
