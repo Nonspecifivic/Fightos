@@ -78,7 +78,9 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:'DM Sans
 .nb .dot{width:6px;height:6px;border-radius:50%;}
 
 /* CONTENT */
-.content{flex:1;overflow-y:auto;padding:14px;}
+.content{flex:1;overflow-y:auto;padding:14px;padding-bottom:env(safe-area-inset-bottom, 24px);-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+/* Extra bottom padding on mobile so content isn't hidden behind browser chrome */
+@media(max-width:768px){.content{padding-bottom:80px;}}
 .tab{display:none;}.tab.active{display:block;}
 
 /* COMMON */
@@ -1122,14 +1124,20 @@ textarea{resize:vertical;min-height:70px;}
         4. Save to your device → upload here
       </div>
       <div style="border:2px dashed var(--bdr2);border-radius:8px;padding:18px;text-align:center;position:relative;cursor:pointer;margin-bottom:10px;transition:border-color .2s" id="csv-drop-zone" ondragover="event.preventDefault();this.style.borderColor='var(--acc)'" ondragleave="this.style.borderColor=''" ondrop="handleCSVDrop(event)">
-        <input type="file" accept=".csv,.txt" id="csv-file-input" onchange="handleCSVFile(this.files[0])" style="position:absolute;inset:0;opacity:0;cursor:pointer">
+        <input type="file" accept=".csv,.txt,.xlsx" id="csv-file-input" onchange="handleCSVFile(this.files[0])" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2">
         <div style="font-size:22px;margin-bottom:5px">📊</div>
         <div style="font-size:13px;font-weight:500">Drop MacroFactor CSV here</div>
-        <div style="font-size:11px;color:var(--mut2);margin-top:3px">or click to browse</div>
+        <div style="font-size:11px;color:var(--mut2);margin-top:3px">or tap to browse your files</div>
       </div>
       <div id="csv-preview" style="display:none;margin-bottom:10px">
-        <div style="font-size:11px;color:var(--mut2);margin-bottom:6px" id="csv-file-name"></div>
-        <div style="background:var(--surf2);border-radius:6px;padding:8px;font-size:11px;font-family:monospace;max-height:100px;overflow-y:auto;color:var(--txt)" id="csv-preview-text"></div>
+        <div style="display:flex;align-items:center;gap:8px;padding:10px;background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.2);border-radius:8px;margin-bottom:8px">
+          <span style="font-size:18px">✅</span>
+          <div>
+            <div style="font-size:13px;font-weight:500" id="csv-file-name">File loaded</div>
+            <div style="font-size:11px;color:var(--mut2)">Ready to analyse — select your focus below then tap the button</div>
+          </div>
+        </div>
+        <div style="background:var(--surf2);border-radius:6px;padding:8px;font-size:11px;font-family:monospace;max-height:80px;overflow-y:auto;color:var(--mut2);line-height:1.5" id="csv-preview-text"></div>
       </div>
       <div class="f2 fg">
         <div><label class="lbl">Analysis focus</label>
@@ -1151,7 +1159,8 @@ textarea{resize:vertical;min-height:70px;}
           </select>
         </div>
       </div>
-      <button class="btn btn-acc btn-full btn-hero" onclick="analyzeMacroFactorCSV()" id="csv-analyze-btn" disabled style="opacity:.5">ANALYSE WITH AI COACH</button>
+      <button class="btn btn-acc btn-full btn-hero" onclick="analyzeMacroFactorCSV()" id="csv-analyze-btn">ANALYSE WITH AI COACH</button>
+      <div id="csv-no-file-msg" style="font-size:11px;color:var(--mut2);text-align:center;margin-top:6px">Upload a CSV file above first</div>
     </div>
     <div id="csv-output" style="display:none">
       <div class="dots-loading" id="csv-loading"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
@@ -2970,6 +2979,7 @@ function clearGPhotosSelection(){
 
 // ===== MACROFACTOR CSV IMPORT =====
 let csvData = null;
+let csvFileName = '';
 
 function handleCSVDrop(e){
   e.preventDefault();
@@ -2980,51 +2990,122 @@ function handleCSVDrop(e){
 
 function handleCSVFile(file){
   if(!file) return;
+
+  // Validate file type
+  const name = file.name.toLowerCase();
+  if(!name.endsWith('.csv') && !name.endsWith('.txt') && !name.endsWith('.xlsx')){
+    alert('Please upload a CSV or TXT file exported from MacroFactor.');
+    return;
+  }
+
+  csvFileName = file.name;
   const reader = new FileReader();
+
   reader.onload = function(e){
     csvData = e.target.result;
-    document.getElementById('csv-file-name').textContent = `📄 ${file.name} · ${(file.size/1024).toFixed(1)}KB`;
-    document.getElementById('csv-preview-text').textContent = csvData.slice(0,400)+(csvData.length>400?'…':'');
-    document.getElementById('csv-preview').style.display='block';
-    const btn=document.getElementById('csv-analyze-btn');
-    btn.disabled=false; btn.style.opacity='1';
+
+    // Show success state
+    document.getElementById('csv-file-name').textContent = `📄 ${file.name} · ${(file.size/1024).toFixed(1)}KB · ${csvData.split('\n').length} rows`;
+    document.getElementById('csv-preview-text').textContent = csvData.slice(0, 300) + (csvData.length > 300 ? '…' : '');
+    document.getElementById('csv-preview').style.display = 'block';
+
+    // Show the "no file" hint as "ready"
+    const noFileMsg = document.getElementById('csv-no-file-msg');
+    if(noFileMsg){
+      noFileMsg.textContent = '✅ File loaded — select focus and tap Analyse';
+      noFileMsg.style.color = 'var(--grn)';
+    }
+
+    // Highlight the drop zone green briefly
+    const zone = document.getElementById('csv-drop-zone');
+    zone.style.borderColor = 'var(--grn)';
+    zone.style.background = 'rgba(0,230,118,.04)';
+    setTimeout(()=>{ zone.style.borderColor=''; zone.style.background=''; }, 1500);
+
+    // Reset file input so same file can be re-uploaded
+    document.getElementById('csv-file-input').value = '';
   };
+
+  reader.onerror = function(){
+    alert('Failed to read the file. Please try again.');
+  };
+
   reader.readAsText(file);
 }
 
 async function analyzeMacroFactorCSV(){
-  if(!csvData){ alert('Please upload a MacroFactor CSV first.'); return; }
-  const out=document.getElementById('csv-output'),dots=document.getElementById('csv-loading'),content=document.getElementById('csv-content');
-  out.style.display='block'; dots.style.display='flex'; content.style.display='none';
-  const profile=loadProfile()||{};
-  const focus=document.getElementById('csv-focus').value;
-  const range=document.getElementById('csv-range').value;
-  const csvSample=csvData.slice(0,3000);
-  const prompt=`You are an elite sports nutritionist analysing a fighter's MacroFactor nutrition export.
+  if(!csvData){
+    // Flash the upload zone to prompt the user
+    const zone = document.getElementById('csv-drop-zone');
+    zone.style.borderColor = 'var(--acc2)';
+    zone.style.animation = 'pulse 0.3s ease 3';
+    setTimeout(()=>{ zone.style.borderColor=''; }, 900);
+    const noFileMsg = document.getElementById('csv-no-file-msg');
+    if(noFileMsg){ noFileMsg.style.color='var(--acc2)'; noFileMsg.textContent='⚠️ Please upload a MacroFactor CSV file first'; }
+    return;
+  }
+
+  const out     = document.getElementById('csv-output');
+  const dots    = document.getElementById('csv-loading');
+  const content = document.getElementById('csv-content');
+  out.style.display='block'; dots.style.display='flex'; content.style.display='none'; content.innerHTML='';
+
+  // Scroll to output on mobile
+  out.scrollIntoView({ behavior:'smooth', block:'nearest' });
+
+  const profile  = loadProfile()||{};
+  const focus    = document.getElementById('csv-focus').value;
+  const range    = document.getElementById('csv-range').value;
+
+  // Smart truncation — keep headers + sample rows rather than just first N chars
+  const csvLines = csvData.split('\n').filter(l=>l.trim());
+  const header   = csvLines[0] || '';
+  const dataRows = csvLines.slice(1);
+  // Take up to 60 rows (covers ~2 weeks of daily data with meals)
+  const sample   = [header, ...dataRows.slice(0, 60)].join('\n');
+
+  const prompt = `You are an elite sports nutritionist analysing a fighter's MacroFactor nutrition export.
 
 FIGHTER: ${profile.firstName||'Athlete'}, ${profile.sport||'Combat sports'}, ${profile.age||'—'} yrs
-TARGETS: ${profile.calTarget||'—'} kcal | Protein: ${profile.proteinTarget||'—'}g | Carbs: ${profile.carbTarget||'—'}g | Fat: ${profile.fatTarget||'—'}g
-GOAL: ${profile.goal||'—'} | Weight class: ${profile.wclass||'—'} | Current: ${profile.weight||'—'}${profile.weightUnit||'kg'}
+DAILY TARGETS: ${profile.calTarget||'—'} kcal | Protein: ${profile.proteinTarget||'—'}g | Carbs: ${profile.carbTarget||'—'}g | Fat: ${profile.fatTarget||'—'}g
+GOAL: ${profile.goal||'—'} | Weight class: ${profile.wclass||'—'} | Current weight: ${profile.weight||'—'}${profile.weightUnit||'kg'}
 
-MACROFACTOR EXPORT (${range}):
-${csvSample}
+MACROFACTOR EXPORT — ${range} (${dataRows.length} rows, file: ${csvFileName}):
+${sample}
 
-FOCUS: ${focus}
+ANALYSIS FOCUS: ${focus}
 
-Provide:
-ADHERENCE SUMMARY — % targets hit for calories, protein, carbs, fat
-KEY PATTERNS — 3-4 specific observations with actual numbers from the data
-PERFORMANCE IMPACT — how this nutrition affects training & recovery
-PROBLEM AREAS — specific days/patterns with actual values
-RECOMMENDATIONS — 4 prioritised actionable changes
-FIGHT CAMP ADJUSTMENTS — how to modify as competition approaches
+Provide a complete nutrition coaching report using these exact section headers on their own lines in CAPS:
 
-Reference actual numbers from the CSV.`;
+ADHERENCE SUMMARY
+How well targets are being hit — give % for calories, protein, carbs, fat with actual averages from the data
+
+KEY PATTERNS
+3-4 specific observations with actual numbers, dates or meal names from the data, one per line
+
+PERFORMANCE IMPACT
+How this nutrition pattern is likely affecting training performance and recovery
+
+PROBLEM AREAS
+Specific days, meals or patterns that need addressing — with actual numbers from the data, one per line
+
+RECOMMENDATIONS
+4 specific, prioritised, actionable changes ranked by impact, one per line
+
+FIGHT CAMP ADJUSTMENTS
+How to modify nutrition as competition gets closer
+
+Reference actual figures from the CSV. Be specific and direct.`;
+
   try{
-    const text=await anthropicCall(prompt,1000);
+    const text = await anthropicCall(prompt, 1200);
     dots.style.display='none'; content.style.display='block';
-    content.innerHTML=renderMarkdown(text);
-  }catch(e){ showAIError(content,dots,e.message); }
+    content.innerHTML = renderCoachOutput(text);
+    // Scroll to results
+    content.scrollIntoView({ behavior:'smooth', block:'start' });
+  }catch(e){
+    showAIError(content, dots, e.message);
+  }
 }
 
 // ===== MATCH HISTORY =====
