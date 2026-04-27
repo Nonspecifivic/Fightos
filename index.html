@@ -7,256 +7,256 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-
-/* ---- DARK theme (default) ---- */
 :root{
   --acc:#E8FF00;--acc2:#FF3B30;
-  --bg:#080808;--surf:#111;--surf2:#181818;--surf3:#202020;
-  --bdr:rgba(255,255,255,0.07);--bdr2:rgba(255,255,255,0.12);
-  --txt:#EFEFEF;--mut:#5A5A5A;--mut2:#888;
-  --grn:#00E676;--blu:#448AFF;--ora:#FF9500;--pur:#BF5FFF;--pink:#FF6B9D;
-  --shadow:rgba(0,0,0,0.4);
+  --bg:#0A0A0A;--surf:#141414;--surf2:#1C1C1C;--surf3:#242424;
+  --bdr:rgba(255,255,255,0.06);--bdr2:rgba(255,255,255,0.11);
+  --txt:#F0F0F0;--mut:#444;--mut2:#777;
+  --grn:#00E676;--blu:#4C9FFF;--ora:#FF9F0A;--pur:#BF5FFF;--pink:#FF6B9D;
+  --radius:12px;--radius-sm:8px;--radius-lg:18px;
   color-scheme:dark;
 }
-
-/* ---- LIGHT theme ---- */
-@media(prefers-color-scheme:light){
-  :root{
-    --acc:#5C8200;--acc2:#CC1A10;
-    --bg:#F2F2F7;--surf:#FFFFFF;--surf2:#F2F2F7;--surf3:#E5E5EA;
-    --bdr:rgba(0,0,0,0.08);--bdr2:rgba(0,0,0,0.14);
-    --txt:#1C1C1E;--mut:#C7C7CC;--mut2:#6C6C70;
-    --grn:#30A84B;--blu:#1A6FE0;--ora:#C96A00;--pur:#8944CF;--pink:#C0185A;
-    --shadow:rgba(0,0,0,0.12);
-    color-scheme:light;
-  }
-  /* light-specific overrides */
-  .nb.active{color:#1C1C1E}
-  input,select,textarea{border-color:rgba(0,0,0,0.14)}
-  .ob-chip.sel{color:#1C1C1E}
-  .ob-nxt{color:#1C1C1E}
-  .btn.ba{color:#1C1C1E}
-  .analyze-btn{color:#1C1C1E}
-}
-
-/* JS override for manual toggle */
-[data-theme="dark"]{
-  --acc:#E8FF00;--acc2:#FF3B30;
-  --bg:#080808;--surf:#111;--surf2:#181818;--surf3:#202020;
-  --bdr:rgba(255,255,255,0.07);--bdr2:rgba(255,255,255,0.12);
-  --txt:#EFEFEF;--mut:#5A5A5A;--mut2:#888;
-  --grn:#00E676;--blu:#448AFF;--ora:#FF9500;--pur:#BF5FFF;--pink:#FF6B9D;
-  color-scheme:dark;
-}
-[data-theme="light"]{
-  --acc:#5C8200;--acc2:#CC1A10;
-  --bg:#F2F2F7;--surf:#FFFFFF;--surf2:#F2F2F7;--surf3:#E5E5EA;
-  --bdr:rgba(0,0,0,0.08);--bdr2:rgba(0,0,0,0.14);
+@media(prefers-color-scheme:light){:root{
+  --acc:#4A7000;--acc2:#CC1A10;
+  --bg:#F2F2F7;--surf:#FFFFFF;--surf2:#F2F2F7;--surf3:#E8E8ED;
+  --bdr:rgba(0,0,0,0.07);--bdr2:rgba(0,0,0,0.13);
   --txt:#1C1C1E;--mut:#C7C7CC;--mut2:#6C6C70;
-  --grn:#30A84B;--blu:#1A6FE0;--ora:#C96A00;--pur:#8944CF;--pink:#C0185A;
+  --grn:#28A745;--blu:#1A6FE0;--ora:#C96A00;--pur:#7A35CF;--pink:#C0185A;
   color-scheme:light;
-}
-[data-theme="light"] .nb.active,[data-theme="light"] .ob-chip.sel,[data-theme="light"] .ob-nxt,[data-theme="light"] .btn.ba,[data-theme="light"] .analyze-btn{color:#1C1C1E}
-
-html,body{height:100%;background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;font-size:14px;overflow:hidden;}
-.app{display:flex;flex-direction:column;height:100vh;}
-
-/* TOP BAR */
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 18px;height:50px;border-bottom:1px solid var(--bdr);flex-shrink:0;background:var(--surf);}
-.logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:4px;color:var(--acc);}
-.logo em{color:var(--mut2);font-style:normal;font-size:13px;letter-spacing:1px;margin-left:6px;}
-.top-right{display:flex;align-items:center;gap:10px;}
-.avatar{width:30px;height:30px;border-radius:50%;background:var(--acc);color:#000;font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center;}
-.ai-badge{padding:3px 10px;background:rgba(232,255,0,0.1);border:1px solid rgba(232,255,0,0.2);border-radius:20px;font-size:11px;color:var(--acc);letter-spacing:0.5px;}
-
+}}
+[data-theme="dark"]{--acc:#E8FF00;--acc2:#FF3B30;--bg:#0A0A0A;--surf:#141414;--surf2:#1C1C1C;--surf3:#242424;--bdr:rgba(255,255,255,0.06);--bdr2:rgba(255,255,255,0.11);--txt:#F0F0F0;--mut:#444;--mut2:#777;--grn:#00E676;--blu:#4C9FFF;--ora:#FF9F0A;--pur:#BF5FFF;--pink:#FF6B9D;color-scheme:dark;}
+[data-theme="light"]{--acc:#4A7000;--acc2:#CC1A10;--bg:#F2F2F7;--surf:#FFFFFF;--surf2:#F2F2F7;--surf3:#E8E8ED;--bdr:rgba(0,0,0,0.07);--bdr2:rgba(0,0,0,0.13);--txt:#1C1C1E;--mut:#C7C7CC;--mut2:#6C6C70;--grn:#28A745;--blu:#1A6FE0;--ora:#C96A00;--pur:#7A35CF;--pink:#C0185A;color-scheme:light;}
+html,body{height:100%;background:var(--bg);color:var(--txt);font-family:"DM Sans",sans-serif;font-size:14px;overflow:hidden;-webkit-font-smoothing:antialiased;}
+.app{display:flex;flex-direction:column;height:100vh;max-width:680px;margin:0 auto;}
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:54px;flex-shrink:0;background:var(--surf);border-bottom:1px solid var(--bdr);}
+.logo{font-family:"Bebas Neue",sans-serif;font-size:20px;letter-spacing:4px;color:var(--acc);}
+.logo em{color:var(--mut2);font-style:normal;font-size:11px;letter-spacing:1px;margin-left:6px;}
+.top-right{display:flex;align-items:center;gap:8px;}
+.topbar-btn{padding:5px 11px;border-radius:20px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);cursor:pointer;font-family:"DM Sans",sans-serif;font-size:11px;transition:all .15s;white-space:nowrap;}
+.topbar-btn:hover{border-color:var(--acc);color:var(--acc);}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--acc);color:#000;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.ai-badge{padding:4px 10px;background:rgba(232,255,0,.08);border:1px solid rgba(232,255,0,.2);border-radius:20px;font-size:11px;color:var(--acc);}
 /* NAV */
-.nav{display:flex;gap:1px;padding:6px 10px;background:var(--surf);border-bottom:1px solid var(--bdr);overflow-x:auto;scrollbar-width:none;flex-shrink:0;}
+.nav{display:flex;gap:0;padding:0 12px;background:var(--surf);border-bottom:1px solid var(--bdr);overflow-x:auto;scrollbar-width:none;flex-shrink:0;}
 .nav::-webkit-scrollbar{display:none;}
-.nb{padding:6px 12px;border-radius:6px;border:none;background:transparent;color:var(--mut2);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;white-space:nowrap;transition:all .15s;display:flex;align-items:center;gap:5px;}
-.nb:hover{color:var(--txt);background:var(--surf2);}
-.nb.active{background:var(--acc);color:#000;font-weight:500;}
-.nb .dot{width:6px;height:6px;border-radius:50%;}
-
+.nb{padding:10px 13px;border:none;background:transparent;color:var(--mut2);font-family:"DM Sans",sans-serif;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;transition:color .15s;border-bottom:2px solid transparent;flex-shrink:0;}
+.nb:hover{color:var(--txt);}
+.nb.active{color:var(--txt);border-bottom-color:var(--acc);}
+.nb .dot{display:none;}
 /* CONTENT */
-.content{flex:1;overflow-y:auto;padding:14px;padding-bottom:env(safe-area-inset-bottom,24px);-webkit-overflow-scrolling:touch;overscroll-behavior-y:auto;}
-/* Extra bottom padding on mobile so content isn't hidden behind browser chrome */
-@media(max-width:768px){.content{padding-bottom:80px;}}
-/* Pull-to-refresh indicator */
-#ptr-indicator{position:fixed;top:0;left:0;right:0;z-index:9999;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--surf);border-bottom:1px solid var(--bdr);font-size:12px;color:var(--mut2);font-family:'DM Sans',sans-serif;height:0;overflow:hidden;transition:height .2s ease,color .15s;}
+.content{flex:1;overflow-y:auto;padding:16px;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 24px);-webkit-overflow-scrolling:touch;overscroll-behavior-y:auto;}
+.tab{display:none;animation:fadeIn .2s ease;}
+.tab.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:680px){.content{padding:12px;padding-bottom:80px;}}
+/* PTR */
+#ptr-indicator{position:fixed;top:0;left:0;right:0;z-index:9999;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--surf);border-bottom:1px solid var(--bdr);font-size:12px;color:var(--mut2);height:0;overflow:hidden;transition:height .2s ease,color .15s;}
 #ptr-indicator.ptr-visible{height:48px;}
-#ptr-indicator.ptr-ready{color:var(--acc);}
-#ptr-indicator.ptr-refreshing{color:var(--acc);}
+#ptr-indicator.ptr-ready,#ptr-indicator.ptr-refreshing{color:var(--acc);}
 #ptr-spinner{width:16px;height:16px;border:2px solid var(--bdr2);border-top-color:var(--acc);border-radius:50%;display:none;animation:spin .6s linear infinite;}
 #ptr-indicator.ptr-refreshing #ptr-spinner{display:block;}
-#ptr-arrow{transition:transform .25s ease;font-size:15px;display:inline-block;}
+#ptr-arrow{transition:transform .25s ease;display:inline-block;}
 #ptr-indicator.ptr-ready #ptr-arrow{transform:rotate(180deg);}
-.focus-chip{padding:6px 13px;border-radius:20px;border:1px solid var(--bdr2);background:var(--surf);color:var(--mut2);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0;}
-.focus-chip:hover{border-color:var(--acc);color:var(--acc);}
-.focus-chip.active-chip{background:rgba(232,255,0,.12);border-color:var(--acc);color:var(--acc);font-weight:500;}
-
-/* COMMON */
-.sec-title{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--mut2);margin-bottom:8px;}
-.card{background:var(--surf);border:1px solid var(--bdr);border-radius:10px;overflow:hidden;margin-bottom:12px;}
-.card-body{padding:13px;}
-.card-header{padding:11px 13px;border-bottom:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center;}
-.card-header h3{font-size:13px;font-weight:500;}
-.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:12px;}
-.stat{background:var(--surf);border:1px solid var(--bdr);border-radius:9px;padding:11px;}
-.stat-l{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);margin-bottom:4px;}
-.stat-v{font-family:'Bebas Neue',sans-serif;font-size:26px;line-height:1;}
+/* CARDS */
+.card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radius);overflow:hidden;margin-bottom:10px;}
+.card-header{padding:12px 14px;border-bottom:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center;}
+.card-header h3{font-size:13px;font-weight:600;}
+.card-body{padding:14px;}
+/* STATS */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-bottom:10px;}
+.stat{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radius-sm);padding:12px 10px;}
+.stat-l{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--mut2);margin-bottom:5px;font-weight:600;}
+.stat-v{font-family:"Bebas Neue",sans-serif;font-size:24px;line-height:1;}
 .stat-s{font-size:10px;color:var(--mut2);margin-top:3px;}
 .acc{color:var(--acc)}.red{color:var(--acc2)}.grn{color:var(--grn)}.blu{color:var(--blu)}.ora{color:var(--ora)}.pur{color:var(--pur)}.pnk{color:var(--pink)}
-.row{display:flex;justify-content:space-between;align-items:center;padding:9px 13px;border-bottom:1px solid var(--bdr);}
+/* ROWS */
+.row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--bdr);}
 .row:last-child{border-bottom:none;}
-.pill{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500;}
-.pill-red{background:rgba(255,59,48,.15);color:#FF6B5B;}
-.pill-grn{background:rgba(0,230,118,.12);color:#00C853;}
-.pill-blu{background:rgba(68,138,255,.15);color:#6FA8FF;}
-.pill-ora{background:rgba(255,149,0,.15);color:#FFA726;}
-.pill-pur{background:rgba(191,95,255,.15);color:#CE93D8;}
-.pill-acc{background:rgba(232,255,0,.12);color:#C8DC00;}
-.pill-pnk{background:rgba(255,107,157,.15);color:#F48FB1;}
-label.lbl{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);display:block;margin-bottom:4px;}
-input[type=text],input[type=number],input[type=date],input[type=time],select,textarea{
-  width:100%;background:var(--surf2);border:1px solid var(--bdr);border-radius:7px;
-  padding:8px 10px;color:var(--txt);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;
-}
-input:focus,select:focus,textarea:focus{border-color:rgba(232,255,0,.4);}
-textarea{resize:vertical;min-height:70px;}
-.fg{margin-bottom:10px;}
-.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.f3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
-.btn{padding:9px 16px;border-radius:7px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;transition:all .15s;}
-.btn-acc{background:var(--acc);color:#000;}
-.btn-acc:hover{background:#D4E800;}
-.btn-ghost{background:transparent;border:1px solid var(--bdr2);color:var(--mut2);}
-.btn-ghost:hover{border-color:var(--acc);color:var(--acc);}
-.btn-full{width:100%;}
-.btn-hero{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2px;padding:12px;}
-.tip{background:rgba(68,138,255,.07);border:1px solid rgba(68,138,255,.18);border-radius:8px;padding:11px 13px;font-size:12px;color:#6FA8FF;line-height:1.6;margin-bottom:12px;}
-.warn{background:rgba(255,59,48,.07);border:1px solid rgba(255,59,48,.18);border-radius:8px;padding:11px 13px;font-size:12px;color:#FF6B5B;line-height:1.6;margin-bottom:12px;}
-.suc{background:rgba(0,230,118,.07);border:1px solid rgba(0,230,118,.18);border-radius:8px;padding:11px 13px;font-size:12px;color:#00C853;line-height:1.6;margin-bottom:12px;}
-.prog-row{margin-bottom:8px;}
-.prog-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;}
+/* PILLS */
+.pill{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;}
+.pill-red{background:rgba(255,59,48,.1);color:#FF6464;}.pill-grn{background:rgba(0,230,118,.1);color:#00C853;}
+.pill-blu{background:rgba(76,159,255,.1);color:#70AEFF;}.pill-ora{background:rgba(255,159,10,.1);color:#FFA733;}
+.pill-pur{background:rgba(191,95,255,.1);color:#D090FF;}.pill-acc{background:rgba(232,255,0,.1);color:var(--acc);}
+.pill-pnk{background:rgba(255,107,157,.1);color:#FF8FB0;}
+p-grn{background:rgba(0,230,118,.1);color:#00C853;}p-ora{background:rgba(255,159,10,.1);color:#FFA733;}p-red{background:rgba(255,59,48,.1);color:#FF6464;}
+/* FORMS */
+label.lbl{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--mut2);display:block;margin-bottom:5px;font-weight:600;}
+input[type=text],input[type=number],input[type=date],input[type=time],input[type=email],input[type=password],select,textarea{width:100%;background:var(--surf2);border:1px solid var(--bdr2);border-radius:var(--radius-sm);padding:9px 11px;color:var(--txt);font-family:"DM Sans",sans-serif;font-size:13px;outline:none;transition:border-color .15s;}
+input:focus,select:focus,textarea:focus{border-color:rgba(232,255,0,.35);background:var(--surf);}
+textarea{resize:vertical;min-height:70px;line-height:1.6;}
+.fg{margin-bottom:12px;}.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}.f3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+/* BUTTONS */
+.btn{padding:9px 16px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:500;transition:all .15s;}
+.btn-acc{background:var(--acc);color:#000;}.btn-acc:hover{filter:brightness(1.08);}
+.btn-ghost{background:transparent;border:1px solid var(--bdr2);color:var(--mut2);}.btn-ghost:hover{border-color:var(--acc);color:var(--acc);}
+.btn-full{width:100%;}.btn-hero{font-family:"Bebas Neue",sans-serif;font-size:16px;letter-spacing:2px;padding:13px;}
+/* ALERTS */
+.tip{background:rgba(76,159,255,.06);border:1px solid rgba(76,159,255,.15);border-radius:var(--radius-sm);padding:11px 13px;font-size:12px;color:#70AEFF;line-height:1.65;margin-bottom:12px;}
+.warn{background:rgba(255,59,48,.06);border:1px solid rgba(255,59,48,.14);border-radius:var(--radius-sm);padding:11px 13px;font-size:12px;color:#FF6B5B;line-height:1.65;margin-bottom:12px;}
+.suc{background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.14);border-radius:var(--radius-sm);padding:11px 13px;font-size:12px;color:#00C853;line-height:1.65;margin-bottom:12px;}
+/* PROGRESS */
+.prog-row{margin-bottom:9px;}.prog-label{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;}
 .prog-label span:last-child{color:var(--mut2);font-size:11px;}
-.bar{background:var(--surf2);border-radius:4px;height:6px;overflow:hidden;}
+.bar{background:var(--surf2);border-radius:4px;height:5px;overflow:hidden;}
 .bar-fill{height:100%;border-radius:4px;transition:width .5s ease;}
-.dots-loading{display:flex;gap:4px;align-items:center;justify-content:center;padding:24px;}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--acc);animation:pulse 1s ease infinite;}
-.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
-@keyframes pulse{0%,100%{opacity:.2}50%{opacity:1}}
-.result-card{background:var(--surf2);border:1px solid var(--bdr2);border-radius:9px;padding:13px;margin-bottom:10px;}
-.result-card h4{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--acc);margin-bottom:7px;}
-.result-card p{font-size:13px;line-height:1.65;color:var(--txt);}
-.result-card ul{padding-left:16px;font-size:13px;line-height:1.7;color:var(--txt);}
+/* LOADING */
+.dots-loading{display:flex;gap:5px;align-items:center;justify-content:center;padding:24px;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--acc);animation:pulse 1s ease infinite;}
+.dot:nth-child(2){animation-delay:.18s}.dot:nth-child(3){animation-delay:.36s}
+@keyframes pulse{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+/* RESULTS */
+.result-card{background:var(--surf2);border:1px solid var(--bdr);border-radius:var(--radius-sm);padding:14px;margin-bottom:10px;}
+.result-card h4{font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--acc);margin-bottom:8px;font-weight:600;}
+.result-card p{font-size:13px;line-height:1.7;}
+/* SLIDER */
 .slider-wrap{display:flex;align-items:center;gap:10px;}
 .slider-wrap input[type=range]{flex:1;accent-color:var(--acc);}
-.slider-val{font-family:'Bebas Neue',sans-serif;font-size:22px;min-width:28px;text-align:right;}
+.slider-val{font-family:"Bebas Neue",sans-serif;font-size:22px;min-width:28px;text-align:right;}
+/* BODY MAP */
 .body-map{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;}
-.body-svg{flex-shrink:0;}
-.body-tags{flex:1;}
 .body-tag{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;margin:3px;font-size:11px;cursor:pointer;border:1px solid var(--bdr);background:var(--surf2);transition:all .15s;}
-.body-tag:hover{border-color:var(--acc2);color:var(--acc2);}
-.body-tag.sore{background:rgba(255,59,48,.2);border-color:rgba(255,59,48,.4);color:#FF6B5B;}
-.body-tag.tight{background:rgba(255,149,0,.15);border-color:rgba(255,149,0,.35);color:#FFA726;}
-.body-tag.injured{background:rgba(191,95,255,.2);border-color:rgba(191,95,255,.4);color:#CE93D8;}
-.toggle-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
-.tog{padding:5px 12px;border-radius:6px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-size:12px;cursor:pointer;transition:all .15s;}
-.tog.on{border-color:var(--acc);background:rgba(232,255,0,.1);color:var(--acc);}
-/* Calendar */
-.cal-grid-hdr{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:2px;}
-.cal-day-hdr{text-align:center;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--mut);padding:4px 0;}
+.body-tag.sore{background:rgba(255,59,48,.12);border-color:rgba(255,59,48,.3);color:#FF6464;}
+.body-tag.tight{background:rgba(255,159,10,.1);border-color:rgba(255,159,10,.25);color:#FFA733;}
+.body-tag.injured{background:rgba(191,95,255,.12);border-color:rgba(191,95,255,.3);color:#D090FF;}
+/* TOGGLES */
+.toggle-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.tog{padding:5px 12px;border-radius:20px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-size:12px;cursor:pointer;transition:all .15s;}
+.tog.on{border-color:var(--acc);background:rgba(232,255,0,.08);color:var(--acc);}
+/* CALENDAR */
+.cal-grid-hdr{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:3px;}
+.cal-day-hdr{text-align:center;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);padding:4px 0;font-weight:600;}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
-.day-cell{min-height:58px;background:var(--surf);border-radius:5px;padding:4px;border:1px solid transparent;transition:border-color .15s,background .15s;cursor:pointer;}
+.day-cell{min-height:54px;background:var(--surf);border-radius:6px;padding:4px;border:1px solid transparent;transition:all .15s;cursor:pointer;}
 .day-cell:hover{border-color:var(--bdr2);background:var(--surf2);}
 .day-cell.today{border-color:var(--acc);}
-.day-cell.selected-day{border-color:var(--blu)!important;background:rgba(68,138,255,.07)!important;box-shadow:0 0 0 1px var(--blu);}
-.day-cell.other-month{background:#0C0C0C;opacity:.5;}
-.day-num{font-size:11px;font-weight:500;margin-bottom:2px;}
-.day-evt{font-size:8px;padding:1px 3px;border-radius:2px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-/* Meal */
-.meal-section{margin-bottom:14px;}
-.meal-title{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;color:var(--mut2);margin-bottom:6px;}
-.meal-item{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--bdr);}
-.meal-item:last-child{border-bottom:none;}
-.meal-name{font-size:13px;}
-.meal-macros{font-size:10px;color:var(--mut2);margin-top:2px;}
-.meal-kcal{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--acc);}
-/* Fitness tracker */
-.tracker-card{display:flex;align-items:center;gap:12px;padding:11px 13px;border-bottom:1px solid var(--bdr);}
+.day-cell.selected-day{border-color:var(--blu)!important;background:rgba(76,159,255,.06)!important;}
+.day-cell.other-month{opacity:.3;}
+.day-num{font-size:11px;font-weight:600;margin-bottom:2px;}
+.day-evt{font-size:8px;padding:1px 3px;border-radius:3px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* MEALS */
+.meal-name{font-size:13px;font-weight:500;}.meal-macros{font-size:10px;color:var(--mut2);margin-top:2px;}
+.meal-kcal{font-family:"Bebas Neue",sans-serif;font-size:18px;color:var(--acc);}
+/* TRACKERS */
+.tracker-card{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--bdr);}
 .tracker-card:last-child{border-bottom:none;}
-.tracker-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
-.tracker-info{flex:1;}
-.tracker-name{font-size:13px;font-weight:500;}
-.tracker-desc{font-size:11px;color:var(--mut2);margin-top:1px;}
-.connect-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.tracker-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.tracker-name{font-size:13px;font-weight:600;}.tracker-desc{font-size:11px;color:var(--mut2);margin-top:1px;}
+.connect-btn{padding:5px 12px;border-radius:20px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .connect-btn.connected{border-color:rgba(0,230,118,.3);color:var(--grn);}
-.connect-btn:hover:not(.connected){border-color:var(--acc);color:var(--acc);}
-/* Period */
-.cycle-viz{display:flex;gap:3px;margin-bottom:12px;overflow-x:auto;}
-.cycle-day{width:28px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;flex-shrink:0;border:1px solid transparent;transition:all .15s;}
-.cycle-day:hover{border-color:var(--pink);}
-.phase-bar{display:flex;border-radius:6px;overflow:hidden;height:8px;margin-bottom:8px;}
-.phase-seg{height:100%;}
+/* CYCLE */
+.phase-bar{display:flex;border-radius:6px;overflow:hidden;height:7px;margin-bottom:8px;}
 .phase-legend{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
 .phase-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--mut2);}
-.phase-dot{width:8px;height:8px;border-radius:2px;}
-/* Mood */
-.mood-row{display:flex;gap:8px;margin-bottom:10px;}
-.mood-btn{width:40px;height:40px;border-radius:8px;border:1px solid var(--bdr2);background:transparent;font-size:20px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;}
-.mood-btn:hover,.mood-btn.sel{border-color:var(--pink);background:rgba(255,107,157,.1);}
+.phase-dot{width:7px;height:7px;border-radius:2px;}
+/* MOOD */
+.mood-row{display:flex;gap:7px;margin-bottom:12px;}
+.mood-btn{width:42px;height:42px;border-radius:10px;border:1px solid var(--bdr2);background:var(--surf2);font-size:20px;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;}
+.mood-btn:hover,.mood-btn.sel{border-color:var(--pink);background:rgba(255,107,157,.08);}
 /* RPE */
-.rpe-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px;}
-.rpe-btn{padding:8px 4px;border-radius:6px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-size:12px;cursor:pointer;text-align:center;transition:all .15s;}
-.rpe-btn:hover{border-color:var(--acc);}
-.rpe-btn.sel{border-color:var(--acc);background:rgba(232,255,0,.12);color:var(--acc);font-weight:500;}
+.rpe-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:12px;}
+.rpe-btn{padding:9px 4px;border-radius:8px;border:1px solid var(--bdr2);background:var(--surf2);color:var(--mut2);font-size:12px;font-weight:500;cursor:pointer;text-align:center;transition:all .15s;}
+.rpe-btn.sel{border-color:var(--acc);background:rgba(232,255,0,.1);color:var(--acc);}
 /* AI */
-.ai-section{background:linear-gradient(135deg,rgba(232,255,0,.04),rgba(68,138,255,.04));border:1px solid rgba(232,255,0,.12);border-radius:10px;padding:13px;margin-bottom:12px;}
-.ai-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
-.ai-icon{width:28px;height:28px;border-radius:6px;background:var(--acc);color:#000;font-size:14px;display:flex;align-items:center;justify-content:center;}
-.ai-title{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;}
+.ai-section{background:linear-gradient(135deg,rgba(232,255,0,.04),rgba(76,159,255,.03));border:1px solid rgba(232,255,0,.1);border-radius:var(--radius);padding:14px;margin-bottom:12px;}
+.ai-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.ai-icon{width:30px;height:30px;border-radius:8px;background:var(--acc);color:#000;font-size:15px;display:flex;align-items:center;justify-content:center;}
+.ai-title{font-family:"Bebas Neue",sans-serif;font-size:16px;letter-spacing:1px;}
 .ai-sub{font-size:11px;color:var(--mut2);}
-
-/* ---- ONBOARDING ---- */
+/* FOCUS CHIPS */
+.focus-chip{padding:6px 13px;border-radius:20px;border:1px solid var(--bdr2);background:var(--surf2);color:var(--mut2);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0;}
+.focus-chip:hover{border-color:var(--acc);color:var(--acc);}
+.focus-chip.active-chip{background:rgba(232,255,0,.1);border-color:var(--acc);color:var(--acc);}
+/* MISC */
+.sec-title{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--mut2);margin-bottom:8px;font-weight:600;}
+/* ONBOARDING */
 #onboarding{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;flex-direction:column;overflow:hidden;}
-.ob-progress{height:3px;background:var(--surf2);flex-shrink:0;}
+.ob-progress{height:2px;background:var(--surf2);flex-shrink:0;}
 .ob-progress-fill{height:100%;background:var(--acc);transition:width .4s ease;}
 .ob-body{flex:1;overflow-y:auto;padding:24px 20px;display:flex;flex-direction:column;}
-.ob-step{display:none;flex-direction:column;flex:1;animation:fadeUp .3s ease;}
+.ob-footer{padding:16px 20px;border-top:1px solid var(--bdr);flex-shrink:0;display:flex;gap:10px;align-items:center;background:var(--bg);}
+.ob-step{display:none;flex-direction:column;flex:1;animation:fadeUp .25s ease;}
 .ob-step.active{display:flex;}
-@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.ob-icon{font-size:40px;margin-bottom:12px;}
-.ob-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:2px;line-height:1.1;margin-bottom:8px;}
+.ob-icon{font-size:40px;margin-bottom:14px;}
+.ob-title{font-family:"Bebas Neue",sans-serif;font-size:30px;letter-spacing:2px;line-height:1.1;margin-bottom:8px;}
 .ob-title span{color:var(--acc);}
-.ob-sub{font-size:14px;color:var(--mut2);line-height:1.6;margin-bottom:24px;}
-.ob-fields{display:flex;flex-direction:column;gap:12px;flex:1;}
-.ob-label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--mut2);display:block;margin-bottom:5px;}
-.ob-input,.ob-select{width:100%;background:var(--surf2);border:1.5px solid var(--bdr2);border-radius:9px;padding:11px 13px;color:var(--txt);font-family:'DM Sans',sans-serif;font-size:15px;outline:none;transition:border-color .15s;}
+.ob-sub{font-size:14px;color:var(--mut2);line-height:1.65;margin-bottom:20px;}
+.ob-label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--mut2);display:block;margin-bottom:5px;font-weight:600;}
+.ob-input,.ob-select{width:100%;background:var(--surf2);border:1.5px solid var(--bdr2);border-radius:var(--radius-sm);padding:11px 13px;color:var(--txt);font-family:"DM Sans",sans-serif;font-size:15px;outline:none;transition:border-color .15s;}
 .ob-input:focus,.ob-select:focus{border-color:var(--acc);}
 .ob-2col{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .ob-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
 .ob-chips{display:flex;gap:8px;flex-wrap:wrap;}
-.ob-chip{padding:8px 14px;border-radius:8px;border:1.5px solid var(--bdr2);background:transparent;color:var(--mut2);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .15s;}
+.ob-chip{padding:8px 14px;border-radius:20px;border:1.5px solid var(--bdr2);background:transparent;color:var(--mut2);font-family:"DM Sans",sans-serif;font-size:13px;cursor:pointer;transition:all .15s;}
 .ob-chip:hover{border-color:rgba(232,255,0,.4);color:var(--txt);}
-.ob-chip.sel{border-color:var(--acc);background:rgba(232,255,0,.1);color:var(--acc);}
-.ob-chip.sel-multi{border-color:var(--blu);background:rgba(68,138,255,.12);color:var(--blu);}
-.ob-footer{padding:16px 20px;border-top:1px solid var(--bdr);flex-shrink:0;display:flex;gap:10px;align-items:center;background:var(--bg);}
-.ob-back{padding:11px 18px;border-radius:9px;border:1.5px solid var(--bdr2);background:transparent;color:var(--mut2);font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;transition:all .15s;}
-.ob-back:hover{border-color:var(--acc);color:var(--acc);}
-.ob-next{flex:1;padding:13px;border-radius:9px;border:none;background:var(--acc);color:#000;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;cursor:pointer;transition:all .15s;}
-.ob-next:hover{background:#D4E800;}
+.ob-chip.sel,.ob-chip.sel-multi{border-color:var(--acc);background:rgba(232,255,0,.1);color:var(--acc);}
+.ob-next{flex:1;padding:13px;border-radius:var(--radius-sm);border:none;background:var(--acc);color:#000;font-family:"Bebas Neue",sans-serif;font-size:17px;letter-spacing:2px;cursor:pointer;}
+.ob-back{padding:13px 18px;border-radius:var(--radius-sm);border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-family:"DM Sans",sans-serif;font-size:13px;cursor:pointer;}
 .ob-step-count{font-size:11px;color:var(--mut);white-space:nowrap;}
 .ob-summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
-.ob-summary-card{background:var(--surf);border:1px solid var(--bdr);border-radius:9px;padding:11px;}
-.ob-summary-label{font-size:10px;color:var(--mut2);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;}
-.ob-summary-val{font-size:14px;font-weight:500;color:var(--txt);}
+.ob-summary-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--radius-sm);padding:11px;}
+.ob-summary-label{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);margin-bottom:3px;font-weight:600;}
+.ob-summary-val{font-size:14px;font-weight:500;}
 .ob-welcome-name{color:var(--acc);}
-.ob-ai-generating{background:var(--surf);border:1px solid rgba(232,255,0,.15);border-radius:10px;padding:20px;text-align:center;margin-top:16px;}
+.ob-ai-generating{background:var(--surf);border:1px solid rgba(232,255,0,.15);border-radius:var(--radius);padding:20px;text-align:center;margin-top:16px;}
 .slider-track{position:relative;height:6px;background:var(--surf2);border-radius:3px;margin:10px 0 4px;}
 .slider-track input[type=range]{position:absolute;inset:0;width:100%;opacity:0;cursor:pointer;height:100%;}
 .slider-fill{position:absolute;left:0;top:0;height:100%;background:var(--acc);border-radius:3px;pointer-events:none;transition:width .1s;}
 .ob-range-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--mut2);}
-</style>
+/* RESPONSIVE */
+@media(max-width:680px){.f2{grid-template-columns:1fr 1fr;}.stat-grid{grid-template-columns:repeat(3,1fr);}.topbar .ai-badge{display:none;}}
+@media(max-width:400px){.f3{grid-template-columns:1fr 1fr;}}
+
+/* ── BOTTOM TAB BAR ── */
+.bottom-bar{display:none;background:var(--surf);border-top:1px solid var(--bdr);flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0px);}
+@media(max-width:680px){
+  .bottom-bar{display:flex;}
+  .nav{display:none;}
+  .content{padding:12px 14px;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 72px);}
+}
+.bb-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;padding:7px 2px 10px;border:none;background:transparent;color:var(--mut2);cursor:pointer;font-family:"DM Sans",sans-serif;font-size:10px;font-weight:500;transition:color .15s;min-height:58px;}
+.bb-btn.active{color:var(--acc);}
+.bb-btn svg{transition:transform .15s;}
+.bb-btn.active svg{transform:scale(1.08);}
+.bb-btn-center{position:relative;flex-shrink:0;}
+.bb-center-ring{width:46px;height:46px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;margin-bottom:2px;margin-top:-18px;box-shadow:0 4px 18px rgba(232,255,0,.35);}
+.bb-center-ring svg{stroke:#000;}
+.bb-btn-center span,.bb-btn span{line-height:1;margin-top:2px;}
+
+/* ── MORE MENU ── */
+.more-btn{display:flex;flex-direction:column;align-items:center;gap:5px;padding:14px 4px;border:none;background:transparent;cursor:pointer;font-family:"DM Sans",sans-serif;font-size:10px;font-weight:500;color:var(--txt);border-radius:10px;transition:background .12s;width:100%;}
+.more-btn:active{background:var(--surf2);}
+
+/* ── CARD RADIUS UPGRADE ── */
+.card{border-radius:14px;}
+.stat{border-radius:10px;}
+
+/* ── TOPBAR REFINEMENT ── */
+.topbar{height:52px;}
+.logo{font-size:21px;letter-spacing:2px;}
+.topbar-btn{width:32px;height:32px;border-radius:50%;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.topbar-btn:hover{border-color:var(--acc);color:var(--acc);}
+#account-btn{width:auto;border-radius:20px;padding:0 11px;font-size:11px;}
+.avatar{width:32px;height:32px;font-size:10px;}
+
+/* ── INPUT REFINEMENT ── */
+input[type=text],input[type=number],input[type=date],input[type=time],input[type=email],input[type=password],select,textarea{border:1.5px solid var(--bdr2);border-radius:10px;padding:10px 12px;}
+input:focus,select:focus,textarea:focus{border-color:rgba(232,255,0,.4);background:var(--surf);}
+.btn{border-radius:10px;}
+.btn-hero{padding:14px;font-size:16px;}
+
+/* ── TAB ANIMATION ── */
+.tab{display:none;animation:fadeUp .18s ease;}
+.tab.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── SECTION HEADER INSIDE TABS ── */
+.tab-page-header{margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--bdr);}
+.tab-page-title{font-family:"Bebas Neue",sans-serif;font-size:22px;letter-spacing:2px;line-height:1;}
+.tab-page-sub{font-size:12px;color:var(--mut2);margin-top:3px;}
+
 </head>
 <body>
 
@@ -808,33 +808,32 @@ textarea{resize:vertical;min-height:70px;}
 
 <!-- TOPBAR -->
 <div class="topbar">
-  <div class="logo">FightOS <em id="app-sport-label">AI COACH</em></div>
+  <div class="logo">FIGHT<span style="color:var(--mut2)">OS</span></div>
   <div class="top-right">
-    <button id="theme-btn" onclick="toggleTheme()" title="Toggle light/dark mode" style="background:transparent;border:1px solid var(--bdr2);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:15px;line-height:1;color:var(--mut2);transition:border-color .15s" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--bdr2)'">☀️</button>
-    <button id="apikey-btn" onclick="openKeyModal()" title="Set Anthropic API key" style="background:transparent;border:1px solid var(--bdr2);border-radius:6px;padding:3px 9px;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap">🔑 API Key</button>
-    <button id="account-btn" onclick="openAccountModal()" title="Account & sync" style="background:transparent;border:1px solid var(--bdr2);border-radius:6px;padding:3px 9px;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap">👤 Account</button>
-    <div class="ai-badge" id="ai-status-badge">AI Active</div>
+    <button class="topbar-btn" onclick="openKeyModal()">🔑</button>
+    <button class="topbar-btn" onclick="toggleTheme()">☀️</button>
+    <button id="account-btn" class="topbar-btn" onclick="openAccountModal()">👤</button>
     <div class="avatar" id="app-avatar" onclick="resetProfile()" title="Reset profile">MF</div>
   </div>
 </div>
 
-<!-- NAV -->
+<!-- HORIZONTAL SECTION NAV (hidden on mobile — replaced by bottom bar) -->
 <nav class="nav" id="nav">
-  <button class="nb active" onclick="showTab('dashboard')"><span class="dot" style="background:#E8FF00"></span>Dashboard</button>
-  <button class="nb" onclick="showTab('profile')"><span class="dot" style="background:#E8FF00"></span>Profile</button>
-  <button class="nb" onclick="showTab('training')"><span class="dot" style="background:#448AFF"></span>Training</button>
-  <button class="nb" onclick="showTab('body')"><span class="dot" style="background:#FF3B30"></span>Body & Recovery</button>
-  <button class="nb" onclick="showTab('nutrition')"><span class="dot" style="background:#00E676"></span>Nutrition</button>
-  <button class="nb" onclick="showTab('hydration')"><span class="dot" style="background:#448AFF"></span>Hydration</button>
-  <button class="nb" onclick="showTab('weight')"><span class="dot" style="background:#FF9500"></span>Weight</button>
-  <button class="nb" onclick="showTab('calendar')"><span class="dot" style="background:#FF3B30"></span>Calendar</button>
-  <button class="nb" onclick="showTab('womens')"><span class="dot" style="background:#FF6B9D"></span>Women's Health</button>
-  <button class="nb" onclick="showTab('trackers')"><span class="dot" style="background:#BF5FFF"></span>Trackers</button>
-  <button class="nb" onclick="showTab('coach')"><span class="dot" style="background:#E8FF00"></span>AI Coach</button>
-  <button class="nb" onclick="showTab('strength')"><span class="dot" style="background:#FF9500"></span>Strength</button>
-  <button class="nb" onclick="showTab('mobility')"><span class="dot" style="background:#00E676"></span>Mobility</button>
-  <button class="nb" onclick="showTab('techniques')"><span class="dot" style="background:#888"></span>Techniques</button>
-  <button class="nb" onclick="showTab('analysis')"><span class="dot" style="background:#FF3B30"></span>Match Analysis</button>
+  <button class="nb active" onclick="showTab('dashboard')">Home</button>
+  <button class="nb" onclick="showTab('coach')">AI Coach</button>
+  <button class="nb" onclick="showTab('training')">Training</button>
+  <button class="nb" onclick="showTab('nutrition')">Nutrition</button>
+  <button class="nb" onclick="showTab('body')">Body</button>
+  <button class="nb" onclick="showTab('calendar')">Calendar</button>
+  <button class="nb" onclick="showTab('profile')">Profile</button>
+  <button class="nb" onclick="showTab('weight')">Weight</button>
+  <button class="nb" onclick="showTab('hydration')">Hydration</button>
+  <button class="nb" onclick="showTab('womens')">Women's Health</button>
+  <button class="nb" onclick="showTab('trackers')">Trackers</button>
+  <button class="nb" onclick="showTab('strength')">Strength</button>
+  <button class="nb" onclick="showTab('mobility')">Mobility</button>
+  <button class="nb" onclick="showTab('techniques')">Techniques</button>
+  <button class="nb" onclick="showTab('analysis')">Match Analysis</button>
 </nav>
 
 <div class="content">
@@ -842,127 +841,75 @@ textarea{resize:vertical;min-height:70px;}
 <!-- ==================== DASHBOARD ==================== -->
 <div class="tab active" id="tab-dashboard">
 
-  <!-- ── AI Coach Brief — front and centre ── -->
-  <div id="dash-coach-section" style="margin-bottom:12px">
-
-    <!-- Brief header with athlete name + time context -->
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px" id="dash-greeting">YOUR COACH BRIEF</div>
-        <div style="font-size:11px;color:var(--mut2)" id="dash-brief-context">Tap to get today's personalised brief</div>
-      </div>
-      <div style="display:flex;gap:6px;align-items:center">
-        <span id="dash-brief-freshness" style="font-size:10px;color:var(--mut2)"></span>
-        <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;white-space:nowrap" onclick="refreshDashCoach()">↻ Refresh</button>
-      </div>
+  <!-- ── Greeting + refresh ── -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;line-height:1" id="dash-greeting">YOUR COACH BRIEF</div>
+      <div style="font-size:12px;color:var(--mut2);margin-top:3px" id="dash-brief-context">Tap a focus then get your brief</div>
     </div>
-
-    <!-- Quick focus selector -->
-    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:none" id="dash-focus-chips">
-      <button class="focus-chip active-chip" onclick="setDashFocus(this,'Today')">Today</button>
-      <button class="focus-chip" onclick="setDashFocus(this,'Tomorrow')">Tomorrow</button>
-      <button class="focus-chip" onclick="setDashFocus(this,'This week')">This week</button>
-      <button class="focus-chip" onclick="setDashFocus(this,'Training load')">Training load</button>
-      <button class="focus-chip" onclick="setDashFocus(this,'Weight cut')">Weight cut</button>
-      <button class="focus-chip" onclick="setDashFocus(this,'Nutrition')">Nutrition</button>
-      <button class="focus-chip" onclick="setDashFocus(this,'Competition prep')">Competition prep</button>
-      <button class="focus-chip" onclick="setDashFocus(this,'Recovery')">Recovery</button>
+    <div style="display:flex;align-items:center;gap:6px">
+      <span id="dash-brief-freshness" style="font-size:10px;color:var(--mut2)"></span>
+      <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px" onclick="refreshDashCoach()">↻</button>
     </div>
-
-    <!-- Anything to add input -->
-    <div style="display:flex;gap:6px;margin-bottom:10px">
-      <input type="text" id="dash-coach-extra" placeholder="Anything to add? e.g. I feel tired today, missed sleep…" style="flex:1;font-size:12px;padding:8px 12px">
-      <button class="btn btn-acc" onclick="getDashCoachBrief()" id="dash-coach-btn" style="font-size:13px;padding:8px 16px;white-space:nowrap;font-family:'Bebas Neue',sans-serif;letter-spacing:1px">GET BRIEF</button>
-    </div>
-
-    <!-- Output area -->
-    <div id="dash-coach-output">
-      <!-- Initial state — show last saved brief or prompt -->
-      <div id="dash-coach-empty" style="background:linear-gradient(135deg,rgba(232,255,0,.05),rgba(232,255,0,.02));border:1px solid rgba(232,255,0,.15);border-radius:12px;padding:18px;text-align:center">
-        <div style="font-size:28px;margin-bottom:8px">🥊</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:1px;margin-bottom:6px">YOUR AI COACH IS READY</div>
-        <div style="font-size:13px;color:var(--mut2);line-height:1.6;max-width:280px;margin:0 auto">Tap <strong>GET BRIEF</strong> for a personalised plan based on everything you've logged so far.</div>
-      </div>
-      <div class="dots-loading" id="dash-coach-loading" style="display:none;justify-content:center;padding:20px"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-      <div id="dash-coach-content" style="display:none"></div>
-    </div>
-
   </div>
 
-  <!-- ── Divider ── -->
-  <div style="height:1px;background:var(--bdr);margin:4px 0 12px"></div>
+  <!-- ── Focus chips ── -->
+  <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px;scrollbar-width:none;-webkit-overflow-scrolling:touch">
+    <button class="focus-chip active-chip" onclick="setDashFocus(this,'Today')">Today</button>
+    <button class="focus-chip" onclick="setDashFocus(this,'Tomorrow')">Tomorrow</button>
+    <button class="focus-chip" onclick="setDashFocus(this,'This week')">This week</button>
+    <button class="focus-chip" onclick="setDashFocus(this,'Training load')">Training load</button>
+    <button class="focus-chip" onclick="setDashFocus(this,'Weight cut')">Weight cut</button>
+    <button class="focus-chip" onclick="setDashFocus(this,'Nutrition')">Nutrition</button>
+    <button class="focus-chip" onclick="setDashFocus(this,'Competition prep')">Competition</button>
+    <button class="focus-chip" onclick="setDashFocus(this,'Recovery')">Recovery</button>
+  </div>
 
-  <!-- ── Smart alert banner ── -->
+  <!-- ── Input + get brief ── -->
+  <div style="display:flex;gap:8px;margin-bottom:14px">
+    <input type="text" id="dash-coach-extra" placeholder="Add a note e.g. feeling tired today…" style="flex:1;font-size:13px">
+    <button class="btn btn-acc" onclick="getDashCoachBrief()" id="dash-coach-btn" style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;padding:0 18px;white-space:nowrap;flex-shrink:0">GO</button>
+  </div>
+
+  <!-- ── Brief output ── -->
+  <div id="dash-coach-output" style="margin-bottom:16px">
+    <div id="dash-coach-empty" style="background:linear-gradient(135deg,rgba(232,255,0,.06),rgba(232,255,0,.02));border:1px solid rgba(232,255,0,.15);border-radius:14px;padding:22px 18px;text-align:center">
+      <div style="font-size:32px;margin-bottom:10px">🥊</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;margin-bottom:6px">YOUR AI COACH IS READY</div>
+      <div style="font-size:13px;color:var(--mut2);line-height:1.65;max-width:260px;margin:0 auto">Select a focus above and tap <strong>GO</strong> for a plan based on everything you've logged.</div>
+    </div>
+    <div class="dots-loading" id="dash-coach-loading" style="display:none;justify-content:center;padding:24px"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    <div id="dash-coach-content" style="display:none"></div>
+  </div>
+
+  <!-- ── Smart alert ── -->
   <div id="dash-ai-banner"></div>
 
-  <!-- ── Top stat row ── -->
-  <div class="stat-grid" id="dash-stat-grid"></div>
-
-  <!-- ── Energy balance ── -->
-  <div class="card" id="tdee-card" style="display:none">
-    <div class="card-header"><h3>Energy balance</h3><span id="tdee-badge" class="pill"></span></div>
-    <div class="card-body" id="tdee-body"></div>
-  </div>
-
-  <!-- ── Today's readiness ── -->
-  <div class="card" id="dash-readiness-card">
-    <div class="card-header"><h3>Today's readiness</h3><span class="pill" id="dash-readiness-badge">—</span></div>
-    <div class="card-body" id="dash-readiness-body">
-      <div style="color:var(--mut2);font-size:13px">Log a body check-in to see your readiness score.</div>
-    </div>
-  </div>
-
-  <!-- ── Google Fit live data ── -->
-  <div class="card" id="dash-gfit-card" style="display:none">
-    <div class="card-header"><h3>🏃 Live health data</h3><span style="font-size:10px;color:var(--mut2)" id="dash-gfit-sync">Google Fit</span></div>
-    <div class="stat-grid" id="dash-gfit-grid" style="grid-template-columns:repeat(auto-fit,minmax(80px,1fr));margin:0"></div>
-  </div>
-
-  <!-- ── Hydration ── -->
-  <div class="card" id="dash-hydration-card">
-    <div class="card-header"><h3>💧 Hydration today</h3><button class="btn btn-ghost" style="font-size:11px;padding:4px 9px" onclick="showTab('hydration')">Log →</button></div>
-    <div class="card-body" id="dash-hydration-body"></div>
-  </div>
-
-  <!-- ── Nutrition today ── -->
-  <div class="card" id="dash-nutrition-card">
-    <div class="card-header"><h3>🥗 Nutrition today</h3><button class="btn btn-ghost" style="font-size:11px;padding:4px 9px" onclick="showTab('nutrition')">Log →</button></div>
-    <div class="card-body" id="dash-nutrition-body"></div>
-  </div>
-
-  <!-- ── This week's training ── -->
-  <div class="card">
-    <div class="card-header"><h3>This week's training</h3><span style="font-size:11px;color:var(--mut2)" id="dash-week-sub"></span></div>
-    <div id="dash-week-body"></div>
-  </div>
-
-  <!-- ── Weight trend ── -->
-  <div class="card" id="dash-weight-card">
-    <div class="card-header"><h3>⚖️ Weight trend</h3><button class="btn btn-ghost" style="font-size:11px;padding:4px 9px" onclick="showTab('weight')">Log →</button></div>
-    <div class="card-body" id="dash-weight-body"></div>
-  </div>
-
-  <!-- ── Next competition ── -->
-  <div class="card" id="dash-comp-card" style="display:none">
-    <div class="card-header"><h3>🏆 Next competition</h3><span class="pill pill-red" id="dash-comp-days"></span></div>
-    <div id="dash-comp-body"></div>
-  </div>
-
-  <!-- ── Upcoming events ── -->
-  <div class="card">
-    <div class="card-header"><h3>📅 Upcoming events</h3><button class="btn btn-ghost" style="font-size:11px;padding:4px 9px" onclick="showTab('calendar')">View calendar →</button></div>
-    <div id="dash-upcoming-body"></div>
-  </div>
+  <!-- ── Key stats ring — 2×3 compact grid ── -->
+  <div class="stat-grid" id="dash-stat-grid" style="margin-bottom:14px"></div>
 
   <!-- ── Quick log ── -->
-  <div class="card">
-    <div class="card-header"><h3>Quick log</h3></div>
-    <div class="card-body" style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-ghost" onclick="showTab('training')">+ Training</button>
-      <button class="btn btn-ghost" onclick="showTab('body')">+ Body check-in</button>
-      <button class="btn btn-ghost" onclick="showTab('nutrition')">+ Food</button>
-      <button class="btn btn-ghost" onclick="showTab('weight')">+ Weight</button>
-      <button class="btn btn-ghost" onclick="showTab('hydration')">+ Water</button>
+  <div style="margin-bottom:4px">
+    <div class="sec-title">Quick log</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+      <button class="btn btn-ghost" onclick="showTab('training')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;font-size:11px;border-radius:12px">
+        <span style="font-size:20px">🏋️</span>Training
+      </button>
+      <button class="btn btn-ghost" onclick="showTab('body')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;font-size:11px;border-radius:12px">
+        <span style="font-size:20px">🫀</span>Body
+      </button>
+      <button class="btn btn-ghost" onclick="showTab('nutrition')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;font-size:11px;border-radius:12px">
+        <span style="font-size:20px">🥗</span>Food
+      </button>
+      <button class="btn btn-ghost" onclick="showTab('weight')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;font-size:11px;border-radius:12px">
+        <span style="font-size:20px">⚖️</span>Weight
+      </button>
+      <button class="btn btn-ghost" onclick="showTab('hydration')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;font-size:11px;border-radius:12px">
+        <span style="font-size:20px">💧</span>Water
+      </button>
+      <button class="btn btn-ghost" onclick="showTab('calendar')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;font-size:11px;border-radius:12px">
+        <span style="font-size:20px">📅</span>Calendar
+      </button>
     </div>
   </div>
 
@@ -2181,6 +2128,53 @@ textarea{resize:vertical;min-height:70px;}
 </div>
 
 </div><!-- /content -->
+
+<!-- BOTTOM TAB BAR — primary nav on mobile -->
+<nav class="bottom-bar" id="bottom-bar">
+  <button class="bb-btn active" onclick="showTab('dashboard')" data-tab="dashboard">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    <span>Home</span>
+  </button>
+  <button class="bb-btn" onclick="showTab('coach')" data-tab="coach">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6l4 2"/></svg>
+    <span>Coach</span>
+  </button>
+  <button class="bb-btn bb-btn-center" onclick="showTab('training')" data-tab="training">
+    <div class="bb-center-ring">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5h11M6.5 17.5h11M5 12h14M12 5v14"/></svg>
+    </div>
+    <span>Log</span>
+  </button>
+  <button class="bb-btn" onclick="showTab('calendar')" data-tab="calendar">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span>Calendar</span>
+  </button>
+  <button class="bb-btn" onclick="showMoreMenu()" id="bb-more-btn">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+    <span>More</span>
+  </button>
+</nav>
+
+<!-- MORE MENU SHEET -->
+<div id="more-menu-overlay" onclick="closeMoreMenu()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1500"></div>
+<div id="more-menu" style="display:none;position:fixed;bottom:0;left:0;right:0;max-width:680px;margin:0 auto;background:var(--surf);border-radius:20px 20px 0 0;z-index:1600;padding:8px 0 calc(env(safe-area-inset-bottom,0px) + 8px)">
+  <div style="width:36px;height:4px;background:var(--bdr2);border-radius:2px;margin:8px auto 16px"></div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:0 12px 8px">
+    <button class="more-btn" onclick="showTabFromMore('profile')">👤<span>Profile</span></button>
+    <button class="more-btn" onclick="showTabFromMore('body')">🫀<span>Body</span></button>
+    <button class="more-btn" onclick="showTabFromMore('nutrition')">🥗<span>Nutrition</span></button>
+    <button class="more-btn" onclick="showTabFromMore('hydration')">💧<span>Hydration</span></button>
+    <button class="more-btn" onclick="showTabFromMore('weight')">⚖️<span>Weight</span></button>
+    <button class="more-btn" onclick="showTabFromMore('womens')">🌸<span>Women's</span></button>
+    <button class="more-btn" onclick="showTabFromMore('trackers')">📡<span>Trackers</span></button>
+    <button class="more-btn" onclick="showTabFromMore('strength')">💪<span>Strength</span></button>
+    <button class="more-btn" onclick="showTabFromMore('mobility')">🧘<span>Mobility</span></button>
+    <button class="more-btn" onclick="showTabFromMore('techniques')">🥋<span>Techniques</span></button>
+    <button class="more-btn" onclick="showTabFromMore('analysis')">🎬<span>Analysis</span></button>
+    <button class="more-btn" onclick="openAccountModal();closeMoreMenu()">☁️<span>Account</span></button>
+  </div>
+</div>
+
 </div><!-- /app -->
 
 <script>
@@ -2211,12 +2205,48 @@ const techniques = [
 ];
 
 // ===== NAV =====
+// ===== BOTTOM TAB BAR =====
+function showMoreMenu(){
+  document.getElementById('more-menu-overlay').style.display='block';
+  const m=document.getElementById('more-menu');
+  m.style.display='block';
+  m.style.transform='translateY(100%)';
+  m.style.transition='transform .25s cubic-bezier(.4,0,.2,1)';
+  requestAnimationFrame(()=>{ m.style.transform='translateY(0)'; });
+}
+function closeMoreMenu(){
+  const m=document.getElementById('more-menu');
+  m.style.transform='translateY(100%)';
+  setTimeout(()=>{
+    m.style.display='none';
+    document.getElementById('more-menu-overlay').style.display='none';
+  },250);
+}
+function showTabFromMore(id){ closeMoreMenu(); setTimeout(()=>showTab(id),200); }
+
+function syncBottomBar(id){
+  document.querySelectorAll('.bb-btn').forEach(b=>b.classList.remove('active'));
+  const primary=['dashboard','coach','training','calendar'];
+  if(primary.includes(id)){
+    const btn=document.querySelector(`.bb-btn[data-tab="${id}"]`);
+    if(btn) btn.classList.add('active');
+  } else {
+    const moreBtn=document.getElementById('bb-more-btn');
+    if(moreBtn) moreBtn.classList.add('active');
+  }
+}
+
 function showTab(id){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
   const tabs=['dashboard','profile','training','body','nutrition','hydration','weight','calendar','womens','trackers','coach','strength','mobility','techniques','analysis'];
   document.querySelectorAll('.nb')[tabs.indexOf(id)]?.classList.add('active');
+  syncBottomBar(id);
+  // Scroll content to top on tab switch
+  const content=document.querySelector('.content');
+  if(content) content.scrollTop=0;
+  // Per-tab render
   if(id==='techniques') renderTechGrid();
   if(id==='calendar'){ renderCal(); renderCompCountdown(); }
   if(id==='weight') renderWeightChart();
@@ -5465,6 +5495,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   initTheme();
   loadAccountSession();
   updateAccountBtn();
+  syncBottomBar('dashboard');
   handleAccountOAuthCallback(); // check if returning from social login
   updateKeyStatus();
   renderSavedBriefs();
@@ -6060,177 +6091,52 @@ function renderDashboard(){
   const todayS = todayStr();
 
   // ── Greeting ──
-  const now2     = new Date();
-  const timeGreet= now2.getHours()<12?'Morning':'afternoon'<'5'?'Afternoon':now2.getHours()<17?'Afternoon':'Evening';
-  const greetEl  = document.getElementById('dash-greeting');
-  const ctxEl    = document.getElementById('dash-brief-context');
-  if(greetEl) greetEl.textContent = `${timeGreet.toUpperCase()}${profile.firstName?', '+profile.firstName.toUpperCase():''}`;
-  if(ctxEl && !document.getElementById('dash-coach-content')?.textContent?.trim()){
-    ctxEl.textContent = 'Select a focus above then tap Get Brief';
-  }
+  const now2      = new Date();
+  const hour      = now2.getHours();
+  const greetWord = hour<12?'MORNING':hour<17?'AFTERNOON':'EVENING';
+  const greetEl   = document.getElementById('dash-greeting');
+  if(greetEl) greetEl.textContent = `${greetWord}${profile.firstName?', '+profile.firstName.toUpperCase():''}`;
 
-  // Load last saved brief if no brief is showing yet
-  if(!document.getElementById('dash-coach-content')?.textContent?.trim()){
-    loadLastCoachBrief();
-  }
-
-  // ── Top stat grid (profile targets) ──
+  // ── Stat grid ──
   const wclassKg = (profile.wclass||'').match(/≤(\d+)/);
   const targetKg = wclassKg ? parseInt(wclassKg[1]) : null;
-  const curWt = weightLog.length ? weightLog[weightLog.length-1].val : parseFloat(profile.weight)||null;
-  const toCut = (targetKg && curWt) ? Math.max(0, curWt - targetKg).toFixed(1) : null;
-  document.getElementById('dash-stat-grid').innerHTML = `
+  const weightLog= JSON.parse(localStorage.getItem('fos_weight_log')||'[]');
+  const curWt    = weightLog.length ? weightLog[weightLog.length-1].val : parseFloat(profile.weight)||null;
+  const toCut    = (targetKg&&curWt) ? Math.max(0,curWt-targetKg).toFixed(1) : null;
+  const waterML  = parseInt(localStorage.getItem('fos_water_today')||'0');
+  const goalML   = (profile.waterTarget||3.5)*1000;
+  const waterPct = Math.min(100,Math.round(waterML/goalML*100));
+  const trainingLog = getTrainingLog();
+  const weekStart= new Date(now); weekStart.setDate(now.getDate()-((now.getDay()+6)%7));
+  const thisWeek = trainingLog.filter(s=>{try{const d=parseDate(s.date);return d>=weekStart&&d<=now;}catch(e){return false;}});
+
+  const grid = document.getElementById('dash-stat-grid');
+  if(grid) grid.innerHTML = `
     <div class="stat"><div class="stat-l">Weight</div>
       <div class="stat-v ${toCut>0?'red':'grn'}">${curWt||'—'}<span style="font-size:11px">${profile.weightUnit||'kg'}</span></div>
-      <div class="stat-s">${toCut!==null?(toCut>0?toCut+'kg to cut':'On weight'):'Not logged'}</div></div>
+      <div class="stat-s">${toCut!==null?(toCut>0?toCut+'kg to cut':'On weight'):'—'}</div></div>
     <div class="stat"><div class="stat-l">Cal target</div>
       <div class="stat-v acc">${profile.calTarget?fmtNum(profile.calTarget):'—'}</div>
       <div class="stat-s">kcal/day</div></div>
     <div class="stat"><div class="stat-l">Protein</div>
-      <div class="stat-v" style="color:var(--pur)">${profile.proteinTarget||'—'}<span style="font-size:11px">g</span></div>
+      <div class="stat-v pur">${profile.proteinTarget||'—'}<span style="font-size:11px">g</span></div>
       <div class="stat-s">daily target</div></div>
-    <div class="stat"><div class="stat-l">Water</div>
-      <div class="stat-v blu">${profile.waterTarget||'—'}<span style="font-size:11px">L</span></div>
-      <div class="stat-s">daily target</div></div>
-    <div class="stat"><div class="stat-l">Sessions/wk</div>
-      <div class="stat-v ora">${profile.sessionsPerWeek||'—'}</div>
-      <div class="stat-s">target</div></div>
+    <div class="stat"><div class="stat-l">Hydration</div>
+      <div class="stat-v blu">${waterPct}<span style="font-size:11px">%</span></div>
+      <div class="stat-s">${(waterML/1000).toFixed(1)}L of ${profile.waterTarget||3.5}L</div></div>
+    <div class="stat"><div class="stat-l">This week</div>
+      <div class="stat-v ora">${thisWeek.length}</div>
+      <div class="stat-s">sessions</div></div>
     <div class="stat"><div class="stat-l">Sleep</div>
       <div class="stat-v pnk">${profile.sleepHours||'—'}<span style="font-size:11px">h</span></div>
       <div class="stat-s">target</div></div>`;
 
-  // ── Readiness (from body log + training load) ──
-  const lastBody = bodyLog[0];
-  const recentSessions = trainingLog.slice(0, 7);
-  const avgRPE = recentSessions.length
-    ? recentSessions.reduce((s,t)=>s+(t.rpe||5),0)/recentSessions.length : 0;
-  const soreness = lastBody ? lastBody.soreness : 0;
-  const loadScore = Math.min(100, Math.round(avgRPE * 10));
-  const recovScore = Math.max(0, 100 - soreness * 10);
-  const overallScore = Math.round((recovScore * 0.6) + ((100 - loadScore) * 0.4));
-  const readinessBadge = document.getElementById('dash-readiness-badge');
-  let readinessLabel, readinessColor;
-  if(soreness >= 8 || avgRPE >= 9){ readinessLabel='REST DAY'; readinessColor='p-red'; }
-  else if(soreness >= 6 || avgRPE >= 7.5){ readinessLabel='MODERATE'; readinessColor='p-ora'; }
-  else if(trainingLog.length === 0 && bodyLog.length === 0){ readinessLabel='NO DATA'; readinessColor=''; }
-  else { readinessLabel='READY'; readinessColor='p-grn'; }
-  readinessBadge.textContent = readinessLabel;
-  readinessBadge.className = 'pill ' + readinessColor;
-  document.getElementById('dash-readiness-body').innerHTML = trainingLog.length || bodyLog.length ? `
-    <div class="prog-row"><div class="prog-label"><span>Soreness</span><span>${soreness}/10</span></div><div class="bar"><div class="bar-fill" style="width:${soreness*10}%;background:${soreness>=7?'var(--acc2)':soreness>=4?'var(--ora)':'var(--grn)'}"></div></div></div>
-    <div class="prog-row"><div class="prog-label"><span>Training load (7-day avg RPE)</span><span>${avgRPE?avgRPE.toFixed(1)+'/10':'—'}</span></div><div class="bar"><div class="bar-fill" style="width:${loadScore}%;background:${loadScore>=80?'var(--acc2)':loadScore>=60?'var(--ora)':'var(--grn)'}"></div></div></div>
-    <div class="prog-row" style="margin-bottom:0"><div class="prog-label"><span>Recovery score</span><span>${recovScore}%</span></div><div class="bar"><div class="bar-fill" style="width:${recovScore}%;background:var(--grn)"></div></div></div>
-    ${lastBody?`<div style="font-size:11px;color:var(--mut2);margin-top:8px">Last check-in: ${fmtDate(lastBody.date)} · Sleep ${lastBody.sleepHours||'?'}h ${lastBody.sleepQuality||''}</div>`:''}
-  ` : '<div style="color:var(--mut2);font-size:13px">Log a body check-in to track your readiness.</div>';
-
-  // ── Google Fit live data ──
-  const gf = window.gfitLiveData;
-  const gfCard = document.getElementById('dash-gfit-card');
-  if(gf && (gf.heart_rate?.resting || gf.sleep?.hours || gf.steps)){
-    gfCard.style.display = 'block';
-    document.getElementById('dash-gfit-sync').textContent = 'Google Fit · ' + (window._gfitSyncTime||'synced');
-    document.getElementById('dash-gfit-grid').innerHTML = `
-      ${gf.heart_rate?.resting?`<div class="stat"><div class="stat-l">Resting HR</div><div class="stat-v blu">${gf.heart_rate.resting}<span style="font-size:11px">bpm</span></div></div>`:''}
-      ${gf.sleep?.hours?`<div class="stat"><div class="stat-l">Sleep</div><div class="stat-v ${gf.sleep.hours>=7?'grn':'ora'}">${gf.sleep.hours}<span style="font-size:11px">h</span></div></div>`:''}
-      ${gf.steps?`<div class="stat"><div class="stat-l">Steps</div><div class="stat-v" style="color:var(--pur)">${fmtNum(gf.steps)}</div></div>`:''}
-      ${gf.calories?.active?`<div class="stat"><div class="stat-l">Active cal</div><div class="stat-v ora">${fmtNum(gf.calories.active)}</div></div>`:''}
-      ${gf.weight?.kg?`<div class="stat"><div class="stat-l">Scale wt</div><div class="stat-v acc">${gf.weight.kg}<span style="font-size:11px">kg</span></div></div>`:''}`;
-  } else {
-    gfCard.style.display = 'none';
+  // Load last saved brief if none showing
+  if(!document.getElementById('dash-coach-content')?.textContent?.trim()){
+    loadLastCoachBrief();
   }
 
-  // ── Hydration ──
-  const goalML = (profile.waterTarget || 3.5) * 1000;
-  const pct = Math.min(100, Math.round(waterML / goalML * 100));
-  document.getElementById('dash-hydration-body').innerHTML = `
-    <div style="display:flex;align-items:center;gap:12px">
-      <div style="flex:1">
-        <div class="prog-row" style="margin-bottom:6px"><div class="prog-label"><span>${(waterML/1000).toFixed(1)}L consumed</span><span>${(goalML/1000).toFixed(1)}L goal</span></div><div class="bar"><div class="bar-fill" style="width:${pct}%;background:var(--blu)"></div></div></div>
-        <div style="font-size:11px;color:var(--mut2)">${pct}% of daily goal${waterML===0?' — tap Hydration to log your intake':''}</div>
-      </div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--blu);flex-shrink:0">${pct}%</div>
-    </div>`;
-
-  // ── Nutrition today ──
-  const todayFood = foodLog.filter(f=>f.date===todayS);
-  const tCal = todayFood.reduce((s,f)=>s+(f.cal||0),0);
-  const tPro = todayFood.reduce((s,f)=>s+(f.pro||0),0);
-  const tCarb = todayFood.reduce((s,f)=>s+(f.carb||0),0);
-  const tFat = todayFood.reduce((s,f)=>s+(f.fat||0),0);
-  const calTarget = profile.calTarget || 2000;
-  const calPct = Math.min(100, Math.round(tCal/calTarget*100));
-  document.getElementById('dash-nutrition-body').innerHTML = todayFood.length ? `
-    <div class="prog-row"><div class="prog-label"><span>${fmtNum(tCal)} kcal eaten</span><span>${fmtNum(calTarget)} target</span></div><div class="bar"><div class="bar-fill" style="width:${calPct}%;background:var(--acc)"></div></div></div>
-    <div style="display:flex;gap:12px;font-size:11px;color:var(--mut2);margin-top:6px">
-      <span>Protein <strong style="color:var(--txt)">${tPro}g</strong></span>
-      <span>Carbs <strong style="color:var(--txt)">${tCarb}g</strong></span>
-      <span>Fat <strong style="color:var(--txt)">${tFat}g</strong></span>
-      <span>${todayFood.length} item${todayFood.length!==1?'s':''} logged</span>
-    </div>` : `<div style="color:var(--mut2);font-size:13px">No food logged today — use the Nutrition tab or AI Meal Planner.</div>`;
-
-  // ── This week's training ──
-  const weekStart = new Date(now); weekStart.setDate(now.getDate() - ((now.getDay()+6)%7));
-  const weekSessions = trainingLog.filter(s=>{ try{ return parseDate(s.date)>=weekStart&&parseDate(s.date)<=now; }catch(e){return false;} });
-  document.getElementById('dash-week-sub').textContent = weekSessions.length + ' session' + (weekSessions.length!==1?'s':'') + ' this week';
-  document.getElementById('dash-week-body').innerHTML = weekSessions.length
-    ? weekSessions.map(s=>`
-        <div class="row">
-          <div><div style="font-size:13px;font-weight:500">${s.type} · ${s.dur} min</div>
-          <div style="font-size:11px;color:var(--mut2)">${fmtDate(s.date)} · ${s.mood||''}${s.coach?' · '+s.coach:''}</div></div>
-          <span class="pill ${s.rpe>=8?'pill-red':s.rpe>=6?'pill-acc':'pill-blu'}">RPE ${s.rpe}</span>
-        </div>`).join('')
-    : '<div class="row" style="color:var(--mut2);font-size:13px">No sessions this week — log your first in the Training tab.</div>';
-
-  // ── Weight trend ──
-  const weightCard = document.getElementById('dash-weight-body');
-  if(weightLog.length){
-    const latest = weightLog[weightLog.length-1];
-    const prev = weightLog.length > 1 ? weightLog[weightLog.length-2] : null;
-    const diff = prev ? (latest.val - prev.val).toFixed(1) : null;
-    const trend = diff ? (diff > 0 ? '▲ +'+diff : '▼ '+diff) : '';
-    weightCard.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <div><div style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--acc);line-height:1">${latest.val}<span style="font-size:16px">${profile.weightUnit||'kg'}</span></div>
-        <div style="font-size:11px;color:var(--mut2);margin-top:2px">${fmtDate(latest.date)}${diff?` · <span style="color:${diff>0?'var(--acc2)':'var(--grn)'}">${trend}${profile.weightUnit||'kg'}</span>`:''}</div></div>
-        ${targetKg?`<div style="text-align:right"><div style="font-size:11px;color:var(--mut2)">Target class</div><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--mut2)">${targetKg}kg</div>${toCut>0?`<div style="font-size:11px;color:var(--ora)">${toCut}kg to cut</div>`:'<div style="font-size:11px;color:var(--grn)">✅ On weight</div>'}</div>`:''}
-      </div>
-      <div style="display:flex;gap:3px;margin-top:8px;align-items:flex-end;height:30px" id="dash-wt-mini-chart">
-        ${weightLog.slice(-7).map((w,i,arr)=>{ const mn=Math.min(...arr.map(x=>x.val)), mx=Math.max(...arr.map(x=>x.val)); const h=mx===mn?50:Math.max(10,Math.round((w.val-mn)/(mx-mn)*100)); return `<div style="flex:1;height:${h}%;background:${i===arr.length-1?'var(--acc)':'var(--bdr2)'};border-radius:2px 2px 0 0;min-height:3px"></div>`; }).join('')}
-      </div>`;
-  } else {
-    weightCard.innerHTML = '<div style="color:var(--mut2);font-size:13px">No weight logged — use the Weight tab to track your progress.</div>';
-  }
-
-  // ── Next competition ──
-  const comps = calEvts.filter(e=>{ try{ return e.type==='competition'&&parseDate(e.date)>=now; }catch(ex){return false;} }).sort((a,b)=>parseDate(a.date)-parseDate(b.date));
-  const compCard = document.getElementById('dash-comp-card');
-  if(comps.length){
-    const comp = comps[0];
-    const dl = daysBetween(now, parseDate(comp.date));
-    compCard.style.display = 'block';
-    document.getElementById('dash-comp-days').textContent = dl === 0 ? 'TODAY' : dl + ' days';
-    document.getElementById('dash-comp-body').innerHTML = `
-      <div class="row"><span style="font-weight:500;font-size:13px">${comp.name}</span><span style="font-size:11px;color:var(--mut2)">${fmtDate(comp.date)}</span></div>
-      ${comp.loc?`<div class="row"><span style="font-size:12px;color:var(--mut2)">${comp.loc}</span>${toCut>0?`<span class="pill pill-ora">${toCut}kg to cut</span>`:''}</div>`:''}
-      ${dl<=14?`<div style="padding:8px 13px"><div class="prog-row" style="margin-bottom:0"><div class="prog-label"><span>Camp progress</span><span>${14-dl} of 14 days</span></div><div class="bar"><div class="bar-fill" style="width:${Math.min(100,Math.round((14-dl)/14*100))}%;background:var(--acc2)"></div></div></div></div>`:''}`;
-  } else {
-    compCard.style.display = 'none';
-  }
-
-  // ── Upcoming calendar events ──
-  const upcoming = calEvts.filter(e=>{ try{ return parseDate(e.date)>=now; }catch(ex){return false;} }).sort((a,b)=>parseDate(a.date)-parseDate(b.date)).slice(0,5);
-  const typeColors2={competition:'#FF3B30',camp:'#E8FF00','weigh-in':'#FF9500',training:'#448AFF',recovery:'#00E676'};
-  document.getElementById('dash-upcoming-body').innerHTML = upcoming.length
-    ? upcoming.map(e=>{ const dl=daysBetween(now,parseDate(e.date)); return `
-        <div class="row" style="gap:8px">
-          <div style="width:7px;height:7px;border-radius:2px;background:${typeColors2[e.type]||'#888'};flex-shrink:0;margin-top:4px"></div>
-          <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.name}</div>
-          <div style="font-size:11px;color:var(--mut2)">${fmtDate(e.date)}${e.loc?' · '+e.loc:''}</div></div>
-          <span style="font-size:11px;color:${dl<=7?'var(--ora)':'var(--mut2)'};flex-shrink:0">${dl===0?'Today':dl===1?'Tomorrow':'in '+dl+'d'}</span>
-        </div>`;}).join('')
-    : '<div class="row" style="color:var(--mut2);font-size:13px">No upcoming events — add one in the Calendar tab.</div>';
-
-  // ── Smart alert banner ──
+  // Smart alert banner
   renderDashAIBanner();
 }
 
