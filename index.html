@@ -249,15 +249,74 @@ textarea{resize:vertical;min-height:70px;}
 
 <!-- ==================== ONBOARDING ==================== -->
 <div id="onboarding">
-  <div class="ob-progress"><div class="ob-progress-fill" id="ob-prog" style="width:12.5%"></div></div>
+  <div class="ob-progress" id="ob-progress-bar" style="display:none"><div class="ob-progress-fill" id="ob-prog" style="width:12.5%"></div></div>
   <div class="ob-body" id="ob-body">
 
-    <!-- STEP 1: Welcome -->
-    <div class="ob-step active" id="ob-step-1">
+    <!-- STEP 0: Account — shown before onboarding starts -->
+    <div id="ob-account-screen" style="display:flex;flex-direction:column;min-height:100%;padding-bottom:20px">
+      <div style="text-align:center;padding:32px 0 24px">
+        <div style="font-size:40px;margin-bottom:10px">🥊</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:4px;color:var(--acc)">FIGHTOS</div>
+        <div style="font-size:13px;color:var(--mut2);margin-top:4px;letter-spacing:1px">AI FIGHT COACH</div>
+      </div>
+
+      <!-- Social sign-in buttons -->
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px">
+        <button onclick="obSocialLogin('google')" style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:10px;border:1.5px solid var(--bdr2);background:var(--surf);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--txt);width:100%;transition:border-color .15s" onmouseover="this.style.borderColor='#4285F4'" onmouseout="this.style.borderColor=''">
+          <svg width="20" height="20" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+          Continue with Google
+        </button>
+        <button onclick="obSocialLogin('azure')" style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:10px;border:1.5px solid var(--bdr2);background:var(--surf);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--txt);width:100%;transition:border-color .15s" onmouseover="this.style.borderColor='#00A4EF'" onmouseout="this.style.borderColor=''">
+          <svg width="20" height="20" viewBox="0 0 24 24"><rect x="1" y="1" width="10" height="10" fill="#F25022"/><rect x="13" y="1" width="10" height="10" fill="#7FBA00"/><rect x="1" y="13" width="10" height="10" fill="#00A4EF"/><rect x="13" y="13" width="10" height="10" fill="#FFB900"/></svg>
+          Continue with Microsoft
+        </button>
+        <button onclick="obSocialLogin('apple')" style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:10px;border:1.5px solid var(--bdr2);background:var(--surf);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--txt);width:100%;transition:border-color .15s" onmouseover="this.style.borderColor='#888'" onmouseout="this.style.borderColor=''">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-.22.14-2.19 1.28-2.17 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.77M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          Continue with Apple
+        </button>
+      </div>
+
+      <!-- Divider -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <div style="flex:1;height:1px;background:var(--bdr2)"></div>
+        <span style="font-size:11px;color:var(--mut2);white-space:nowrap">or sign in with email</span>
+        <div style="flex:1;height:1px;background:var(--bdr2)"></div>
+      </div>
+
+      <!-- Email sign-in / create -->
+      <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:10px;padding:16px;margin-bottom:14px">
+        <!-- Tab -->
+        <div style="display:flex;background:var(--surf2);border-radius:7px;padding:3px;margin-bottom:14px">
+          <button id="ob-signin-tab" onclick="obSwitchEmailTab('signin')" style="flex:1;padding:7px;border-radius:5px;border:none;background:var(--surf);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;font-weight:500;color:var(--txt)">Sign in</button>
+          <button id="ob-signup-tab" onclick="obSwitchEmailTab('signup')" style="flex:1;padding:7px;border-radius:5px;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;color:var(--mut2)">Create account</button>
+        </div>
+        <div style="margin-bottom:10px"><label class="ob-label">Email</label><input type="email" id="ob-email" class="ob-input" placeholder="you@example.com"></div>
+        <div style="margin-bottom:12px"><label class="ob-label">Password</label><input type="password" id="ob-password" class="ob-input" placeholder="8+ characters" onkeydown="if(event.key==='Enter')obSubmitEmail()"></div>
+        <div id="ob-email-error" style="display:none;background:rgba(255,59,48,.08);border:1px solid rgba(255,59,48,.2);border-radius:7px;padding:8px 11px;font-size:12px;color:#FF6B5B;margin-bottom:10px"></div>
+        <button onclick="obSubmitEmail()" id="ob-email-btn" style="width:100%;padding:12px;border-radius:8px;border:none;background:var(--acc);color:#000;font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2px;cursor:pointer">SIGN IN</button>
+      </div>
+
+      <!-- Loading state (shown during social redirect) -->
+      <div id="ob-social-loading" style="display:none;text-align:center;padding:24px 0">
+        <div class="dots-loading" style="justify-content:center"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        <div style="font-size:13px;color:var(--mut2);margin-top:8px" id="ob-social-loading-msg">Redirecting…</div>
+      </div>
+
+      <!-- Skip option -->
+      <div style="text-align:center;padding-top:4px">
+        <button onclick="obSkipToOnboarding()" style="background:transparent;border:none;color:var(--mut2);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;padding:8px;text-decoration:underline">
+          Continue without an account →
+        </button>
+        <div style="font-size:10px;color:var(--mut);margin-top:4px">Data saved on this device only — won't sync across devices</div>
+      </div>
+    </div>
+
+    <!-- STEP 1: Welcome (shown after account, for new users only) -->
+    <div class="ob-step" id="ob-step-1">
       <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
-        <div class="ob-icon">🥊</div>
-        <div class="ob-title">Welcome to<br><span>FightOS</span></div>
-        <div class="ob-sub">Your personal AI fight coach. Before we build your program, we need to get to know you — your background, your goals, and what you're working towards.<br><br>This takes about 2 minutes. Let's go.</div>
+        <div class="ob-icon">👋</div>
+        <div class="ob-title">Welcome,<br><span id="ob-welcome-name">Fighter</span></div>
+        <div class="ob-sub">Let's set up your coaching profile. This takes about 2 minutes and shapes everything — your calorie targets, training load, weight cut plan and AI briefs.</div>
         <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
           <div style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--surf);border:1px solid var(--bdr);border-radius:9px">
             <span style="font-size:20px">🎯</span><div><div style="font-size:13px;font-weight:500">Personalised coaching</div><div style="font-size:11px;color:var(--mut2)">Plans built around your sport, level & goals</div></div>
@@ -578,7 +637,7 @@ textarea{resize:vertical;min-height:70px;}
 
   </div><!-- /ob-body -->
 
-  <div class="ob-footer" id="ob-footer">
+  <div class="ob-footer" id="ob-footer" style="display:none">
     <button class="ob-back" id="ob-back-btn" onclick="obBack()" style="display:none">← Back</button>
     <span class="ob-step-count" id="ob-step-count">Step 1 of 8</span>
     <button class="ob-next" id="ob-next-btn" onclick="obNext()">Let's go →</button>
@@ -3416,7 +3475,19 @@ function handleAccountOAuthCallback(){
     window.history.replaceState(null,'',window.location.pathname);
     saveAccountSession();
     updateAccountBtn();
-    loadFromCloud().then(()=>{ openAccountModal(); });
+    loadFromCloud().then(()=>{
+      const profile=loadProfile();
+      if(profile){
+        // Existing user — apply profile and go straight to app
+        applyProfile(profile); renderTDEECard(profile); renderNutritionStats(profile); renderWeightStats(profile);
+        document.getElementById('onboarding').style.display='none';
+        document.getElementById('main-app').style.display='flex';
+        showTab('dashboard'); renderDashAIBanner(); renderCal(); renderTrainingLog();
+      } else {
+        // New user — came from social login, go to onboarding step 1
+        obProceedToOnboarding();
+      }
+    });
     return;
   }
 
@@ -3430,7 +3501,17 @@ function handleAccountOAuthCallback(){
     window.history.replaceState(null,'',window.location.pathname);
     saveAccountSession();
     updateAccountBtn();
-    loadFromCloud().then(()=>{ openAccountModal(); });
+    loadFromCloud().then(()=>{
+      const profile=loadProfile();
+      if(profile){
+        applyProfile(profile); renderTDEECard(profile); renderNutritionStats(profile); renderWeightStats(profile);
+        document.getElementById('onboarding').style.display='none';
+        document.getElementById('main-app').style.display='flex';
+        showTab('dashboard'); renderDashAIBanner(); renderCal(); renderTrainingLog();
+      } else {
+        obProceedToOnboarding();
+      }
+    });
   }
 }
 
@@ -3639,18 +3720,8 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     }
 
   } else {
-    // No local profile, not signed in → show onboarding
-    // But first show a "sign in" prompt so returning users know they can skip onboarding
+    // No local profile, not signed in → show account screen first
     showOnboarding();
-    // Inject sign-in shortcut at the top of the first onboarding step
-    const ob1=document.querySelector('#ob-step-1');
-    if(ob1 && !ob1.querySelector('.signin-shortcut')){
-      const shortcut=document.createElement('div');
-      shortcut.className='signin-shortcut';
-      shortcut.style.cssText='background:var(--surf2);border:1px solid var(--bdr);border-radius:9px;padding:11px 13px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center';
-      shortcut.innerHTML=`<span style="font-size:13px;color:var(--mut2)">Already have an account?</span><button onclick="closeOB_openSignin()" style="padding:6px 14px;border-radius:7px;border:1.5px solid var(--acc);background:transparent;color:var(--acc);font-family:\'DM Sans\',sans-serif;font-size:13px;font-weight:600;cursor:pointer">Sign in →</button>`;
-      ob1.insertBefore(shortcut, ob1.firstChild);
-    }
   }
 });
 
@@ -3670,6 +3741,123 @@ function closeOB_openSignin(){
   },{once:false});
 }
 
+// ===== ONBOARDING ACCOUNT SCREEN =====
+let obEmailMode = 'signin';
+
+function obSwitchEmailTab(mode){
+  obEmailMode = mode;
+  const si=document.getElementById('ob-signin-tab'), su=document.getElementById('ob-signup-tab');
+  const btn=document.getElementById('ob-email-btn');
+  if(mode==='signin'){
+    si.style.cssText='flex:1;padding:7px;border-radius:5px;border:none;background:var(--surf);font-family:DM Sans,sans-serif;font-size:13px;cursor:pointer;font-weight:500;color:var(--txt)';
+    su.style.cssText='flex:1;padding:7px;border-radius:5px;border:none;background:transparent;font-family:DM Sans,sans-serif;font-size:13px;cursor:pointer;color:var(--mut2)';
+    btn.textContent='SIGN IN';
+  } else {
+    su.style.cssText='flex:1;padding:7px;border-radius:5px;border:none;background:var(--surf);font-family:DM Sans,sans-serif;font-size:13px;cursor:pointer;font-weight:500;color:var(--txt)';
+    si.style.cssText='flex:1;padding:7px;border-radius:5px;border:none;background:transparent;font-family:DM Sans,sans-serif;font-size:13px;cursor:pointer;color:var(--mut2)';
+    btn.textContent='CREATE ACCOUNT';
+  }
+  document.getElementById('ob-email-error').style.display='none';
+}
+
+function obSocialLogin(provider){
+  const backendUrl = ACCT.backendUrl || gfitBackendUrl() || localStorage.getItem('gfit_backend_url') || '';
+  if(!backendUrl){
+    // Prompt for backend URL
+    const url = prompt('Enter your Vercel backend URL to enable account sync:\n(e.g. https://fightos-backend.vercel.app)\n\nLeave blank to continue without an account.');
+    if(!url){ obSkipToOnboarding(); return; }
+    localStorage.setItem('gfit_backend_url', url.trim());
+    ACCT.backendUrl = url.trim();
+  }
+  // Show loading state
+  document.getElementById('ob-account-screen').querySelector('div:first-child').style.opacity='0.4';
+  document.getElementById('ob-social-loading').style.display='block';
+  document.getElementById('ob-social-loading-msg').textContent=`Redirecting to ${provider==='azure'?'Microsoft':provider.charAt(0).toUpperCase()+provider.slice(1)}…`;
+  setTimeout(()=>{ window.location.href=`${ACCT.backendUrl||localStorage.getItem('gfit_backend_url')}/api/account/oauth-start?provider=${provider}`; }, 500);
+}
+
+async function obSubmitEmail(){
+  const email = document.getElementById('ob-email').value.trim();
+  const password = document.getElementById('ob-password').value;
+  const errEl = document.getElementById('ob-email-error');
+  const btn = document.getElementById('ob-email-btn');
+  errEl.style.display='none';
+
+  if(!email||!password){ errEl.textContent='Please enter your email and password.'; errEl.style.display='block'; return; }
+
+  const backendUrl = ACCT.backendUrl || gfitBackendUrl() || localStorage.getItem('gfit_backend_url') || '';
+  if(!backendUrl){
+    const url = prompt('Enter your Vercel backend URL:\n(e.g. https://fightos-backend.vercel.app)');
+    if(!url){ errEl.textContent='Backend URL required for account creation. Use "Continue without account" to skip.'; errEl.style.display='block'; return; }
+    localStorage.setItem('gfit_backend_url', url.trim());
+    ACCT.backendUrl = url.trim();
+  }
+
+  btn.textContent='…'; btn.disabled=true;
+  try{
+    const res = await fetch(`${ACCT.backendUrl}/api/account/auth`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action:obEmailMode, email, password})
+    });
+    const data = await res.json();
+    if(!res.ok||data.error){ errEl.textContent=data.error||'Authentication failed.'; errEl.style.display='block'; btn.disabled=false; btn.textContent=obEmailMode==='signin'?'SIGN IN':'CREATE ACCOUNT'; return; }
+
+    // Store session
+    ACCT.user = data.user;
+    ACCT.accessToken = data.access_token;
+    ACCT.refreshToken = data.refresh_token;
+    ACCT.expiresAt = Date.now()+(data.expires_in||3600)*1000;
+    ACCT.backendUrl = ACCT.backendUrl || '';
+    saveAccountSession();
+    updateAccountBtn();
+
+    if(obEmailMode==='signin'){
+      // Existing user — load cloud data then enter app
+      btn.textContent='Loading your data…';
+      await loadFromCloud();
+      const profile = loadProfile();
+      if(profile){
+        applyProfile(profile);
+        renderTDEECard(profile);
+        renderNutritionStats(profile);
+        renderWeightStats(profile);
+        document.getElementById('onboarding').style.display='none';
+        document.getElementById('main-app').style.display='flex';
+        showTab('dashboard');
+        renderDashAIBanner();
+        renderCal();
+        renderTrainingLog();
+        return;
+      }
+    }
+    // New account or no cloud profile — proceed to onboarding
+    obProceedToOnboarding();
+  }catch(e){
+    errEl.textContent='Connection error. Check your backend URL and try again.';
+    errEl.style.display='block';
+  }
+  btn.disabled=false; btn.textContent=obEmailMode==='signin'?'SIGN IN':'CREATE ACCOUNT';
+}
+
+function obSkipToOnboarding(){
+  // User wants to proceed without an account
+  obProceedToOnboarding();
+}
+
+function obProceedToOnboarding(){
+  // Hide account screen, show progress bar + footer, go to step 1
+  document.getElementById('ob-account-screen').style.display='none';
+  document.getElementById('ob-progress-bar').style.display='block';
+  document.getElementById('ob-footer').style.display='flex';
+  // Update welcome name if signed in
+  if(isSignedIn()&&ACCT.user?.email){
+    const name=ACCT.user.email.split('@')[0];
+    const nameEl=document.getElementById('ob-welcome-name');
+    if(nameEl) nameEl.textContent=name.charAt(0).toUpperCase()+name.slice(1);
+  }
+  obSetStep(1);
+}
+
 // ===== ONBOARDING STATE =====
 let obStep = 1;
 const OB_TOTAL = 8;
@@ -3678,7 +3866,15 @@ const obData = {};
 function loadProfile(){ try{ const p=localStorage.getItem('fightos_profile'); return p?JSON.parse(p):null; }catch(e){return null;} }
 function saveProfile(p){ try{ localStorage.setItem('fightos_profile',JSON.stringify(p)); }catch(e){} }
 
-function showOnboarding(){ document.getElementById('onboarding').style.display='flex'; }
+function showOnboarding(){
+  document.getElementById('onboarding').style.display='flex';
+  // Always start with the account screen for new users
+  document.getElementById('ob-account-screen').style.display='block';
+  document.getElementById('ob-progress-bar').style.display='none';
+  document.getElementById('ob-footer').style.display='none';
+  // Hide all steps
+  document.querySelectorAll('.ob-step').forEach(s=>s.classList.remove('active'));
+}
 function hideOnboarding(){ document.getElementById('onboarding').style.display='none'; }
 
 function obSetStep(n){
