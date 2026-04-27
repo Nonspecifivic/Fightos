@@ -1242,14 +1242,14 @@ textarea{resize:vertical;min-height:70px;}
     <div class="card-body" id="gfit-card-body">
       <!-- Disconnected state -->
       <div id="gfit-disconnected">
-        <p style="font-size:13px;color:var(--mut2);line-height:1.6;margin-bottom:14px">
-          Connects to Google Fit to pull your resting heart rate, sleep duration, daily steps, active calories and body weight — updated each time you open this tab.
+        <p style="font-size:13px;color:var(--mut2);line-height:1.6;margin-bottom:12px">
+          Connects to the <strong>Google Fit REST API</strong> to pull resting heart rate, sleep, steps, active calories and weight. Requires the Google Fit app to be installed and collecting data on your device.
         </p>
-        <div style="background:var(--surf2);border:1px solid var(--bdr);border-radius:8px;padding:11px;margin-bottom:14px;font-size:12px;line-height:1.8">
+        <div style="background:var(--surf2);border:1px solid var(--bdr);border-radius:8px;padding:11px;margin-bottom:12px;font-size:12px;line-height:1.8">
           <strong>Before connecting:</strong><br>
-          1. Deploy the <strong>fightos-backend</strong> folder to Vercel (see README)<br>
-          2. Enter your backend URL below<br>
-          3. Click Connect — you'll be redirected to Google to approve access
+          1. Install <strong>Google Fit</strong> on your phone (Android) or connect it to Apple Health (iPhone) — <a href="https://fit.google.com" target="_blank" style="color:var(--acc)">fit.google.com</a><br>
+          2. Deploy the <strong>fightos-backend</strong> folder to Vercel (see README)<br>
+          3. Enter your backend URL below and click Connect
         </div>
         <div class="fg">
           <label class="lbl">Your Vercel backend URL</label>
@@ -3205,6 +3205,8 @@ function renderGfitData(d){
   const cal   = d.calories?.active;
   const wt    = d.weight?.kg;
 
+  const hasAnyData = hr || sleep || steps || cal || wt;
+
   grid.innerHTML = `
     <div class="stat"><div class="stat-l">Resting HR</div>
       <div class="stat-v ${hr&&hr<60?'grn':hr&&hr<75?'acc':'red'}">${hr||'—'}<span style="font-size:11px">bpm</span></div></div>
@@ -3216,17 +3218,24 @@ function renderGfitData(d){
       <div class="stat-v ora">${cal?fmtNum(cal):'—'}<span style="font-size:11px">kcal</span></div></div>
     ${wt?`<div class="stat"><div class="stat-l">Weight</div><div class="stat-v acc">${wt}<span style="font-size:11px">kg</span></div></div>`:''}`;
 
-  // Inline coaching insight based on live data
-  let insight = '';
-  if(hr && hr > 75) insight += '⚠️ Resting HR elevated — consider a lighter session today. ';
-  if(sleep && sleep < 6) insight += '😴 Under 6h sleep — prioritise recovery. ';
-  if(sleep && sleep >= 8 && hr && hr < 60) insight += '✅ HRV & sleep looking good — ready to train hard. ';
+  if(!hasAnyData){
+    rows.innerHTML=`<div class="tip" style="margin-top:10px">
+      <strong>No data found in Google Fit.</strong> The Google Fit REST API only reads data from the <strong>Google Fit app</strong> or connected devices that write to it (Fitbit, Garmin, etc.).<br><br>
+      <strong>To populate data:</strong><br>
+      1. Install <strong>Google Fit</strong> on your Android phone or use <a href="https://fit.google.com" target="_blank" style="color:var(--acc)">fit.google.com</a><br>
+      2. Open it and allow it to read from your phone's sensors<br>
+      3. Use it for a day — steps and HR should appear within minutes<br>
+      4. Come back and click <strong>↻ Refresh</strong> here<br><br>
+      <em>On iPhone: Google Fit syncs from Apple Health. Open Google Fit → Profile → Manage connected apps → Connect Apple Health.</em>
+    </div>`;
+  } else {
+    let insight='';
+    if(hr&&hr>75) insight+='⚠️ Resting HR elevated — consider a lighter session today. ';
+    if(sleep&&sleep<6) insight+='😴 Under 6h sleep — prioritise recovery. ';
+    if(sleep&&sleep>=8&&hr&&hr<60) insight+='✅ Sleep & HR looking good — ready to train hard. ';
+    rows.innerHTML=insight?`<div class="suc" style="margin-top:10px;font-size:13px">${insight}</div>`:'';
+  }
 
-  rows.innerHTML = insight
-    ? `<div class="suc" style="margin-top:10px;font-size:13px">${insight}</div>`
-    : '';
-
-  // Inject into AI coach context (so the brief uses real data)
   window.gfitLiveData = d;
 }
 
@@ -3534,7 +3543,7 @@ function renderMarkdown(text){
 }
 
 // ===== INIT =====
-document.addEventListener('DOMContentLoaded',()=>{
+document.addEventListener('DOMContentLoaded', async ()=>{
   initTheme();
   loadAccountSession();
   updateAccountBtn();
@@ -3547,7 +3556,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   initGoogleFit();
   initGooglePhotosUI();
   initBodyParts();
-  loadCalEvents(); // load saved events BEFORE rendering
+  loadCalEvents();
   renderWeightChart();
   renderCal();
   renderPhaseBar(28,5);
@@ -3559,10 +3568,16 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(ltEl) ltEl.value=today;
   const wtEl=document.getElementById('wt-time');
   if(wtEl) wtEl.value=new Date().toTimeString().slice(0,5);
-  // Show onboarding on first load (check localStorage)
+
+  // ── Boot priority ──
+  // 1. Local profile exists → use it immediately (fastest)
+  // 2. No local profile but signed in → fetch from cloud → skip onboarding
+  // 3. Neither → show onboarding
+
   const profile = loadProfile();
+
   if(profile){
-    // Backfill computed fields if missing (older saves)
+    // Profile found locally — apply it and show the app
     if(!profile.bmr) profile.bmr=computeBMR(profile);
     if(!profile.tdee){ const r=computeTDEE(profile); profile.tdee=r.tdee; }
     if(!profile.calTarget) profile.calTarget=computeCalTarget(profile);
@@ -3570,7 +3585,6 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(!profile.carbTarget) profile.carbTarget=Math.round(profile.calTarget*0.45/4);
     if(!profile.fatTarget) profile.fatTarget=Math.round(profile.calTarget*0.25/9);
     if(!profile.waterTarget) profile.waterTarget=Math.max(2.5,Math.round((parseFloat(profile.weight)||80)*0.04*10)/10);
-    // Seed comp date into calendar if not already there
     if(profile.compDate && !calEvents.some(e=>e.type==='competition')){
       calEvents.push({id:nextEvtId++,name:'My Competition',date:profile.compDate,end:'',type:'competition',loc:''});
       saveCalEvents();
@@ -3580,10 +3594,81 @@ document.addEventListener('DOMContentLoaded',()=>{
     renderNutritionStats(profile);
     renderWeightStats(profile);
     hideOnboarding();
+    // Also sync from cloud in background to pick up any changes from other devices
+    if(isSignedIn()) loadFromCloud().catch(()=>{});
+
+  } else if(isSignedIn()){
+    // No local profile but user has a cloud account — show loading state then fetch
+    document.getElementById('onboarding').style.display='none';
+    document.getElementById('main-app').style.display='flex';
+    // Show a loading indicator on dashboard while we fetch
+    const dashAlert=document.getElementById('dash-ai-banner');
+    if(dashAlert) dashAlert.innerHTML=`<div class="tip" style="display:flex;align-items:center;gap:10px"><div class="dots"><div class="dot-a"></div><div class="dot-a"></div><div class="dot-a"></div></div><span>Loading your profile from cloud…</span></div>`;
+    try{
+      await loadFromCloud();
+      const cloudProfile=loadProfile();
+      if(cloudProfile){
+        // Successfully loaded — apply profile
+        applyProfile(cloudProfile);
+        renderTDEECard(cloudProfile);
+        renderNutritionStats(cloudProfile);
+        renderWeightStats(cloudProfile);
+        renderDashAIBanner();
+        renderTrainingLog();
+        renderCal();
+        renderMatchRecord();
+        renderMatchHistory();
+      } else {
+        // Cloud account exists but no profile saved yet — show onboarding
+        document.getElementById('main-app').style.display='none';
+        showOnboarding();
+      }
+    }catch(e){
+      // Cloud fetch failed — show onboarding with option to retry
+      document.getElementById('main-app').style.display='none';
+      showOnboarding();
+      // Show a retry notice on the first onboarding screen
+      const ob1=document.querySelector('#ob-step-1');
+      if(ob1){
+        const notice=document.createElement('div');
+        notice.className='warn';
+        notice.style.marginTop='12px';
+        notice.innerHTML=`Couldn't load your profile from cloud. <button onclick="location.reload()" style="background:transparent;border:none;color:var(--acc);cursor:pointer;text-decoration:underline;font-size:12px">Retry</button>`;
+        ob1.appendChild(notice);
+      }
+    }
+
   } else {
+    // No local profile, not signed in → show onboarding
+    // But first show a "sign in" prompt so returning users know they can skip onboarding
     showOnboarding();
+    // Inject sign-in shortcut at the top of the first onboarding step
+    const ob1=document.querySelector('#ob-step-1');
+    if(ob1 && !ob1.querySelector('.signin-shortcut')){
+      const shortcut=document.createElement('div');
+      shortcut.className='signin-shortcut';
+      shortcut.style.cssText='background:var(--surf2);border:1px solid var(--bdr);border-radius:9px;padding:11px 13px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center';
+      shortcut.innerHTML=`<span style="font-size:13px;color:var(--mut2)">Already have an account?</span><button onclick="closeOB_openSignin()" style="padding:6px 14px;border-radius:7px;border:1.5px solid var(--acc);background:transparent;color:var(--acc);font-family:\'DM Sans\',sans-serif;font-size:13px;font-weight:600;cursor:pointer">Sign in →</button>`;
+      ob1.insertBefore(shortcut, ob1.firstChild);
+    }
   }
 });
+
+// Opens account modal from onboarding — lets returning users sign in and skip setup
+function closeOB_openSignin(){
+  // Show the app shell so the modal has something to sit over
+  document.getElementById('onboarding').style.display='none';
+  document.getElementById('main-app').style.display='flex';
+  openAccountModal();
+  // If they close without signing in, show onboarding again
+  document.getElementById('account-modal').addEventListener('click', function onClose(e){
+    if(e.target===document.getElementById('account-modal')&&!isSignedIn()){
+      document.getElementById('main-app').style.display='none';
+      showOnboarding();
+      document.getElementById('account-modal').removeEventListener('click',onClose);
+    }
+  },{once:false});
+}
 
 // ===== ONBOARDING STATE =====
 let obStep = 1;
