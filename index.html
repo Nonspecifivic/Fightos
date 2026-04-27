@@ -5486,6 +5486,17 @@ function buildSummaryAndGenerate(){
     {label:'Cal target',val:calTarget?fmtNum(calTarget)+' kcal':'—'},
   ];
   document.getElementById('ob-summary-grid').innerHTML=fields.map(f=>`<div class="ob-summary-card"><div class="ob-summary-label">${f.label}</div><div class="ob-summary-val">${f.val}</div></div>`).join('');
+  // Save fully computed profile (not partial) — ensures dashboard has all targets
+  obData.bmr = bmr;
+  obData.tdee = tdee;
+  obData.calTarget = calTarget;
+  obData.proteinTarget = Math.round((parseFloat(obData.weight)||80)*2.2);
+  obData.carbTarget = Math.round(calTarget*0.45/4);
+  obData.fatTarget  = Math.round(calTarget*0.25/9);
+  obData.waterTarget = Math.max(2.5, Math.round((parseFloat(obData.weight)||80)*0.04*10)/10);
+  // Coerce slider strings to numbers
+  if(obData.sessionsPerWeek) obData.sessionsPerWeek = parseInt(obData.sessionsPerWeek);
+  if(obData.sleepHours) obData.sleepHours = parseFloat(obData.sleepHours);
   saveProfile(obData);
   generateAIIntro();
 }
@@ -5515,6 +5526,20 @@ Sound like a real, direct coach — not a chatbot. Be concise and high-energy. N
 }
 
 function applyProfile(p){
+  // Backfill computed fields if missing (handles cloud profiles saved before targets were computed)
+  const wt = parseFloat(p.weight)||0;
+  let dirty = false;
+  if(!p.calTarget && wt){ p.calTarget=computeCalTarget(p); dirty=true; }
+  if(!p.proteinTarget && wt){ p.proteinTarget=Math.round(wt*2.2); dirty=true; }
+  if(!p.carbTarget && p.calTarget){ p.carbTarget=Math.round(p.calTarget*0.45/4); dirty=true; }
+  if(!p.fatTarget && p.calTarget){ p.fatTarget=Math.round(p.calTarget*0.25/9); dirty=true; }
+  if(!p.waterTarget && wt){ p.waterTarget=Math.max(2.5,Math.round(wt*0.04*10)/10); dirty=true; }
+  if(!p.bmr && wt){ p.bmr=computeBMR(p); dirty=true; }
+  if(!p.tdee && wt){ const r=computeTDEE(p); p.tdee=r.tdee||r; dirty=true; }
+  if(p.sessionsPerWeek && typeof p.sessionsPerWeek==='string'){ p.sessionsPerWeek=parseInt(p.sessionsPerWeek); dirty=true; }
+  if(p.sleepHours && typeof p.sleepHours==='string'){ p.sleepHours=parseFloat(p.sleepHours); dirty=true; }
+  if(dirty) saveProfile(p);
+
   if(p.firstName){
     const initials=((p.firstName||'M')[0]+(p.lastName||'F')[0]).toUpperCase();
     const av=document.querySelector('#app-avatar');
@@ -5559,7 +5584,45 @@ function enterApp(){
 
 // ===== DASHBOARD — fully dynamic from all data sources =====
 function renderDashboard(){
-  const profile = loadProfile() || {};
+  let profile = loadProfile() || {};
+
+  // ── Backfill any missing computed fields ──
+  // Handles profiles saved before nutrition targets were computed,
+  // or cloud profiles where enterApp() hadn't run yet.
+  let dirty = false;
+  const wt = parseFloat(profile.weight) || 0;
+
+  if(!profile.bmr && wt){
+    profile.bmr = computeBMR(profile); dirty = true;
+  }
+  if(!profile.tdee && wt){
+    const r = computeTDEE(profile);
+    profile.tdee = r.tdee || r;   // computeTDEE returns {tdee, label}
+    dirty = true;
+  }
+  if(!profile.calTarget && wt){
+    profile.calTarget = computeCalTarget(profile); dirty = true;
+  }
+  if(!profile.proteinTarget && wt){
+    profile.proteinTarget = Math.round(wt * 2.2); dirty = true;
+  }
+  if(!profile.carbTarget && profile.calTarget){
+    profile.carbTarget = Math.round(profile.calTarget * 0.45 / 4); dirty = true;
+  }
+  if(!profile.fatTarget && profile.calTarget){
+    profile.fatTarget = Math.round(profile.calTarget * 0.25 / 9); dirty = true;
+  }
+  if(!profile.waterTarget && wt){
+    profile.waterTarget = Math.max(2.5, Math.round(wt * 0.04 * 10) / 10); dirty = true;
+  }
+  // sessionsPerWeek and sleepHours come as strings from onboarding sliders — coerce
+  if(profile.sessionsPerWeek && typeof profile.sessionsPerWeek === 'string'){
+    profile.sessionsPerWeek = parseInt(profile.sessionsPerWeek); dirty = true;
+  }
+  if(profile.sleepHours && typeof profile.sleepHours === 'string'){
+    profile.sleepHours = parseFloat(profile.sleepHours); dirty = true;
+  }
+  if(dirty){ saveProfile(profile); }
   const trainingLog = getTrainingLog();
   const bodyLog = JSON.parse(localStorage.getItem('fos_body_log') || '[]');
   const foodLog = JSON.parse(localStorage.getItem('fos_food_log') || '[]');
