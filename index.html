@@ -3708,12 +3708,89 @@ function handleCSVFile(file){
   reader.readAsText(file);
 }
 
+// ===== MACROFACTOR CSV PARSER =====
+// Parses MacroFactor daily summary CSV into structured daily totals
+// MacroFactor exports columns like: Date, Calories, Protein, Carbohydrates, Fat, ...
+function parseMacroFactorCSV(csvText){
+  const lines = csvText.split('\n').map(l=>l.trim()).filter(Boolean);
+  if(lines.length < 2) return [];
+
+  // Parse header — find column indices (case-insensitive)
+  const raw = lines[0];
+  // Handle both comma and semicolon delimiters
+  const delim = raw.includes(';') ? ';' : ',';
+  const headers = raw.split(delim).map(h=>h.replace(/^"|"$/g,'').trim().toLowerCase());
+
+  function colIdx(...names){ for(const n of names){ const i=headers.findIndex(h=>h.includes(n)); if(i>=0) return i; } return -1; }
+
+  const dateCol  = colIdx('date');
+  const calCol   = colIdx('calorie','energy','kcal');
+  const proCol   = colIdx('protein');
+  const carbCol  = colIdx('carb');
+  const fatCol   = colIdx('fat');
+  const fiberCol = colIdx('fiber','fibre');
+  const sugarCol = colIdx('sugar');
+
+  if(dateCol < 0 || calCol < 0){
+    return null; // Can't identify required columns
+  }
+
+  const dailyMap = {}; // date string → {cal, pro, carb, fat, rows}
+
+  for(const line of lines.slice(1)){
+    const cols = line.split(delim).map(c=>c.replace(/^"|"$/g,'').trim());
+    if(cols.length < 2) continue;
+
+    const rawDate = cols[dateCol];
+    if(!rawDate) continue;
+
+    // Normalise date to YYYY-MM-DD
+    let date = rawDate;
+    // Handle formats: MM/DD/YYYY, DD/MM/YYYY, YYYY-MM-DD, DD-MM-YYYY
+    const mdy = rawDate.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    const dmy = rawDate.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+    if(mdy){
+      // Assume MM/DD/YYYY (MacroFactor default for US)
+      date = `${mdy[3]}-${mdy[1].padStart(2,'0')}-${mdy[2].padStart(2,'0')}`;
+    } else if(dmy){
+      date = `${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')}`;
+    }
+
+    const cal  = parseFloat(cols[calCol])  || 0;
+    const pro  = parseFloat(cols[proCol])  || 0;
+    const carb = parseFloat(cols[carbCol]) || 0;
+    const fat  = parseFloat(cols[fatCol])  || 0;
+
+    if(!dailyMap[date]){
+      dailyMap[date] = { cal:0, pro:0, carb:0, fat:0, rows:0 };
+    }
+    // Some MacroFactor exports have one row per meal, others one per day
+    // We accumulate and then check if it's already a daily summary
+    dailyMap[date].cal  += cal;
+    dailyMap[date].pro  += pro;
+    dailyMap[date].carb += carb;
+    dailyMap[date].fat  += fat;
+    dailyMap[date].rows += 1;
+  }
+
+  // Convert to array sorted newest first
+  return Object.entries(dailyMap)
+    .map(([date, d]) => ({
+      date,
+      cal:  Math.round(d.cal),
+      pro:  Math.round(d.pro),
+      carb: Math.round(d.carb),
+      fat:  Math.round(d.fat),
+      rows: d.rows,
+    }))
+    .filter(d => d.cal > 0)
+    .sort((a,b) => b.date.localeCompare(a.date));
+}
+
 async function analyzeMacroFactorCSV(){
   if(!csvData){
-    // Flash the upload zone to prompt the user
     const zone = document.getElementById('csv-drop-zone');
     zone.style.borderColor = 'var(--acc2)';
-    zone.style.animation = 'pulse 0.3s ease 3';
     setTimeout(()=>{ zone.style.borderColor=''; }, 900);
     const noFileMsg = document.getElementById('csv-no-file-msg');
     if(noFileMsg){ noFileMsg.style.color='var(--acc2)'; noFileMsg.textContent='⚠️ Please upload a MacroFactor CSV file first'; }
@@ -3724,20 +3801,76 @@ async function analyzeMacroFactorCSV(){
   const dots    = document.getElementById('csv-loading');
   const content = document.getElementById('csv-content');
   out.style.display='block'; dots.style.display='flex'; content.style.display='none'; content.innerHTML='';
-
-  // Scroll to output on mobile
   out.scrollIntoView({ behavior:'smooth', block:'nearest' });
 
+  // ── Step 1: Parse CSV client-side ──
+  const parsed = parseMacroFactorCSV(csvData);
+
+  if(parsed === null){
+    dots.style.display='none'; content.style.display='block';
+    content.innerHTML=`<div class="warn">⚠️ Could not identify Date and Calories columns in this CSV. Make sure you're exporting a MacroFactor <strong>Daily Summary</strong> or <strong>Food Log</strong> export.</div>`;
+    return;
+  }
+
+  // ── Step 2: Show import preview before saving ──
+  if(parsed.length > 0){
+    dots.style.display='none'; content.style.display='block';
+
+    const today = todayStr();
+    const existingLog = JSON.parse(localStorage.getItem('fos_food_log')||'[]');
+    const existingDates = new Set(existingLog.map(e=>e.date));
+    const newDays   = parsed.filter(d=>!existingDates.has(d.date));
+    const dupes     = parsed.filter(d=> existingDates.has(d.date));
+
+    content.innerHTML = `
+      <div style="background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.2);border-radius:10px;padding:14px;margin-bottom:12px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;color:var(--grn);margin-bottom:8px">
+          ✅ ${parsed.length} day${parsed.length!==1?'s':''} found in CSV
+        </div>
+        <div style="font-size:12px;color:var(--mut2);line-height:1.8">
+          <strong>${newDays.length}</strong> new day${newDays.length!==1?'s':''} to import
+          ${dupes.length ? ` · <strong>${dupes.length}</strong> day${dupes.length!==1?'s':''} already logged (will be skipped)` : ''}
+          · Date range: <strong>${parsed[parsed.length-1].date}</strong> → <strong>${parsed[0].date}</strong>
+        </div>
+      </div>
+
+      <!-- Daily preview table -->
+      <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:10px;overflow:hidden;margin-bottom:12px">
+        <div style="padding:10px 13px;border-bottom:1px solid var(--bdr);display:grid;grid-template-columns:80px 1fr 1fr 1fr 1fr;gap:4px;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2)">
+          <div>Date</div><div>Calories</div><div>Protein</div><div>Carbs</div><div>Fat</div>
+        </div>
+        ${parsed.slice(0,14).map(d=>{
+          const isNew = !existingDates.has(d.date);
+          const isToday = d.date === today;
+          return `<div style="padding:8px 13px;border-bottom:1px solid var(--bdr);display:grid;grid-template-columns:80px 1fr 1fr 1fr 1fr;gap:4px;font-size:12px;opacity:${isNew?1:0.45};background:${isToday?'rgba(232,255,0,.04)':''}">
+            <div style="color:var(--mut2)">${d.date.slice(5)}${isToday?' <span style="color:var(--acc);font-size:10px">today</span>':''}${!isNew?' <span style="color:var(--mut2);font-size:10px">✓</span>':''}</div>
+            <div><strong>${d.cal}</strong></div>
+            <div>${d.pro}g</div>
+            <div>${d.carb}g</div>
+            <div>${d.fat}g</div>
+          </div>`;
+        }).join('')}
+        ${parsed.length > 14 ? `<div style="padding:8px 13px;font-size:11px;color:var(--mut2)">… and ${parsed.length-14} more days</div>` : ''}
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button class="btn btn-acc btn-full btn-hero" onclick="importMacroFactorToLog()" id="mf-import-btn">
+          IMPORT ${newDays.length} DAY${newDays.length!==1?'S':''} TO FOOD LOG
+        </button>
+      </div>
+      <div style="height:1px;background:var(--bdr);margin-bottom:16px"></div>
+      <div style="font-size:12px;color:var(--mut2);margin-bottom:12px">📊 Also getting an AI analysis of your nutrition patterns…</div>`;
+
+    // Store parsed data for the import button
+    window._mfParsed = parsed;
+  }
+
+  // ── Step 3: Get AI coaching analysis in parallel ──
   const profile  = loadProfile()||{};
   const focus    = document.getElementById('csv-focus').value;
   const range    = document.getElementById('csv-range').value;
-
-  // Smart truncation — keep headers + sample rows rather than just first N chars
   const csvLines = csvData.split('\n').filter(l=>l.trim());
-  const header   = csvLines[0] || '';
-  const dataRows = csvLines.slice(1);
-  // Take up to 60 rows (covers ~2 weeks of daily data with meals)
-  const sample   = [header, ...dataRows.slice(0, 60)].join('\n');
+  const sample   = [csvLines[0], ...csvLines.slice(1,61)].join('\n');
 
   const prompt = `You are an elite sports nutritionist analysing a fighter's MacroFactor nutrition export.
 
@@ -3745,7 +3878,7 @@ FIGHTER: ${profile.firstName||'Athlete'}, ${profile.sport||'Combat sports'}, ${p
 DAILY TARGETS: ${profile.calTarget||'—'} kcal | Protein: ${profile.proteinTarget||'—'}g | Carbs: ${profile.carbTarget||'—'}g | Fat: ${profile.fatTarget||'—'}g
 GOAL: ${profile.goal||'—'} | Weight class: ${profile.wclass||'—'} | Current weight: ${profile.weight||'—'}${profile.weightUnit||'kg'}
 
-MACROFACTOR EXPORT — ${range} (${dataRows.length} rows, file: ${csvFileName}):
+MACROFACTOR EXPORT — ${range} (${csvLines.length-1} rows, file: ${csvFileName}):
 ${sample}
 
 ANALYSIS FOCUS: ${focus}
@@ -3774,13 +3907,95 @@ Reference actual figures from the CSV. Be specific and direct.`;
 
   try{
     const text = await anthropicCall(prompt, 1200);
-    dots.style.display='none'; content.style.display='block';
-    content.innerHTML = renderCoachOutput(text);
-    // Scroll to results
+    // Append AI analysis after the import section
+    const existing = document.getElementById('csv-content').innerHTML;
+    content.innerHTML = existing + renderCoachOutput(text);
     content.scrollIntoView({ behavior:'smooth', block:'start' });
   }catch(e){
-    showAIError(content, dots, e.message);
+    const existing = document.getElementById('csv-content').innerHTML;
+    content.innerHTML = existing + `<div class="warn" style="margin-top:12px">AI analysis failed: ${e.message}</div>`;
   }
+}
+
+function importMacroFactorToLog(){
+  const parsed = window._mfParsed;
+  if(!parsed || !parsed.length) return;
+
+  const existingLog  = JSON.parse(localStorage.getItem('fos_food_log')||'[]');
+  const existingDates = new Set(existingLog.map(e=>e.date));
+
+  let imported = 0;
+  const newEntries = [];
+
+  for(const day of parsed){
+    if(existingDates.has(day.date)) continue; // skip days already logged
+    newEntries.push({
+      date: day.date,
+      name: `MacroFactor daily total`,
+      cal:  day.cal,
+      pro:  day.pro,
+      carb: day.carb,
+      fat:  day.fat,
+      source: 'macrofactor',
+    });
+    imported++;
+  }
+
+  // Merge and save — newest first
+  const merged = [...newEntries, ...existingLog]
+    .sort((a,b) => b.date.localeCompare(a.date))
+    .slice(0, 200); // keep up to 200 entries
+
+  try{
+    localStorage.setItem('fos_food_log', JSON.stringify(merged));
+    debouncedSync();
+  }catch(e){ console.error('Failed to save food log', e); }
+
+  // Update the import button to show success
+  const btn = document.getElementById('mf-import-btn');
+  if(btn){
+    btn.textContent = `✅ ${imported} day${imported!==1?'s':''} imported successfully`;
+    btn.style.opacity = '0.7';
+    btn.disabled = true;
+  }
+
+  // Show a breakdown of what was imported
+  const today = todayStr();
+  const todayEntry = newEntries.find(e=>e.date===today);
+  let successMsg = `<div style="background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.2);border-radius:8px;padding:11px 13px;margin-top:8px;font-size:12px;line-height:1.8">
+    <strong style="color:var(--grn)">✅ ${imported} day${imported!==1?'s':''} imported to your food log</strong><br>`;
+  if(todayEntry){
+    successMsg += `Today's entry: <strong>${todayEntry.cal} kcal · ${todayEntry.pro}g protein · ${todayEntry.carb}g carbs · ${todayEntry.fat}g fat</strong><br>`;
+  }
+  successMsg += `Dashboard and nutrition progress bars updated automatically.</div>`;
+  btn?.insertAdjacentHTML('afterend', successMsg);
+
+  // Refresh all views that use food log data
+  renderFoodLog();
+  renderNutritionStats();
+  renderDashboard();
+}
+
+function renderFoodLog(){
+  const foodLog = JSON.parse(localStorage.getItem('fos_food_log')||'[]');
+  const today   = todayStr();
+  const todayFood = foodLog.filter(f=>f.date===today);
+  const logEl   = document.getElementById('food-log');
+  if(!logEl) return;
+
+  if(!todayFood.length){
+    logEl.innerHTML='<div class="row" style="color:var(--mut2);font-size:13px">No food logged today — add entries above or import from MacroFactor.</div>';
+    return;
+  }
+
+  logEl.innerHTML = todayFood.map(f=>`
+    <div class="row">
+      <div>
+        <div class="meal-name">${f.name}${f.source==='macrofactor'?' <span style="font-size:10px;color:var(--mut2)">MF</span>':''}</div>
+        <div class="meal-macros">${f.pro}P · ${f.carb}C · ${f.fat}F</div>
+      </div>
+      <div class="meal-kcal">${f.cal}</div>
+    </div>`).join('');
 }
 
 // ===== MATCH HISTORY =====
@@ -5061,6 +5276,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   renderMatchRecord();
   renderMatchHistory();
   renderTrainingLog();
+  renderFoodLog();
   initGoogleFit();
   initGooglePhotosUI();
   initBodyParts();
