@@ -2933,15 +2933,6 @@ function renderUpcoming(){
     return `<div class="row" style="gap:6px"><div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0"><div style="width:7px;height:7px;border-radius:2px;background:${typeColors[e.type]||'#888'};flex-shrink:0"></div><div style="min-width:0"><div style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.name}</div><div style="font-size:11px;color:var(--mut2)">${fmtDate(e.date)}${e.loc?' · '+e.loc:''}</div></div></div><div style="display:flex;align-items:center;gap:6px;flex-shrink:0">${dlabel}<button onclick="openEditEvent(${e.id})" style="padding:3px 8px;border-radius:5px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-size:11px;cursor:pointer">Edit</button><button onclick="deleteEvent(${e.id})" style="padding:3px 8px;border-radius:5px;border:1px solid rgba(255,59,48,.25);background:transparent;color:var(--acc2);font-size:11px;cursor:pointer">✕</button></div></div>`;
   }).join('');
 }
-function renderCompCountdown(){
-  const now=new Date(new Date().getFullYear(),new Date().getMonth(),new Date().getDate());
-  const comps=calEvents.filter(e=>e.type==='competition'&&parseDate(e.date)>=now).sort((a,b)=>parseDate(a.date)-parseDate(b.date));
-  const el=document.getElementById('comp-countdown');
-  if(!comps.length){el.style.display='none';return;}
-  const next=comps[0];const dl=daysBetween(now,parseDate(next.date));
-  el.style.display='block';
-  el.innerHTML=`<strong>${next.name}</strong> — <strong style="color:var(--acc2)">${dl} days away</strong>${next.loc?' · '+next.loc:''}`;
-}
 function calNav(dir){
   calMonth+=dir;
   if(calMonth>11){calMonth=0;calYear++;}
@@ -6081,14 +6072,6 @@ function renderDashboard(){
     profile.sleepHours = parseFloat(profile.sleepHours); dirty = true;
   }
   if(dirty){ saveProfile(profile); }
-  const trainingLog = getTrainingLog();
-  const bodyLog = JSON.parse(localStorage.getItem('fos_body_log') || '[]');
-  const foodLog = JSON.parse(localStorage.getItem('fos_food_log') || '[]');
-  const weightLog = JSON.parse(localStorage.getItem('fos_weight_log') || '[]');
-  const waterML = parseInt(localStorage.getItem('fos_water_today') || '0');
-  const calEvts = JSON.parse(localStorage.getItem('fos_cal_events') || '[]');
-  const now = new Date(); now.setHours(0,0,0,0);
-  const todayS = todayStr();
 
   // ── Greeting ──
   const now2      = new Date();
