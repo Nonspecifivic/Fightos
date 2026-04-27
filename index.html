@@ -261,7 +261,7 @@ input:focus,select:focus,textarea:focus{border-color:rgba(232,255,0,.4);backgrou
 <body>
 
 <!-- ==================== ONBOARDING ==================== -->
-<div id="onboarding">
+<div id="onboarding" style="display:none;flex-direction:column;height:100vh;background:var(--bg);">
   <div class="ob-progress" id="ob-progress-bar" style="display:none"><div class="ob-progress-fill" id="ob-prog" style="width:12.5%"></div></div>
   <div class="ob-body" id="ob-body">
 
@@ -804,7 +804,7 @@ input:focus,select:focus,textarea:focus{border-color:rgba(232,255,0,.4);backgrou
 </div>
 <!-- ==================== END ACCOUNT MODAL ==================== -->
 
-<div class="app">
+<div class="app" id="main-app" style="display:none">
 
 <!-- TOPBAR -->
 <div class="topbar">
@@ -5736,7 +5736,10 @@ function showOnboarding(){
   // Hide all steps
   document.querySelectorAll('.ob-step').forEach(s=>s.classList.remove('active'));
 }
-function hideOnboarding(){ document.getElementById('onboarding').style.display='none'; }
+function hideOnboarding(){
+  document.getElementById('onboarding').style.display='none';
+  document.getElementById('main-app').style.display='flex';
+}
 
 function obSetStep(n){
   document.querySelector(`#ob-step-${obStep}`)?.classList.remove('active');
