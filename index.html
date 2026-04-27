@@ -3047,16 +3047,41 @@ function renderMatchHistory(){
   const history=getMatchHistory();
   const el=document.getElementById('match-history-list');
   if(!el) return;
-  if(!history.length){ el.innerHTML='<div class="row" style="color:var(--mut2);font-size:13px">No matches logged yet — analyse your first match above.</div>'; return; }
-  el.innerHTML=history.slice(0,10).map((m,i)=>`
-    <div class="row" style="align-items:flex-start;gap:8px">
-      <div style="width:32px;height:32px;border-radius:6px;background:${m.result==='Win'?'rgba(0,230,118,.15)':m.result==='Loss'?'rgba(255,59,48,.12)':'rgba(136,136,136,.12)'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${m.result==='Win'?'var(--grn)':m.result==='Loss'?'var(--acc2)':'var(--mut2)'};flex-shrink:0">${m.result==='Win'?'W':m.result==='Loss'?'L':'D'}</div>
+  if(!history.length){
+    el.innerHTML='<div class="row" style="color:var(--mut2);font-size:13px">No matches logged yet — analyse your first match above.</div>';
+    return;
+  }
+  el.innerHTML=history.slice(0,20).map((m,i)=>{
+    const resultColor = m.result==='Win'?'var(--grn)':m.result==='Loss'?'var(--acc2)':'var(--mut2)';
+    const resultBg    = m.result==='Win'?'rgba(0,230,118,.12)':m.result==='Loss'?'rgba(255,59,48,.1)':'rgba(136,136,136,.1)';
+    const resultLetter= m.result==='Win'?'W':m.result==='Loss'?'L':'D';
+    return `
+    <div class="row" style="align-items:flex-start;gap:8px" id="match-row-${m.id||i}">
+      <div style="width:34px;height:34px;border-radius:8px;background:${resultBg};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:${resultColor};flex-shrink:0">${resultLetter}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:500">${m.type||'Match'}${m.opponent?' vs '+m.opponent:''} · ${m.finish||'Decision'}</div>
-        <div style="font-size:11px;color:var(--mut2)">${fmtDate(m.date)}${m.event?' · '+m.event:''}</div>
+        <div style="font-size:13px;font-weight:500">${m.type||'Match'}${m.opponent?' <span style="color:var(--mut2);font-weight:400">vs '+m.opponent+'</span>':''} · ${m.finish||'Decision'}</div>
+        <div style="font-size:11px;color:var(--mut2);margin-top:2px">${fmtDate(m.date)}${m.event?' · '+m.event:''}</div>
       </div>
-      <button onclick="viewMatchAnalysis(${i})" style="padding:3px 8px;border-radius:5px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-size:11px;cursor:pointer;flex-shrink:0">View</button>
-    </div>`).join('');
+      <div style="display:flex;gap:5px;flex-shrink:0">
+        <button onclick="viewMatchAnalysis(${i})" style="padding:4px 9px;border-radius:5px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-size:11px;cursor:pointer" title="View analysis">View</button>
+        <button onclick="deleteMatchEntry(${m.id||i}, ${!m.id})" style="padding:4px 8px;border-radius:5px;border:1px solid rgba(255,59,48,.25);background:transparent;color:var(--acc2);font-size:11px;cursor:pointer" title="Delete this match">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function deleteMatchEntry(idOrIdx, isIdx){
+  if(!confirm('Delete this match analysis? This cannot be undone.')) return;
+  let history = getMatchHistory();
+  if(isIdx){
+    history.splice(idOrIdx, 1);
+  } else {
+    history = history.filter(m => m.id !== idOrIdx);
+  }
+  saveMatchHistory(history);
+  renderMatchRecord();
+  renderMatchHistory();
+  debouncedSync();
 }
 
 function viewMatchAnalysis(i){
@@ -3065,7 +3090,15 @@ function viewMatchAnalysis(i){
   const content=document.getElementById('analysis-content'), out=document.getElementById('analysis-output');
   out.style.display='block'; content.style.display='block';
   document.getElementById('analysis-loading').style.display='none';
-  content.innerHTML=`<div style="padding:8px 0;font-size:11px;color:var(--mut2);margin-bottom:8px">📋 Saved analysis — ${fmtDate(m.date)}</div>`+renderCoachOutput(m.analysis);
+  content.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0 12px;border-bottom:1px solid var(--bdr);margin-bottom:12px">
+      <div>
+        <div style="font-size:13px;font-weight:500">${m.type||'Match'}${m.opponent?' vs '+m.opponent:''} · ${m.finish||'Decision'}</div>
+        <div style="font-size:11px;color:var(--mut2)">📋 Saved analysis · ${fmtDate(m.date)}${m.event?' · '+m.event:''}</div>
+      </div>
+      <span class="pill ${m.result==='Win'?'pill-grn':m.result==='Loss'?'pill-red':''}">${m.result||'—'}</span>
+    </div>
+    `+renderCoachOutput(m.analysis);
   out.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
@@ -3225,39 +3258,90 @@ function handleDragLeave(){
   document.getElementById('upload-zone').style.borderColor='';
   document.getElementById('upload-zone').style.background='';
 }
-async function fileToBase64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});}
+// Compress image to max 1024px and JPEG quality 0.7 before encoding
+// This keeps each image under ~200KB base64 so 5 images fit comfortably in the 4MB API limit
+async function compressImage(file, maxPx=1024, quality=0.7){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = ()=>{
+      URL.revokeObjectURL(url);
+      let {width:w, height:h} = img;
+      // Scale down if needed
+      if(w>maxPx || h>maxPx){
+        if(w>h){ h=Math.round(h*maxPx/w); w=maxPx; }
+        else    { w=Math.round(w*maxPx/h); h=maxPx; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      const b64 = canvas.toDataURL('image/jpeg', quality).split(',')[1];
+      resolve({ b64, mimeType:'image/jpeg', w, h });
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+async function fileToBase64(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=()=>res(r.result.split(',')[1]);
+    r.onerror=rej;
+    r.readAsDataURL(file);
+  });
+}
+
 async function analyzeMatch(){
   const out=document.getElementById('analysis-output');
   const loading=document.getElementById('analysis-loading');
   const content=document.getElementById('analysis-content');
-  out.style.display='block';loading.style.display='flex';content.style.display='none';content.innerHTML='';
+  out.style.display='block'; loading.style.display='flex'; content.style.display='none'; content.innerHTML='';
 
-  const type=document.getElementById('ma-type').value;
-  const result=document.getElementById('ma-result').value;
-  const finish=document.getElementById('ma-finish').value;
-  const dur=document.getElementById('ma-dur').value;
-  const desc=document.getElementById('ma-desc').value;
-  const focus=document.getElementById('ma-focus').value;
-  const profile=loadProfile()||{};
-  const userContent=[];
+  const type    = document.getElementById('ma-type').value;
+  const result  = document.getElementById('ma-result').value;
+  const finish  = document.getElementById('ma-finish').value;
+  const dur     = document.getElementById('ma-dur').value;
+  const desc    = document.getElementById('ma-desc').value;
+  const focus   = document.getElementById('ma-focus').value;
+  const profile = loadProfile()||{};
+  const userContent = [];
 
-  // 1. Add local file uploads (images only — Claude can't process video)
-  for(const f of uploadedFiles2){
-    if(f.type.startsWith('image/')){
-      const b64=await fileToBase64(f);
-      userContent.push({type:'image',source:{type:'base64',media_type:f.type,data:b64}});
+  // Show compression progress
+  const imageFiles = uploadedFiles2.filter(f=>f.type.startsWith('image/'));
+  if(imageFiles.length){
+    loading.innerHTML=`<div style="text-align:center"><div class="dots-loading" style="justify-content:center"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><div style="font-size:12px;color:var(--mut2);margin-top:8px">Compressing ${imageFiles.length} image${imageFiles.length!==1?'s':''}…</div></div>`;
+  }
+
+  // Compress and encode images — max 5 to keep request manageable
+  let totalBytes = 0;
+  const MAX_BYTES = 3_500_000; // 3.5MB safety limit (API allows ~4MB total)
+  let skipped = 0;
+
+  for(const f of imageFiles.slice(0, 10)){
+    try{
+      const { b64, mimeType } = await compressImage(f);
+      const byteSize = Math.round(b64.length * 0.75); // base64 → bytes estimate
+      if(totalBytes + byteSize > MAX_BYTES){ skipped++; continue; }
+      totalBytes += byteSize;
+      userContent.push({type:'image', source:{type:'base64', media_type:mimeType, data:b64}});
+    }catch(e){
+      console.error('Failed to compress image:', f.name, e);
     }
   }
 
-  // 2. Add Google Photos selections
-  for(const p of gPhotosSelected){
-    userContent.push({type:'image',source:{type:'base64',media_type:p.mimeType,data:p.base64}});
-  }
+  // Restore normal loading dots
+  loading.innerHTML=`<div class="dots-loading"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
 
-  const totalImages=userContent.length;
-  const imageNote=totalImages>0
-    ?`${totalImages} image${totalImages>1?'s':''} attached (${uploadedFiles2.filter(f=>f.type.startsWith('image/')).length} local, ${gPhotosSelected.length} from Google Photos) — analyse visible technique, positioning and tactical patterns.`
-    :'No images attached — analysis based on description only.';
+  const totalImages = userContent.length;
+  const imageNote = totalImages>0
+    ? `${totalImages} image${totalImages!==1?'s':''} attached${skipped>0?` (${skipped} skipped — too large)`:''}. Analyse visible technique, body positioning and tactical patterns.`
+    : 'No images attached — analysis based on written description only.';
+
+  if(skipped>0){
+    content.innerHTML=`<div class="tip" style="margin-bottom:10px">⚠️ ${skipped} image${skipped!==1?'s were':' was'} skipped to stay within the API size limit. The remaining ${totalImages} image${totalImages!==1?'s are':' is'} being analysed.</div>`;
+    content.style.display='block';
+  }
 
   const prompt=`You are an elite combat sports coach. Analyse this fighter's match performance.
 
@@ -3269,10 +3353,10 @@ Description: ${desc||'No description provided'}
 Focus areas: ${focus||'General analysis'}
 Images: ${imageNote}
 
-Provide analysis using these exact section headers. Each section on its own line in CAPS:
+Provide analysis using these exact section headers. Each section header on its own line in CAPS:
 
 PERFORMANCE SCORES
-Rate each out of 5 (format exactly as "Label: X/5"):
+Rate each area out of 5 (format exactly as "Label: X/5"):
 Takedown offense: X/5
 Takedown defense: X/5
 Guard/Position work: X/5
@@ -3281,51 +3365,58 @@ Cardio & conditioning: X/5
 Tactical execution: X/5
 
 KEY STRENGTHS
-List 2-3 specific things done well, one per line
+2-3 specific things done well, one per line starting with a dash
 
 CRITICAL IMPROVEMENTS
-Top 3 most important areas to fix, one per line with brief explanation
+Top 3 most important areas to fix, one per line starting with a dash
 
 TRAINING DRILLS
-4 specific drills to address the gaps, one per line
+4 specific drills to address the gaps, one per line starting with a dash
 
 TACTICAL ADJUSTMENTS
-3-4 specific tactical changes for next time
+3-4 specific tactical changes for next time, one per line starting with a dash
+${document.getElementById('ma-scout')?.value==='yes'?'\nOPPONENT PATTERNS\nPatterns observed and how to counter them, one per line starting with a dash':''}
+${totalImages>0?'\nVISUAL OBSERVATIONS\nSpecific technique feedback based on the images, one per line starting with a dash':''}
 
-${document.getElementById('ma-scout')?.value==='yes'?'OPPONENT PATTERNS\nPatterns observed and how to counter them\n':''}${totalImages>0?'VISUAL OBSERVATIONS\nSpecific technique feedback from the images provided\n':''}
+Be specific and direct. Use ${profile.firstName||'their'} first name. Reference actual moments from the description.`;
 
-Be specific and direct. Use their first name. Reference actual moments from the description.`;
-
-
-  userContent.push({type:'text',text:prompt});
+  userContent.push({type:'text', text:prompt});
 
   try{
     const key=getAPIKey(); if(!key){openKeyModal();throw new Error('no_key');}
     const resp=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01','x-api-key':key,'anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1000,messages:[{role:'user',content:userContent}]})
+      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1200,messages:[{role:'user',content:userContent}]})
     });
-    if(!resp.ok){const err=await resp.json().catch(()=>({}));throw new Error(err.error?.message||resp.statusText);}
+    if(!resp.ok){
+      const err=await resp.json().catch(()=>({}));
+      const msg=err.error?.message||resp.statusText;
+      // Specific guidance for size errors
+      if(msg.includes('size')||msg.includes('too large')||resp.status===413){
+        throw new Error('Request too large. Try removing some images and analysing fewer at once (3-4 max recommended).');
+      }
+      throw new Error(msg);
+    }
     const data=await resp.json();
     const text=data.content?.map(b=>b.text||'').join('')||'Analysis failed.';
     loading.style.display='none'; content.style.display='block';
-    content.innerHTML=renderCoachOutput(text);
+    content.innerHTML=(skipped>0?content.innerHTML:'')+renderCoachOutput(text);
     // Save to match history
     const history=getMatchHistory();
     history.unshift({
+      id: Date.now(),
       date:todayStr(),
       type,result,finish,
       opponent:document.getElementById('ma-opponent')?.value||'',
       event:document.getElementById('ma-event')?.value||'',
-      analysis:text.slice(0,1000)
+      analysis:text.slice(0,1500)
     });
-    saveMatchHistory(history.slice(0,20));
+    saveMatchHistory(history.slice(0,30));
     renderMatchRecord();
     renderMatchHistory();
-    // Clear Google Photos selection after analysis
     clearGPhotosSelection();
-  }catch(e){showAIError(content,loading,e.message);}
+  }catch(e){ showAIError(content,loading,e.message); }
 }
 
 // ===== TECHNIQUES =====
