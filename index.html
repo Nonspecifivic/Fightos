@@ -615,52 +615,110 @@ textarea{resize:vertical;min-height:70px;}
 <!-- ==================== END API KEY MODAL ==================== -->
 
 <!-- ==================== ACCOUNT MODAL ==================== -->
-<div id="account-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:2000;align-items:center;justify-content:center;padding:20px">
-  <div style="background:var(--surf);border:1px solid var(--bdr2);border-radius:14px;padding:22px;width:100%;max-width:400px">
+<div id="account-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:2000;align-items:center;justify-content:center;padding:20px;overflow-y:auto">
+  <div style="background:var(--surf);border:1px solid var(--bdr2);border-radius:16px;padding:24px;width:100%;max-width:420px;margin:auto">
 
-    <!-- Signed out: sign in / sign up tabs -->
+    <!-- ── SIGNED OUT PANEL ── -->
     <div id="acct-auth-panel">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;margin-bottom:4px">FightOS Account</div>
-      <p style="font-size:13px;color:var(--mut2);line-height:1.5;margin-bottom:14px">Create an account to sync your data across all your devices.</p>
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;margin-bottom:4px">FightOS Account</div>
+        <p style="font-size:13px;color:var(--mut2);line-height:1.5">Sign in to sync your training data across all your devices</p>
+      </div>
 
-      <!-- Tab toggle -->
-      <div style="display:flex;background:var(--surf2);border-radius:8px;padding:3px;margin-bottom:16px">
+      <!-- Social login buttons -->
+      <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:18px">
+
+        <!-- Google -->
+        <button onclick="socialLogin('google')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:9px;border:1.5px solid var(--bdr2);background:var(--surf2);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--txt);transition:border-color .15s;width:100%;text-align:left" onmouseover="this.style.borderColor='#4285F4'" onmouseout="this.style.borderColor=''">
+          <svg width="20" height="20" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+          Continue with Google
+        </button>
+
+        <!-- Microsoft -->
+        <button onclick="socialLogin('azure')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:9px;border:1.5px solid var(--bdr2);background:var(--surf2);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--txt);transition:border-color .15s;width:100%;text-align:left" onmouseover="this.style.borderColor='#00A4EF'" onmouseout="this.style.borderColor=''">
+          <svg width="20" height="20" viewBox="0 0 24 24"><rect x="1" y="1" width="10" height="10" fill="#F25022"/><rect x="13" y="1" width="10" height="10" fill="#7FBA00"/><rect x="1" y="13" width="10" height="10" fill="#00A4EF"/><rect x="13" y="13" width="10" height="10" fill="#FFB900"/></svg>
+          Continue with Microsoft
+        </button>
+
+        <!-- Apple -->
+        <button onclick="socialLogin('apple')" style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:9px;border:1.5px solid var(--bdr2);background:var(--surf2);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--txt);transition:border-color .15s;width:100%;text-align:left" onmouseover="this.style.borderColor='#888'" onmouseout="this.style.borderColor=''">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98l-.09.06c-.22.14-2.19 1.28-2.17 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.77M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          Continue with Apple
+        </button>
+      </div>
+
+      <!-- Divider -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <div style="flex:1;height:1px;background:var(--bdr2)"></div>
+        <span style="font-size:11px;color:var(--mut2);white-space:nowrap">or use email</span>
+        <div style="flex:1;height:1px;background:var(--bdr2)"></div>
+      </div>
+
+      <!-- Email tab toggle -->
+      <div style="display:flex;background:var(--surf2);border-radius:8px;padding:3px;margin-bottom:14px">
         <button id="acct-signin-tab" onclick="switchAuthTab('signin')" style="flex:1;padding:7px;border-radius:6px;border:none;background:var(--surf);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;font-weight:500;color:var(--txt)">Sign in</button>
         <button id="acct-signup-tab" onclick="switchAuthTab('signup')" style="flex:1;padding:7px;border-radius:6px;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;color:var(--mut2)">Create account</button>
       </div>
 
-      <div style="margin-bottom:10px"><label style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);display:block;margin-bottom:5px">Email</label>
+      <div style="margin-bottom:10px">
+        <label style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);display:block;margin-bottom:5px">Email</label>
         <input type="email" id="acct-email" placeholder="you@example.com" style="width:100%;background:var(--surf2);border:1.5px solid var(--bdr2);border-radius:8px;padding:9px 12px;color:var(--txt);font-family:'DM Sans',sans-serif;font-size:13px;outline:none">
       </div>
-      <div style="margin-bottom:14px"><label style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);display:block;margin-bottom:5px">Password</label>
+      <div style="margin-bottom:14px">
+        <label style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);display:block;margin-bottom:5px">Password</label>
         <input type="password" id="acct-password" placeholder="8+ characters" style="width:100%;background:var(--surf2);border:1.5px solid var(--bdr2);border-radius:8px;padding:9px 12px;color:var(--txt);font-family:'DM Sans',sans-serif;font-size:13px;outline:none" onkeydown="if(event.key==='Enter')submitAuth()">
       </div>
+
       <div id="acct-error" style="display:none;background:rgba(255,59,48,.08);border:1px solid rgba(255,59,48,.2);border-radius:7px;padding:9px 12px;font-size:12px;color:var(--acc2);margin-bottom:10px"></div>
+
       <div style="display:flex;gap:8px">
         <button onclick="closeAccountModal()" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer">Cancel</button>
         <button onclick="submitAuth()" id="acct-submit-btn" style="flex:2;padding:10px;border-radius:8px;border:none;background:var(--acc);color:#000;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;cursor:pointer">SIGN IN</button>
       </div>
+
+      <p style="font-size:10px;color:var(--mut2);text-align:center;margin-top:12px;line-height:1.5">By signing in you agree that your data is stored securely in your personal account and synced across your devices only.</p>
     </div>
 
-    <!-- Signed in: account info + sync controls -->
+    <!-- ── SIGNED IN PANEL ── -->
     <div id="acct-signed-in-panel" style="display:none">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;margin-bottom:4px">Your Account</div>
-      <div style="font-size:13px;color:var(--mut2);margin-bottom:16px" id="acct-email-display"></div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+        <div id="acct-provider-icon" style="width:42px;height:42px;border-radius:10px;background:var(--surf2);border:1px solid var(--bdr2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">👤</div>
+        <div>
+          <div style="font-size:14px;font-weight:600" id="acct-email-display"></div>
+          <div style="font-size:11px;color:var(--mut2)" id="acct-provider-display">Email account</div>
+        </div>
+      </div>
 
-      <!-- Sync status -->
       <div style="background:var(--surf2);border:1px solid var(--bdr);border-radius:9px;padding:12px;margin-bottom:14px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <span style="font-size:13px;font-weight:500">Data sync</span>
+          <span style="font-size:13px;font-weight:500">Cloud sync</span>
           <span id="acct-sync-badge" class="pill pill-grn">✓ Synced</span>
         </div>
-        <div style="font-size:11px;color:var(--mut2);line-height:1.6" id="acct-sync-detail">Your profile, training log, calendar and match history are synced across devices.</div>
+        <div style="font-size:11px;color:var(--mut2);line-height:1.6" id="acct-sync-detail">Profile, training log, calendar and match history synced across all your devices.</div>
+      </div>
+
+      <!-- What's synced -->
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px">
+        <span style="font-size:10px;padding:3px 8px;border-radius:20px;background:var(--surf2);border:1px solid var(--bdr);color:var(--mut2)">🏋️ Training log</span>
+        <span style="font-size:10px;padding:3px 8px;border-radius:20px;background:var(--surf2);border:1px solid var(--bdr);color:var(--mut2)">📅 Calendar</span>
+        <span style="font-size:10px;padding:3px 8px;border-radius:20px;background:var(--surf2);border:1px solid var(--bdr);color:var(--mut2)">🎯 Profile</span>
+        <span style="font-size:10px;padding:3px 8px;border-radius:20px;background:var(--surf2);border:1px solid var(--bdr);color:var(--mut2)">🥋 Match history</span>
+        <span style="font-size:10px;padding:3px 8px;border-radius:20px;background:var(--surf2);border:1px solid var(--bdr);color:var(--mut2)">🧠 Coach briefs</span>
       </div>
 
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button onclick="manualSync()" class="btn btn-ghost" style="flex:1;font-size:12px">↻ Sync now</button>
-        <button onclick="signOut()" class="btn btn-danger" style="flex:1;font-size:12px">Sign out</button>
-        <button onclick="closeAccountModal()" class="btn btn-ghost" style="width:100%;font-size:12px;margin-top:4px">Close</button>
+        <button onclick="signOut()" class="btn" style="flex:1;font-size:12px;background:rgba(255,59,48,.08);color:var(--acc2);border:1px solid rgba(255,59,48,.2)">Sign out</button>
       </div>
+      <button onclick="closeAccountModal()" class="btn btn-ghost" style="width:100%;font-size:12px;margin-top:8px">Close</button>
+    </div>
+
+    <!-- ── SOCIAL LOGIN PENDING ── -->
+    <div id="acct-social-pending" style="display:none;text-align:center;padding:20px 0">
+      <div style="font-size:32px;margin-bottom:12px" id="acct-social-icon">🔄</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;margin-bottom:8px" id="acct-social-msg">Redirecting…</div>
+      <div style="font-size:13px;color:var(--mut2);line-height:1.6">You'll be redirected to sign in, then brought back to FightOS automatically.</div>
+      <button onclick="showAuthPanel()" style="margin-top:16px;padding:8px 16px;border-radius:8px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer">← Back</button>
     </div>
 
   </div>
@@ -3254,11 +3312,80 @@ async function getValidToken(){
   return ACCT.accessToken;
 }
 
-function openAccountModal(){ document.getElementById('account-modal').style.display='flex'; if(isSignedIn()) showSignedInPanel(); else showAuthPanel(); }
+function openAccountModal(){
+  document.getElementById('account-modal').style.display='flex';
+  if(isSignedIn()) showSignedInPanel();
+  else showAuthPanel();
+}
 function closeAccountModal(){ document.getElementById('account-modal').style.display='none'; }
 
-function showAuthPanel(){ document.getElementById('acct-auth-panel').style.display='block'; document.getElementById('acct-signed-in-panel').style.display='none'; document.getElementById('acct-error').style.display='none'; }
-function showSignedInPanel(){ document.getElementById('acct-auth-panel').style.display='none'; document.getElementById('acct-signed-in-panel').style.display='block'; document.getElementById('acct-email-display').textContent=ACCT.user?.email||''; updateSyncBadge(); }
+function showAuthPanel(){
+  document.getElementById('acct-auth-panel').style.display='block';
+  document.getElementById('acct-signed-in-panel').style.display='none';
+  document.getElementById('acct-social-pending').style.display='none';
+  document.getElementById('acct-error').style.display='none';
+}
+
+function showSignedInPanel(){
+  document.getElementById('acct-auth-panel').style.display='none';
+  document.getElementById('acct-signed-in-panel').style.display='block';
+  document.getElementById('acct-social-pending').style.display='none';
+  document.getElementById('acct-email-display').textContent=ACCT.user?.email||'';
+  // Provider display
+  const provider=ACCT.user?.provider||'email';
+  const providerMap={google:{icon:'🔵',label:'Signed in with Google'},azure:{icon:'🟦',label:'Signed in with Microsoft'},apple:{icon:'⚫',label:'Signed in with Apple'},email:{icon:'📧',label:'Email account'}};
+  const p=providerMap[provider]||providerMap.email;
+  const ic=document.getElementById('acct-provider-icon'); if(ic) ic.textContent=p.icon;
+  const pl=document.getElementById('acct-provider-display'); if(pl) pl.textContent=p.label;
+  updateSyncBadge();
+}
+
+// ── Social login — redirects to provider via Vercel backend ──
+function socialLogin(provider){
+  const backendUrl=ACCT.backendUrl||gfitBackendUrl();
+  if(!backendUrl){
+    document.getElementById('acct-error').textContent='Enter your Vercel backend URL in the Trackers tab first.';
+    document.getElementById('acct-error').style.display='block';
+    return;
+  }
+  // Show pending state
+  const icons={google:'🔵',azure:'🟦',apple:'⚫'};
+  const labels={google:'Redirecting to Google…',azure:'Redirecting to Microsoft…',apple:'Redirecting to Apple…'};
+  document.getElementById('acct-auth-panel').style.display='none';
+  document.getElementById('acct-social-pending').style.display='block';
+  document.getElementById('acct-social-icon').textContent=icons[provider]||'🔄';
+  document.getElementById('acct-social-msg').textContent=labels[provider]||'Redirecting…';
+  // Redirect after brief delay so user sees the message
+  setTimeout(()=>{ window.location.href=`${backendUrl}/api/account/oauth-start?provider=${provider}`; },600);
+}
+
+// ── Handle OAuth callback on page load (tokens arrive in URL fragment) ──
+function handleAccountOAuthCallback(){
+  const hash=window.location.hash;
+  if(!hash||!hash.includes('acct_')) return;
+  const params=new URLSearchParams(hash.slice(1));
+
+  if(params.has('acct_error')){
+    const msg=decodeURIComponent(params.get('acct_error'));
+    window.history.replaceState(null,'',window.location.pathname);
+    // Show account modal with error
+    setTimeout(()=>{ openAccountModal(); document.getElementById('acct-error').textContent=msg; document.getElementById('acct-error').style.display='block'; },500);
+    return;
+  }
+
+  if(params.has('acct_access_token')){
+    ACCT.user={ id:params.get('acct_user_id'), email:params.get('acct_email'), provider:params.get('acct_provider')||'email' };
+    ACCT.accessToken=params.get('acct_access_token');
+    ACCT.refreshToken=params.get('acct_refresh_token');
+    ACCT.expiresAt=Date.now()+(parseInt(params.get('acct_expires_in')||'3600'))*1000;
+    ACCT.backendUrl=localStorage.getItem('gfit_backend_url')||'';
+    window.history.replaceState(null,'',window.location.pathname);
+    saveAccountSession();
+    updateAccountBtn();
+    // Load cloud data
+    loadFromCloud().then(()=>{ openAccountModal(); });
+  }
+}
 
 function switchAuthTab(tab){
   ACCT.authTab=tab;
@@ -3373,6 +3500,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   initTheme();
   loadAccountSession();
   updateAccountBtn();
+  handleAccountOAuthCallback(); // check if returning from social login
   updateKeyStatus();
   renderSavedBriefs();
   renderMatchRecord();
