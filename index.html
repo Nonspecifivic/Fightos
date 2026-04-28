@@ -955,25 +955,6 @@ html,body{
 
 <div class="content">
 
-  <button class="nb active" onclick="showTab('dashboard')">Home</button>
-  <button class="nb" onclick="showTab('coach')">AI Coach</button>
-  <button class="nb" onclick="showTab('training')">Training</button>
-  <button class="nb" onclick="showTab('nutrition')">Nutrition</button>
-  <button class="nb" onclick="showTab('body')">Body</button>
-  <button class="nb" onclick="showTab('calendar')">Calendar</button>
-  <button class="nb" onclick="showTab('profile')">Profile</button>
-  <button class="nb" onclick="showTab('weight')">Weight</button>
-  <button class="nb" onclick="showTab('hydration')">Hydration</button>
-  <button class="nb" onclick="showTab('womens')">Women's Health</button>
-  <button class="nb" onclick="showTab('trackers')">Trackers</button>
-  <button class="nb" onclick="showTab('strength')">Strength</button>
-  <button class="nb" onclick="showTab('mobility')">Mobility</button>
-  <button class="nb" onclick="showTab('techniques')">Techniques</button>
-  <button class="nb" onclick="showTab('analysis')">Match Analysis</button>
-</nav>
-
-<div class="content">
-
 <!-- ==================== DASHBOARD ==================== -->
 <div class="tab active" id="tab-dashboard">
 
@@ -2467,7 +2448,7 @@ function buildAthleteContext(){
   const tCal = todayFood.reduce((s,f)=>s+(f.cal||0),0);
   const tPro = todayFood.reduce((s,f)=>s+(f.pro||0),0);
   const yday  = new Date(now); yday.setDate(yday.getDate()-1);
-  const ydStr = yday.toISOString().split('T')[0];
+  const ydStr = `${yday.getFullYear()}-${String(yday.getMonth()+1).padStart(2,'0')}-${String(yday.getDate()).padStart(2,'0')}`;
   const yCal  = foodLog.filter(f=>f.date===ydStr).reduce((s,f)=>s+(f.cal||0),0);
 
   const latestWt = weightLog.length ? weightLog[weightLog.length-1] : null;
@@ -3387,8 +3368,8 @@ function renderWomensTab(){
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div>
           <div style="font-size:12px;font-weight:600;color:#FF6B9D">🩸 Period ${i===0?'(next)':'cycle '+(i+1)}</div>
-          <div style="font-size:13px;font-weight:500;margin:2px 0">${fmtDate(p.nextStart.toISOString().split('T')[0])} – ${fmtDate(p.nextEnd.toISOString().split('T')[0])}</div>
-          <div style="font-size:11px;color:var(--mut2)">🟡 Ovulation ~${fmtDate(p.nextOv.toISOString().split('T')[0])}</div>
+          <div style="font-size:13px;font-weight:500;margin:2px 0">${fmtDate(localDateStr(p.nextStart))} – ${fmtDate(localDateStr(p.nextEnd))}</div>
+          <div style="font-size:11px;color:var(--mut2)">🟡 Ovulation ~${fmtDate(localDateStr(p.nextOv))}</div>
         </div>
         <span style="font-size:11px;color:${p.daysTo<=7?'#FF6B9D':'var(--mut2)'}">
           ${p.daysTo<0?'Now':p.daysTo===0?'Today':p.daysTo===1?'Tomorrow':'in '+p.daysTo+'d'}
@@ -6011,7 +5992,16 @@ function fmtDateShort(dateStr){
 }
 
 function todayStr(){
-  return new Date().toISOString().split('T')[0];
+  // Use local date, not UTC — toISOString() returns UTC which is wrong for non-UTC timezones
+  return localDateStr(new Date());
+}
+
+// Formats any Date object to YYYY-MM-DD in LOCAL timezone
+function localDateStr(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
 }
 
 function fmtNum(n){
