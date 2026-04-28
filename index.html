@@ -205,17 +205,64 @@ textarea{resize:vertical;min-height:70px;line-height:1.6;}
 .slider-track input[type=range]{position:absolute;inset:0;width:100%;opacity:0;cursor:pointer;height:100%;}
 .slider-fill{position:absolute;left:0;top:0;height:100%;background:var(--acc);border-radius:3px;pointer-events:none;transition:width .1s;}
 .ob-range-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--mut2);}
-/* RESPONSIVE */
-@media(max-width:680px){.f2{grid-template-columns:1fr 1fr;}.stat-grid{grid-template-columns:repeat(3,1fr);}.topbar .ai-badge{display:none;}}
-@media(max-width:400px){.f3{grid-template-columns:1fr 1fr;}}
+/* ── LAYOUT ── */
+html,body{height:100%;background:var(--bg);color:var(--txt);font-family:"DM Sans",sans-serif;font-size:14px;overflow:hidden;-webkit-font-smoothing:antialiased;}
 
-/* ── BOTTOM TAB BAR ── */
-.bottom-bar{display:none;background:var(--surf);border-top:1px solid var(--bdr);flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0px);}
-@media(max-width:680px){
-  .bottom-bar{display:flex;}
-  .nav{display:none;}
-  .content{padding:12px 14px;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 72px);}
+/* Desktop: sidebar + content */
+.app{display:flex;flex-direction:column;height:100vh;max-width:100%;background:var(--bg);}
+@media(min-width:681px){
+  .app{flex-direction:row;}
+  .app-sidebar{width:220px;flex-shrink:0;background:var(--surf);border-right:1px solid var(--bdr);display:flex;flex-direction:column;overflow-y:auto;padding:16px 0;}
+  .app-main{flex:1;display:flex;flex-direction:column;min-width:0;}
 }
+@media(max-width:680px){
+  .app-sidebar{display:none;}
+  .app-main{flex:1;display:flex;flex-direction:column;min-width:0;}
+}
+
+/* ── DESKTOP SIDEBAR NAV ── */
+.sidebar-logo{font-family:"Bebas Neue",sans-serif;font-size:22px;letter-spacing:3px;padding:0 18px 16px;border-bottom:1px solid var(--bdr);margin-bottom:8px;}
+.sidebar-logo span{color:var(--acc);}
+.sidebar-section{font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--mut2);padding:8px 18px 4px;font-weight:700;}
+.sidebar-btn{display:flex;align-items:center;gap:10px;width:100%;padding:9px 18px;border:none;background:transparent;color:var(--mut2);font-family:"DM Sans",sans-serif;font-size:13px;font-weight:500;cursor:pointer;text-align:left;transition:all .15s;border-radius:0;}
+.sidebar-btn:hover{background:var(--surf2);color:var(--txt);}
+.sidebar-btn.active{background:rgba(232,255,0,.08);color:var(--acc);border-left:3px solid var(--acc);}
+.sidebar-btn .sb-icon{font-size:16px;width:22px;flex-shrink:0;}
+
+/* ── TOPBAR (mobile only) ── */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 14px;height:52px;flex-shrink:0;background:var(--surf);border-bottom:1px solid var(--bdr);}
+@media(min-width:681px){.topbar{display:none;}}
+.logo{font-family:"Bebas Neue",sans-serif;font-size:20px;letter-spacing:2px;color:var(--txt);}
+.logo span{color:var(--acc);}
+.top-right{display:flex;align-items:center;gap:6px;}
+.topbar-btn{width:32px;height:32px;border-radius:50%;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.topbar-btn:hover{border-color:var(--acc);color:var(--acc);}
+#account-btn{width:auto;border-radius:20px;padding:0 10px;font-family:"DM Sans",sans-serif;font-size:11px;white-space:nowrap;}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--acc);color:#000;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-family:"DM Sans",sans-serif;}
+
+/* Desktop topbar */
+.desktop-topbar{display:none;align-items:center;justify-content:space-between;padding:0 24px;height:56px;flex-shrink:0;background:var(--surf);border-bottom:1px solid var(--bdr);}
+@media(min-width:681px){.desktop-topbar{display:flex;}}
+.dt-title{font-family:"Bebas Neue",sans-serif;font-size:18px;letter-spacing:2px;}
+
+/* Old nav hidden */
+.nav{display:none;}
+
+/* ── CONTENT ── */
+.content{flex:1;overflow-y:auto;padding:20px 24px;padding-bottom:calc(env(safe-area-inset-bottom,0px)+24px);-webkit-overflow-scrolling:touch;overscroll-behavior-y:auto;}
+@media(max-width:680px){.content{padding:14px;padding-bottom:calc(env(safe-area-inset-bottom,0px)+80px);}}
+
+/* ── TAB BACK HEADER (mobile) ── */
+.tab-back-header{display:none;}
+@media(max-width:680px){
+  .tab-back-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--bdr);}
+  .tab-back-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .tab-back-title{font-family:"Bebas Neue",sans-serif;font-size:18px;letter-spacing:1px;}
+}
+
+/* ── BOTTOM TAB BAR (mobile) ── */
+.bottom-bar{display:none;background:var(--surf);border-top:1px solid var(--bdr);flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0px);}
+@media(max-width:680px){.bottom-bar{display:flex;}}
 .bb-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;padding:7px 2px 10px;border:none;background:transparent;color:var(--mut2);cursor:pointer;font-family:"DM Sans",sans-serif;font-size:10px;font-weight:500;transition:color .15s;min-height:58px;}
 .bb-btn.active{color:var(--acc);}
 .bb-btn svg{transition:transform .15s;}
@@ -228,34 +275,6 @@ textarea{resize:vertical;min-height:70px;line-height:1.6;}
 /* ── MORE MENU ── */
 .more-btn{display:flex;flex-direction:column;align-items:center;gap:5px;padding:14px 4px;border:none;background:transparent;cursor:pointer;font-family:"DM Sans",sans-serif;font-size:10px;font-weight:500;color:var(--txt);border-radius:10px;transition:background .12s;width:100%;}
 .more-btn:active{background:var(--surf2);}
-
-/* ── CARD RADIUS UPGRADE ── */
-.card{border-radius:14px;}
-.stat{border-radius:10px;}
-
-/* ── TOPBAR REFINEMENT ── */
-.topbar{height:52px;}
-.logo{font-size:21px;letter-spacing:2px;}
-.topbar-btn{width:32px;height:32px;border-radius:50%;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
-.topbar-btn:hover{border-color:var(--acc);color:var(--acc);}
-#account-btn{width:auto;border-radius:20px;padding:0 11px;font-size:11px;}
-.avatar{width:32px;height:32px;font-size:10px;}
-
-/* ── INPUT REFINEMENT ── */
-input[type=text],input[type=number],input[type=date],input[type=time],input[type=email],input[type=password],select,textarea{border:1.5px solid var(--bdr2);border-radius:10px;padding:10px 12px;}
-input:focus,select:focus,textarea:focus{border-color:rgba(232,255,0,.4);background:var(--surf);}
-.btn{border-radius:10px;}
-.btn-hero{padding:14px;font-size:16px;}
-
-/* ── TAB ANIMATION ── */
-.tab{display:none;animation:fadeUp .18s ease;}
-.tab.active{display:block;}
-@keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
-
-/* ── SECTION HEADER INSIDE TABS ── */
-.tab-page-header{margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--bdr);}
-.tab-page-title{font-family:"Bebas Neue",sans-serif;font-size:22px;letter-spacing:2px;line-height:1;}
-.tab-page-sub{font-size:12px;color:var(--mut2);margin-top:3px;}
 
 </style>
 </head>
@@ -807,9 +826,39 @@ input:focus,select:focus,textarea:focus{border-color:rgba(232,255,0,.4);backgrou
 
 <div class="app" id="main-app" style="display:none">
 
-<!-- TOPBAR -->
+<!-- DESKTOP SIDEBAR -->
+<aside class="app-sidebar" id="app-sidebar">
+  <div class="sidebar-logo">FIGHT<span>OS</span></div>
+  <div class="sidebar-section">Main</div>
+  <button class="sidebar-btn active" onclick="showTab('dashboard')" data-tab="dashboard"><span class="sb-icon">🏠</span>Dashboard</button>
+  <button class="sidebar-btn" onclick="showTab('coach')" data-tab="coach"><span class="sb-icon">🧠</span>AI Coach</button>
+  <button class="sidebar-btn" onclick="showTab('calendar')" data-tab="calendar"><span class="sb-icon">📅</span>Calendar</button>
+  <div class="sidebar-section">Log</div>
+  <button class="sidebar-btn" onclick="showTab('training')" data-tab="training"><span class="sb-icon">🏋️</span>Training</button>
+  <button class="sidebar-btn" onclick="showTab('body')" data-tab="body"><span class="sb-icon">🫀</span>Body & Recovery</button>
+  <button class="sidebar-btn" onclick="showTab('nutrition')" data-tab="nutrition"><span class="sb-icon">🥗</span>Nutrition</button>
+  <button class="sidebar-btn" onclick="showTab('hydration')" data-tab="hydration"><span class="sb-icon">💧</span>Hydration</button>
+  <button class="sidebar-btn" onclick="showTab('weight')" data-tab="weight"><span class="sb-icon">⚖️</span>Weight</button>
+  <div class="sidebar-section">Performance</div>
+  <button class="sidebar-btn" onclick="showTab('strength')" data-tab="strength"><span class="sb-icon">💪</span>Strength</button>
+  <button class="sidebar-btn" onclick="showTab('mobility')" data-tab="mobility"><span class="sb-icon">🧘</span>Mobility</button>
+  <button class="sidebar-btn" onclick="showTab('techniques')" data-tab="techniques"><span class="sb-icon">🥋</span>Techniques</button>
+  <button class="sidebar-btn" onclick="showTab('analysis')" data-tab="analysis"><span class="sb-icon">🎬</span>Match Analysis</button>
+  <div class="sidebar-section">Health</div>
+  <button class="sidebar-btn" onclick="showTab('womens')" data-tab="womens"><span class="sb-icon">🌸</span>Women's Health</button>
+  <button class="sidebar-btn" onclick="showTab('trackers')" data-tab="trackers"><span class="sb-icon">📡</span>Trackers</button>
+  <div class="sidebar-section">Settings</div>
+  <button class="sidebar-btn" onclick="showTab('profile')" data-tab="profile"><span class="sb-icon">👤</span>Profile</button>
+  <button class="sidebar-btn" onclick="openAccountModal()"><span class="sb-icon">☁️</span>Account & Sync</button>
+  <button class="sidebar-btn" onclick="openKeyModal()"><span class="sb-icon">🔑</span>API Key</button>
+  <button class="sidebar-btn" onclick="toggleTheme()"><span class="sb-icon">☀️</span>Toggle Theme</button>
+</aside>
+
+<div class="app-main">
+
+<!-- MOBILE TOPBAR -->
 <div class="topbar">
-  <div class="logo">FIGHT<span style="color:var(--mut2)">OS</span></div>
+  <div class="logo">FIGHT<span style="color:var(--acc)">OS</span></div>
   <div class="top-right">
     <button class="topbar-btn" onclick="openKeyModal()">🔑</button>
     <button class="topbar-btn" onclick="toggleTheme()">☀️</button>
@@ -818,8 +867,19 @@ input:focus,select:focus,textarea:focus{border-color:rgba(232,255,0,.4);backgrou
   </div>
 </div>
 
-<!-- HORIZONTAL SECTION NAV (hidden on mobile — replaced by bottom bar) -->
-<nav class="nav" id="nav">
+<!-- DESKTOP TOPBAR -->
+<div class="desktop-topbar">
+  <div class="dt-title" id="desktop-tab-title">DASHBOARD</div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <button onclick="openAccountModal()" style="padding:6px 14px;border-radius:20px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;" id="account-btn-desktop">👤 Account</button>
+    <div class="avatar" onclick="resetProfile()" title="Reset profile" id="app-avatar-desktop">MF</div>
+  </div>
+</div>
+
+<nav class="nav" id="nav" style="display:none"></nav>
+
+<div class="content">
+
   <button class="nb active" onclick="showTab('dashboard')">Home</button>
   <button class="nb" onclick="showTab('coach')">AI Coach</button>
   <button class="nb" onclick="showTab('training')">Training</button>
@@ -886,8 +946,54 @@ input:focus,select:focus,textarea:focus{border-color:rgba(232,255,0,.4);backgrou
   <!-- ── Smart alert ── -->
   <div id="dash-ai-banner"></div>
 
-  <!-- ── Key stats ring — 2×3 compact grid ── -->
-  <div class="stat-grid" id="dash-stat-grid" style="margin-bottom:14px"></div>
+  <!-- ── Today's stats ── -->
+  <div class="sec-title" style="margin-top:4px">Today at a glance</div>
+  <div class="stat-grid" id="dash-stat-grid" style="margin-bottom:10px"></div>
+
+  <!-- ── Today's cards row ── -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+    <!-- Readiness -->
+    <div class="card" style="margin-bottom:0">
+      <div style="padding:12px 14px">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);margin-bottom:6px;font-weight:600">Readiness</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1" id="dash-readiness-val">—</div>
+        <div id="dash-readiness-sub" style="font-size:11px;color:var(--mut2);margin-top:3px"></div>
+      </div>
+    </div>
+    <!-- Hydration -->
+    <div class="card" style="margin-bottom:0">
+      <div style="padding:12px 14px">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);margin-bottom:6px;font-weight:600">Hydration</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1;color:var(--blu)" id="dash-water-val">—</div>
+        <div id="dash-water-sub" style="font-size:11px;color:var(--mut2);margin-top:3px"></div>
+      </div>
+    </div>
+    <!-- Nutrition -->
+    <div class="card" style="margin-bottom:0">
+      <div style="padding:12px 14px">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);margin-bottom:6px;font-weight:600">Nutrition</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1;color:var(--acc)" id="dash-cal-val">—</div>
+        <div id="dash-cal-sub" style="font-size:11px;color:var(--mut2);margin-top:3px"></div>
+      </div>
+    </div>
+    <!-- Training this week -->
+    <div class="card" style="margin-bottom:0">
+      <div style="padding:12px 14px">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);margin-bottom:6px;font-weight:600">This week</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1;color:var(--ora)" id="dash-sessions-val">—</div>
+        <div id="dash-sessions-sub" style="font-size:11px;color:var(--mut2);margin-top:3px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Competition countdown (if applicable) ── -->
+  <div id="dash-comp-strip" style="display:none;background:linear-gradient(135deg,rgba(255,59,48,.08),rgba(255,59,48,.03));border:1px solid rgba(255,59,48,.2);border-radius:12px;padding:12px 14px;margin-bottom:14px;display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--acc2);font-weight:600;margin-bottom:3px">Next competition</div>
+      <div style="font-size:13px;font-weight:600" id="dash-comp-name">—</div></div>
+      <div style="text-align:right"><div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--acc2);line-height:1" id="dash-comp-days-num">—</div><div style="font-size:10px;color:var(--mut2)">days</div></div>
+    </div>
+  </div>
 
   <!-- ── Quick log ── -->
   <div style="margin-bottom:4px">
@@ -2137,12 +2243,12 @@ input:focus,select:focus,textarea:focus{border-color:rgba(232,255,0,.4);backgrou
     <span>Home</span>
   </button>
   <button class="bb-btn" onclick="showTab('coach')" data-tab="coach">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6l4 2"/></svg>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
     <span>Coach</span>
   </button>
   <button class="bb-btn bb-btn-center" onclick="showTab('training')" data-tab="training">
     <div class="bb-center-ring">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5h11M6.5 17.5h11M5 12h14M12 5v14"/></svg>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     </div>
     <span>Log</span>
   </button>
@@ -2151,10 +2257,12 @@ input:focus,select:focus,textarea:focus{border-color:rgba(232,255,0,.4);backgrou
     <span>Calendar</span>
   </button>
   <button class="bb-btn" onclick="showMoreMenu()" id="bb-more-btn">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
     <span>More</span>
   </button>
 </nav>
+
+</div><!-- /app-main -->
 
 <!-- MORE MENU SHEET -->
 <div id="more-menu-overlay" onclick="closeMoreMenu()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1500"></div>
@@ -2237,16 +2345,40 @@ function syncBottomBar(id){
   }
 }
 
+// Tab name map for desktop title
+const TAB_NAMES = {
+  dashboard:'Dashboard', coach:'AI Coach', training:'Training', body:'Body & Recovery',
+  nutrition:'Nutrition', hydration:'Hydration', weight:'Weight', calendar:'Calendar',
+  womens:"Women's Health", trackers:'Trackers', strength:'Strength', mobility:'Mobility',
+  techniques:'Techniques', analysis:'Match Analysis', profile:'Profile'
+};
+
 function showTab(id){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
-  document.getElementById('tab-'+id).classList.add('active');
-  const tabs=['dashboard','profile','training','body','nutrition','hydration','weight','calendar','womens','trackers','coach','strength','mobility','techniques','analysis'];
-  document.querySelectorAll('.nb')[tabs.indexOf(id)]?.classList.add('active');
+  const tab = document.getElementById('tab-'+id);
+  if(tab) tab.classList.add('active');
+
+  // Sync sidebar
+  document.querySelectorAll('.sidebar-btn[data-tab]').forEach(b=>b.classList.remove('active'));
+  const sbBtn = document.querySelector(`.sidebar-btn[data-tab="${id}"]`);
+  if(sbBtn) sbBtn.classList.add('active');
+
+  // Desktop topbar title
+  const dtTitle = document.getElementById('desktop-tab-title');
+  if(dtTitle) dtTitle.textContent = TAB_NAMES[id] || id.toUpperCase();
+
+  // Bottom bar sync
   syncBottomBar(id);
-  // Scroll content to top on tab switch
-  const content=document.querySelector('.content');
-  if(content) content.scrollTop=0;
+
+  // Show/hide mobile back header (not on dashboard)
+  document.querySelectorAll('.tab-back-header').forEach(h=>{
+    h.style.display = (id !== 'dashboard') ? 'flex' : 'none';
+  });
+
+  // Scroll content to top
+  const content = document.querySelector('.content');
+  if(content) content.scrollTop = 0;
+
   // Per-tab render
   if(id==='techniques') renderTechGrid();
   if(id==='calendar'){ renderCal(); renderCompCountdown(); }
@@ -2264,7 +2396,22 @@ function resetProfile(){
   location.reload();
 }
 
-// ===== DASHBOARD AI COACH =====
+// ===== BACK HEADERS =====
+// Inject back-to-dashboard header into every non-dashboard tab on init
+function injectBackHeaders(){
+  const tabs = ['coach','training','body','nutrition','hydration','weight','calendar',
+    'womens','trackers','strength','mobility','techniques','analysis','profile'];
+  tabs.forEach(id=>{
+    const tab = document.getElementById('tab-'+id);
+    if(!tab || tab.querySelector('.tab-back-header')) return;
+    const header = document.createElement('div');
+    header.className = 'tab-back-header';
+    header.innerHTML = `
+      <button class="tab-back-btn" onclick="showTab('dashboard')" aria-label="Back to dashboard">←</button>
+      <span class="tab-back-title">${TAB_NAMES[id]||id}</span>`;
+    tab.insertBefore(header, tab.firstChild);
+  });
+}
 let dashCoachFocus = 'Today';
 
 function setDashFocus(el, focus){
@@ -5536,6 +5683,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
     // Render tabs (deferred so UI paints first)
     setTimeout(()=>{
+      try{ injectBackHeaders(); }catch(e){}
       try{ renderDashboard(); }catch(e){ console.error('renderDashboard:',e); }
       try{ renderCal(); }catch(e){}
       try{ renderTrainingLog(); }catch(e){}
@@ -6117,7 +6265,71 @@ function renderDashboard(){
     loadLastCoachBrief();
   }
 
-  // Smart alert banner
+  // ── Today's mini-cards ──
+  const bodyLog    = JSON.parse(localStorage.getItem('fos_body_log')||'[]');
+  const foodLog2   = JSON.parse(localStorage.getItem('fos_food_log')||'[]');
+  const waterML2   = parseInt(localStorage.getItem('fos_water_today')||'0');
+  const now3       = new Date(); now3.setHours(0,0,0,0);
+  const wsStart    = new Date(now3); wsStart.setDate(wsStart.getDate()-((now3.getDay()+6)%7));
+  const trainingLog2 = getTrainingLog();
+  const weekSess   = trainingLog2.filter(s=>{try{const d=parseDate(s.date);return d>=wsStart&&d<=now3;}catch(e){return false;}});
+  const lastBody   = bodyLog.find(b=>b.date===todayStr()) || bodyLog[0];
+  const soreness   = lastBody?.soreness ?? null;
+  const recentRPE  = trainingLog2.slice(0,5);
+  const avgRPE     = recentRPE.length?(recentRPE.reduce((s,t)=>s+(t.rpe||5),0)/recentRPE.length).toFixed(1):null;
+
+  // Readiness card
+  let readinessLabel='—', readinessColor='var(--mut2)';
+  if(soreness!==null||avgRPE!==null){
+    const s=soreness||0, r=parseFloat(avgRPE)||5;
+    if(s>=7||r>=9){readinessLabel='REST';readinessColor='var(--acc2)';}
+    else if(s>=5||r>=7){readinessLabel='EASY';readinessColor='var(--ora)';}
+    else{readinessLabel='READY';readinessColor='var(--grn)';}
+  }
+  const rdv=document.getElementById('dash-readiness-val');
+  if(rdv){rdv.textContent=readinessLabel;rdv.style.color=readinessColor;}
+  const rds=document.getElementById('dash-readiness-sub');
+  if(rds) rds.textContent=soreness!==null?`Soreness ${soreness}/10${avgRPE?' · RPE avg '+avgRPE:''}`:lastBody?'Based on last check-in':'Log a body check-in';
+
+  // Hydration card
+  const goalML2=(profile.waterTarget||3.5)*1000;
+  const wPct=Math.min(100,Math.round(waterML2/goalML2*100));
+  const wv=document.getElementById('dash-water-val');
+  if(wv) wv.textContent=wPct+'%';
+  const ws=document.getElementById('dash-water-sub');
+  if(ws) ws.textContent=`${(waterML2/1000).toFixed(1)}L of ${profile.waterTarget||3.5}L`;
+
+  // Nutrition card
+  const todayFood2=foodLog2.filter(f=>f.date===todayStr());
+  const tCal2=todayFood2.reduce((s,f)=>s+(f.cal||0),0);
+  const cv=document.getElementById('dash-cal-val');
+  if(cv) cv.textContent=tCal2?fmtNum(tCal2)+'kcal':'—';
+  const cs=document.getElementById('dash-cal-sub');
+  if(cs) cs.textContent=tCal2?`of ${fmtNum(profile.calTarget||2000)} target`:todayFood2.length?'':' Tap Food to log';
+
+  // Sessions card
+  const sv=document.getElementById('dash-sessions-val');
+  if(sv) sv.textContent=weekSess.length+' sess';
+  const ss=document.getElementById('dash-sessions-sub');
+  if(ss) ss.textContent=weekSess.length?`last: ${fmtDate(weekSess[0].date)}`:'No sessions yet this week';
+
+  // Competition strip
+  const calEvts2=JSON.parse(localStorage.getItem('fos_cal_events')||'[]');
+  const now4=new Date(); now4.setHours(0,0,0,0);
+  const nextComp2=calEvts2.filter(e=>{try{return e.type==='competition'&&parseDate(e.date)>=now4;}catch(x){return false;}}).sort((a,b)=>parseDate(a.date)-parseDate(b.date))[0];
+  const compStrip=document.getElementById('dash-comp-strip');
+  if(compStrip){
+    if(nextComp2){
+      compStrip.style.display='block';
+      const dl2=Math.round((parseDate(nextComp2.date)-now4)/86400000);
+      const cn=document.getElementById('dash-comp-name'); if(cn) cn.textContent=nextComp2.name;
+      const cd2=document.getElementById('dash-comp-days-num'); if(cd2) cd2.textContent=dl2;
+    } else {
+      compStrip.style.display='none';
+    }
+  }
+
+  // ── Smart alert banner ──
   renderDashAIBanner();
 }
 
