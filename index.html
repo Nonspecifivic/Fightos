@@ -2194,9 +2194,7 @@ html,body{
   <div class="card">
     <div class="card-header"><h3>Recent strength sessions</h3></div>
     <div id="strength-log-list">
-      <div class="row"><div><div style="font-weight:500;font-size:13px">Lower body — Squat focus · 65 min</div><div style="font-size:11px;color:var(--mut2)">Tue 22 Apr · Back squat 112.5kg PR 🎉</div></div><span class="pill pill-ora">Week 3</span></div>
-      <div class="row"><div><div style="font-weight:500;font-size:13px">Upper body — Pull · 55 min</div><div style="font-size:11px;color:var(--mut2)">Mon 21 Apr · Weighted pull-ups +20kg</div></div><span class="pill pill-ora">Week 3</span></div>
-      <div class="row"><div><div style="font-weight:500;font-size:13px">Full body power · 70 min</div><div style="font-size:11px;color:var(--mut2)">Sat 19 Apr · Power cleans, trap bar DL</div></div><span class="pill pill-acc">Week 2</span></div>
+      <div class="row" style="color:var(--mut2);font-size:13px">No strength sessions logged yet.</div>
     </div>
   </div>
 </div>
@@ -2284,8 +2282,7 @@ html,body{
   <div class="card">
     <div class="card-header"><h3>Recent sessions</h3></div>
     <div id="mobility-log-list">
-      <div class="row"><div><div style="font-weight:500;font-size:13px">Post-training stretch · 15 min</div><div style="font-size:11px;color:var(--mut2)">Thu 24 Apr · Hips much looser after</div></div><span class="pill pill-grn">Done</span></div>
-      <div class="row"><div><div style="font-weight:500;font-size:13px">Shoulder health flow · 12 min</div><div style="font-size:11px;color:var(--mut2)">Tue 22 Apr · Right shoulder still tight</div></div><span class="pill pill-ora">Tight</span></div>
+      <div class="row" style="color:var(--mut2);font-size:13px">No mobility sessions logged yet.</div>
     </div>
   </div>
 </div>
@@ -2379,11 +2376,14 @@ function showTab(id){
   if(id==='techniques') renderTechGrid();
   if(id==='calendar'){ renderCal(); renderCompCountdown(); }
   if(id==='weight') renderWeightChart();
-  if(id==='dashboard') renderDashboard();
+  if(id==='dashboard'){ resetDailyIfNeeded(); renderDashboard(); }
   if(id==='analysis'){ renderMatchRecord(); renderMatchHistory(); }
-  if(id==='nutrition'){ renderNutritionStats(); renderFoodLog(); }
+  if(id==='nutrition'){ resetDailyIfNeeded(); renderNutritionStats(); renderFoodLog(); }
+  if(id==='hydration'){ resetDailyIfNeeded(); renderHydrationTab(); }
   if(id==='profile') renderProfileTab();
   if(id==='womens') renderWomensTab();
+  if(id==='strength') renderStrengthLog();
+  if(id==='mobility') renderMobilityLog();
 }
 
 function resetProfile(){
@@ -2424,7 +2424,7 @@ function buildAthleteContext(){
   const bodyLog   = JSON.parse(localStorage.getItem('fos_body_log')||'[]');
   const foodLog   = JSON.parse(localStorage.getItem('fos_food_log')||'[]');
   const weightLog = JSON.parse(localStorage.getItem('fos_weight_log')||'[]');
-  const waterML   = parseInt(localStorage.getItem('fos_water_today')||'0');
+  const waterML   = loadWaterToday();
   const calEvents = JSON.parse(localStorage.getItem('fos_cal_events')||'[]');
   const gf        = window.gfitLiveData;
   const today     = todayStr();
@@ -2572,6 +2572,308 @@ function loadLastCoachBrief(){
     if(fresh) fresh.textContent = 'From ' + fmtDate(last.date);
     if(ctx)   ctx.textContent   = 'Tap Refresh for a new brief based on today\'s data';
   }catch(e){}
+}
+
+// ===== HYDRATION TAB REFRESH =====
+function renderHydrationTab(){
+  waterML = loadWaterToday();
+  const profile = loadProfile()||{};
+  const goalML = (profile.waterTarget||3.5)*1000;
+  const pct = Math.min(100, Math.round(waterML/goalML*100));
+  const dispEl=document.getElementById('w-disp'), goalEl=document.getElementById('w-goal-disp');
+  const fillEl=document.getElementById('w-fill'), pctEl=document.getElementById('w-pct');
+  if(dispEl) dispEl.textContent=(waterML/1000).toFixed(1)+'L';
+  if(goalEl) goalEl.textContent='of '+(profile.waterTarget||3.5)+'L';
+  if(fillEl) fillEl.style.height=pct+'%';
+  if(pctEl)  pctEl.textContent=pct+'% of daily goal';
+  const wlog=document.getElementById('water-log');
+  if(wlog && waterML===0) wlog.innerHTML='<div class="row" style="color:var(--mut2);font-size:13px">No water logged today — tap a button above to start.</div>';
+}
+
+function renderBodyLog(){
+  const log=JSON.parse(localStorage.getItem('fos_body_log')||'[]');
+  const el=document.getElementById('body-log-list');
+  if(!el) return;
+  if(!log.length){ el.innerHTML='<div class="row" style="color:var(--mut2);font-size:13px">No check-ins yet.</div>'; return; }
+  el.innerHTML=log.slice(0,15).map((b,i)=>{
+    const pill=b.soreness>=7?'pill-red':b.soreness>=4?'pill-ora':'pill-grn';
+    const label=b.soreness>=7?'High':b.soreness>=4?'Moderate':'Good';
+    return `<div class="row" style="align-items:flex-start;gap:8px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500">${fmtDate(b.date)} — Soreness ${b.soreness??'—'}/10</div>
+        <div style="font-size:11px;color:var(--mut2)">Sleep ${b.sleepHours||'?'}h · ${b.sleepQuality||''}${b.injuries?' · '+b.injuries.slice(0,40):''}</div>
+      </div>
+      <div style="display:flex;gap:4px;flex-shrink:0;align-items:center">
+        <span class="pill ${pill}">${label}</span>
+        <button onclick="editActivityEntry('body',${b.id||i})" style="padding:3px 7px;border-radius:5px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-size:11px;cursor:pointer">✏️</button>
+        <button onclick="deleteActivityEntry('body',${b.id||i})" style="padding:3px 7px;border-radius:5px;border:1px solid rgba(255,59,48,.2);background:transparent;color:var(--acc2);font-size:11px;cursor:pointer">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== DAILY RESET — clears day-scoped logs at midnight =====
+// Called on every tab open and on boot — ensures no stale data carries over
+function resetDailyIfNeeded(){
+  const today = todayStr();
+  const lastReset = localStorage.getItem('fos_last_reset_date');
+  if(lastReset === today) return; // already reset today
+
+  // Reset water (stored with date — loadWaterToday() handles this, but reset UI var too)
+  waterML = 0;
+
+  // Clear today's food display (food log entries have .date so they filter correctly,
+  // but we want to make sure the in-memory waterML is 0)
+  const waterRaw = localStorage.getItem('fos_water_today');
+  if(waterRaw){
+    try{
+      const stored = JSON.parse(waterRaw);
+      if(stored.date !== today){
+        // New day — archive yesterday's water then reset
+        waterML = 0;
+        localStorage.setItem('fos_water_today', JSON.stringify({date: today, ml: 0}));
+      }
+    }catch(e){
+      localStorage.setItem('fos_water_today', JSON.stringify({date: today, ml: 0}));
+    }
+  }
+
+  localStorage.setItem('fos_last_reset_date', today);
+}
+
+// ===== STRENGTH LOG =====
+function saveStrengthLog(){
+  const focus = document.getElementById('str-focus')?.value||'';
+  const dur   = document.getElementById('str-dur')?.value||'';
+  const notes = document.getElementById('str-notes')?.value||'';
+  const week  = document.getElementById('str-week')?.value||'';
+  const entry = {id:Date.now(),date:todayStr(),focus,dur:parseInt(dur)||60,notes,week};
+  const log = JSON.parse(localStorage.getItem('fos_strength_log')||'[]');
+  log.unshift(entry);
+  try{localStorage.setItem('fos_strength_log',JSON.stringify(log.slice(0,50)));debouncedSync();}catch(e){}
+  ['str-dur','str-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const btn=document.querySelector('#tab-strength .btn-hero');
+  if(btn){const o=btn.textContent;btn.textContent='✅ LOGGED';setTimeout(()=>btn.textContent=o,1500);}
+  renderStrengthLog();
+}
+function renderStrengthLog(){
+  const log=JSON.parse(localStorage.getItem('fos_strength_log')||'[]');
+  const el=document.getElementById('strength-log-list');
+  if(!el) return;
+  if(!log.length){
+    el.innerHTML='<div class="row" style="color:var(--mut2);font-size:13px">No strength sessions logged yet — complete a session above to see it here.</div>';
+    return;
+  }
+  el.innerHTML=log.slice(0,20).map((s,i)=>`
+    <div class="row" style="align-items:flex-start;gap:8px" id="str-row-${s.id||i}">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500">${s.focus||'Strength session'} · ${s.dur||'—'} min</div>
+        <div style="font-size:11px;color:var(--mut2)">${fmtDate(s.date)}${s.notes?' · '+s.notes.slice(0,60):''}</div>
+        ${s.week?`<span class="pill pill-ora" style="margin-top:3px">${s.week}</span>`:''}
+      </div>
+      <div style="display:flex;gap:4px;flex-shrink:0">
+        <button onclick="editActivityEntry('strength',${s.id||i})" style="padding:3px 7px;border-radius:5px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-size:11px;cursor:pointer">✏️</button>
+        <button onclick="deleteActivityEntry('strength',${s.id||i})" style="padding:3px 7px;border-radius:5px;border:1px solid rgba(255,59,48,.2);background:transparent;color:var(--acc2);font-size:11px;cursor:pointer">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderMobilityLog(){
+  const log=JSON.parse(localStorage.getItem('fos_mobility_log')||'[]');
+  const el=document.getElementById('mobility-log-list');
+  if(!el) return;
+  if(!log.length){
+    el.innerHTML='<div class="row" style="color:var(--mut2);font-size:13px">No mobility sessions logged yet — complete a routine above to see it here.</div>';
+    return;
+  }
+  el.innerHTML=log.slice(0,20).map((s,i)=>{
+    const fc=s.feel==='Loose'?'pill-grn':s.feel==='Tight'?'pill-ora':'pill-blu';
+    return `<div class="row" style="align-items:flex-start;gap:8px" id="mob-row-${s.id||i}">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500">${s.routine||'Mobility session'} · ${s.dur||'—'} min</div>
+        <div style="font-size:11px;color:var(--mut2)">${fmtDate(s.date)}${s.notes?' · '+s.notes.slice(0,60):''}</div>
+        ${s.feel?`<span class="pill ${fc}" style="margin-top:3px">${s.feel}</span>`:''}
+      </div>
+      <div style="display:flex;gap:4px;flex-shrink:0">
+        <button onclick="editActivityEntry('mobility',${s.id||i})" style="padding:3px 7px;border-radius:5px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-size:11px;cursor:pointer">✏️</button>
+        <button onclick="deleteActivityEntry('mobility',${s.id||i})" style="padding:3px 7px;border-radius:5px;border:1px solid rgba(255,59,48,.2);background:transparent;color:var(--acc2);font-size:11px;cursor:pointer">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== MOBILITY SAVE =====
+function saveMobilityLog(){
+  const routine=document.getElementById('mob-routine')?.value||'';
+  const dur    =document.getElementById('mob-dur')?.value||'';
+  const feel   =document.getElementById('mob-feel')?.value||'';
+  const notes  =document.getElementById('mob-notes')?.value||'';
+  const entry={id:Date.now(),date:todayStr(),routine,dur:parseInt(dur)||15,feel,notes};
+  const log=JSON.parse(localStorage.getItem('fos_mobility_log')||'[]');
+  log.unshift(entry);
+  try{localStorage.setItem('fos_mobility_log',JSON.stringify(log.slice(0,50)));debouncedSync();}catch(e){}
+  ['mob-dur','mob-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const btn=document.querySelector('#tab-mobility .btn-acc');
+  if(btn){const o=btn.textContent;btn.textContent='✅ LOGGED';setTimeout(()=>btn.textContent=o,1500);}
+  renderMobilityLog();
+}
+
+// ===== UNIVERSAL EDIT / DELETE FOR ALL ACTIVITY LOGS =====
+const LOG_KEYS = {
+  training: 'fos_training_log',
+  strength: 'fos_strength_log',
+  mobility: 'fos_mobility_log',
+  body:     'fos_body_log',
+  weight:   'fos_weight_log',
+  food:     'fos_food_log',
+};
+
+function getLogEntries(type){
+  try{ return JSON.parse(localStorage.getItem(LOG_KEYS[type])||'[]'); }catch(e){ return []; }
+}
+function saveLogEntries(type, entries){
+  try{ localStorage.setItem(LOG_KEYS[type], JSON.stringify(entries)); debouncedSync(); }catch(e){}
+}
+
+function deleteActivityEntry(type, idOrIdx){
+  if(!confirm('Delete this entry? This cannot be undone.')) return;
+  let entries = getLogEntries(type);
+  // Try id match first, fall back to index
+  const byId = entries.filter(e=>e.id && e.id !== idOrIdx);
+  entries = byId.length < entries.length ? byId : entries.filter((_,i)=>i !== idOrIdx);
+  saveLogEntries(type, entries);
+  // Re-render the relevant list
+  const renders = {
+    training: ()=>{ renderTrainingLog(); renderCal(); renderDashboard(); },
+    strength: renderStrengthLog,
+    mobility: renderMobilityLog,
+    body:     ()=>{ renderDashboard(); },
+    weight:   ()=>{ renderWeightChart(); renderDashboard(); },
+    food:     ()=>{ renderFoodLog(); renderNutritionStats(); renderDashboard(); },
+  };
+  if(renders[type]) renders[type]();
+}
+
+function editActivityEntry(type, idOrIdx){
+  const entries = getLogEntries(type);
+  const entry = entries.find(e=>e.id===idOrIdx) || entries[idOrIdx];
+  if(!entry) return;
+
+  // Remove any existing edit modal
+  document.getElementById('activity-edit-modal')?.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'activity-edit-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2100;display:flex;align-items:center;justify-content:center;padding:20px';
+
+  // Build fields based on type
+  const dateField = `<div class="fg"><label class="lbl">Date</label><input type="date" id="ae-date" value="${entry.date||todayStr()}"></div>`;
+
+  let extraFields = '';
+  if(type==='training'){
+    extraFields = `
+      <div class="f2 fg">
+        <div><label class="lbl">Session type</label><input type="text" id="ae-type" value="${entry.type||''}"></div>
+        <div><label class="lbl">Duration (min)</label><input type="number" id="ae-dur" value="${entry.dur||''}"></div>
+      </div>
+      <div class="f2 fg">
+        <div><label class="lbl">RPE (1–10)</label><input type="number" id="ae-rpe" min="1" max="10" value="${entry.rpe||''}"></div>
+        <div><label class="lbl">Coach / partner</label><input type="text" id="ae-coach" value="${entry.coach||''}"></div>
+      </div>
+      <div class="fg"><label class="lbl">Focus / notes</label><textarea id="ae-focus" style="min-height:55px">${entry.focus||''}</textarea></div>`;
+  } else if(type==='strength'){
+    extraFields = `
+      <div class="f2 fg">
+        <div><label class="lbl">Focus</label><input type="text" id="ae-focus" value="${entry.focus||''}"></div>
+        <div><label class="lbl">Duration (min)</label><input type="number" id="ae-dur" value="${entry.dur||''}"></div>
+      </div>
+      <div class="fg"><label class="lbl">Notes</label><textarea id="ae-notes" style="min-height:55px">${entry.notes||''}</textarea></div>`;
+  } else if(type==='mobility'){
+    extraFields = `
+      <div class="f2 fg">
+        <div><label class="lbl">Routine</label><input type="text" id="ae-routine" value="${entry.routine||''}"></div>
+        <div><label class="lbl">Duration (min)</label><input type="number" id="ae-dur" value="${entry.dur||''}"></div>
+      </div>
+      <div class="fg"><label class="lbl">Notes</label><textarea id="ae-notes" style="min-height:55px">${entry.notes||''}</textarea></div>`;
+  } else if(type==='body'){
+    extraFields = `
+      <div class="f2 fg">
+        <div><label class="lbl">Soreness (0–10)</label><input type="number" id="ae-soreness" min="0" max="10" value="${entry.soreness||''}"></div>
+        <div><label class="lbl">Sleep hours</label><input type="number" id="ae-sleep" step="0.5" value="${entry.sleepHours||''}"></div>
+      </div>
+      <div class="fg"><label class="lbl">Notes / injuries</label><textarea id="ae-injuries" style="min-height:55px">${entry.injuries||''}</textarea></div>`;
+  } else if(type==='weight'){
+    extraFields = `<div class="fg"><label class="lbl">Weight</label><input type="number" id="ae-val" step="0.1" value="${entry.val||''}"></div>`;
+  } else if(type==='food'){
+    extraFields = `
+      <div class="fg"><label class="lbl">Food name</label><input type="text" id="ae-name" value="${entry.name||''}"></div>
+      <div class="f2 fg">
+        <div><label class="lbl">Calories</label><input type="number" id="ae-cal" value="${entry.cal||''}"></div>
+        <div><label class="lbl">Protein (g)</label><input type="number" id="ae-pro" value="${entry.pro||''}"></div>
+      </div>
+      <div class="f2 fg">
+        <div><label class="lbl">Carbs (g)</label><input type="number" id="ae-carb" value="${entry.carb||''}"></div>
+        <div><label class="lbl">Fat (g)</label><input type="number" id="ae-fat" value="${entry.fat||''}"></div>
+      </div>`;
+  }
+
+  const typeLabel = {training:'Training session',strength:'Strength session',mobility:'Mobility session',body:'Body check-in',weight:'Weight entry',food:'Food entry'}[type]||type;
+
+  modal.innerHTML = `
+    <div style="background:var(--surf);border:1px solid var(--bdr2);border-radius:16px;padding:22px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px">Edit ${typeLabel}</div>
+        <button onclick="document.getElementById('activity-edit-modal').remove()" style="background:transparent;border:none;color:var(--mut2);cursor:pointer;font-size:20px;line-height:1">✕</button>
+      </div>
+      ${dateField}
+      ${extraFields}
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn btn-acc" style="flex:2" onclick="saveActivityEdit('${type}',${idOrIdx})">SAVE CHANGES</button>
+        <button class="btn" style="flex:1;background:rgba(255,59,48,.08);color:var(--acc2);border:1px solid rgba(255,59,48,.2)" onclick="deleteActivityEntry('${type}',${idOrIdx});document.getElementById('activity-edit-modal').remove()">Delete</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+}
+
+function saveActivityEdit(type, idOrIdx){
+  const entries = getLogEntries(type);
+  const idx = entries.findIndex(e=>e.id===idOrIdx);
+  const i = idx >= 0 ? idx : idOrIdx;
+  if(i < 0 || i >= entries.length) return;
+
+  const g = id => { const el=document.getElementById(id); return el?el.value.trim():null; };
+
+  const date = g('ae-date') || entries[i].date;
+
+  if(type==='training'){
+    entries[i] = {...entries[i], date, type:g('ae-type')||entries[i].type, dur:parseInt(g('ae-dur'))||entries[i].dur, rpe:parseInt(g('ae-rpe'))||entries[i].rpe, coach:g('ae-coach'), focus:g('ae-focus')};
+  } else if(type==='strength'){
+    entries[i] = {...entries[i], date, focus:g('ae-focus'), dur:parseInt(g('ae-dur'))||entries[i].dur, notes:g('ae-notes')};
+  } else if(type==='mobility'){
+    entries[i] = {...entries[i], date, routine:g('ae-routine'), dur:parseInt(g('ae-dur'))||entries[i].dur, notes:g('ae-notes')};
+  } else if(type==='body'){
+    entries[i] = {...entries[i], date, soreness:parseInt(g('ae-soreness'))??entries[i].soreness, sleepHours:parseFloat(g('ae-sleep'))||entries[i].sleepHours, injuries:g('ae-injuries')};
+  } else if(type==='weight'){
+    entries[i] = {...entries[i], date, val:parseFloat(g('ae-val'))||entries[i].val};
+  } else if(type==='food'){
+    entries[i] = {...entries[i], date, name:g('ae-name')||entries[i].name, cal:parseInt(g('ae-cal'))||0, pro:parseInt(g('ae-pro'))||0, carb:parseInt(g('ae-carb'))||0, fat:parseInt(g('ae-fat'))||0};
+  }
+
+  saveLogEntries(type, entries);
+  document.getElementById('activity-edit-modal')?.remove();
+
+  // Re-render
+  const renders = {
+    training: ()=>{ renderTrainingLog(); renderCal(); renderDashboard(); },
+    strength: renderStrengthLog,
+    mobility: renderMobilityLog,
+    body:     ()=>{ renderDashboard(); },
+    weight:   ()=>{ renderWeightChart(); renderDashboard(); },
+    food:     ()=>{ renderFoodLog(); renderNutritionStats(); renderDashboard(); },
+  };
+  if(renders[type]) renders[type]();
 }
 
 // ===== RPE & MOOD SELECTORS =====
@@ -2780,25 +3082,23 @@ function saveBodyCheckIn(){
   const sleep = document.getElementById('sleep-q').value;
   const sh = document.getElementById('sleep-h').value;
   const injuries = document.getElementById('injury-notes')?.value||'';
-  const entry = { date:todayStr(), soreness:sor, sleepQuality:sleep, sleepHours:sh, injuries };
+  const entry = { id:Date.now(), date:todayStr(), soreness:sor, sleepQuality:sleep, sleepHours:sh, injuries };
   // Save to localStorage
   const bodyLog = JSON.parse(localStorage.getItem('fos_body_log')||'[]');
   bodyLog.unshift(entry);
   try{ localStorage.setItem('fos_body_log', JSON.stringify(bodyLog.slice(0,30))); debouncedSync(); }catch(e){}
-  // Update the log display
-  const pill=sor>=7?'pill-red':sor>=4?'pill-ora':'pill-grn';
-  const label=sor>=7?'High':sor>=4?'Monitor':'Good';
-  const list=document.getElementById('body-log-list');
-  if(list.querySelector('[style*="mut2"]')) list.innerHTML=''; // clear empty state
-  list.insertAdjacentHTML('afterbegin',`<div class="row"><div><div style="font-weight:500;font-size:13px">${fmtDate(todayStr())} — Soreness: ${sor}/10</div><div style="font-size:11px;color:var(--mut2)">Sleep ${sh||'?'}h · ${sleep}${injuries?' · '+injuries.slice(0,30):''}</div></div><span class="pill ${pill}">${label}</span></div>`);
-  // Refresh dashboard
+  renderBodyLog();
   renderDashboard();
 }
 
 // ===== HYDRATION =====
 function addWater(ml){
   waterML+=ml;
-  try{ localStorage.setItem('fos_water_today', String(waterML)); }catch(e){}
+  // Store with today's date so it resets automatically the next day
+  try{
+    const stored = { date: todayStr(), ml: waterML };
+    localStorage.setItem('fos_water_today', JSON.stringify(stored));
+  }catch(e){}
   const profile=loadProfile()||{};
   const goalML=((profile.waterTarget||3.5)*1000);
   const pct=Math.min(100,Math.round(waterML/goalML*100));
@@ -2811,6 +3111,21 @@ function addWater(ml){
   const wlog=document.getElementById('water-log');
   if(wlog.querySelector('.row[style*="mut2"]')) wlog.innerHTML='';
   wlog.insertAdjacentHTML('afterbegin',`<div class="row"><span style="font-size:12px;color:var(--mut2)">${timeStr} — Added</span><span class="blu" style="font-size:13px">${ml>=1000?(ml/1000)+'L':ml+'ml'}</span></div>`);
+}
+
+// Load water for today only — returns 0 if stored date is not today
+function loadWaterToday(){
+  try{
+    const raw = localStorage.getItem('fos_water_today');
+    if(!raw) return 0;
+    // Handle both old format (plain number) and new format (JSON with date)
+    if(raw.startsWith('{')) {
+      const stored = JSON.parse(raw);
+      return stored.date === todayStr() ? (stored.ml || 0) : 0;
+    }
+    // Old plain-number format — treat as stale, reset
+    return 0;
+  }catch(e){ return 0; }
 }
 
 // ===== WEIGHT =====
@@ -5655,7 +5970,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   try{ syncBottomBar('dashboard'); }catch(e){}
   try{ updateKeyStatus(); }catch(e){}
   try{ loadCalEvents(); }catch(e){}
-  waterML = parseInt(localStorage.getItem('fos_water_today')||'0');
+  waterML = loadWaterToday();
 
   // Pre-fill today's date fields
   const today=todayStr();
@@ -5689,11 +6004,13 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
     // Render tabs (deferred so UI paints first)
     setTimeout(()=>{
+      try{ resetDailyIfNeeded(); }catch(e){}
       try{ injectBackHeaders(); }catch(e){}
       try{ renderDashboard(); }catch(e){ console.error('renderDashboard:',e); }
       try{ renderCal(); }catch(e){}
       try{ renderTrainingLog(); }catch(e){}
       try{ renderFoodLog(); }catch(e){}
+      try{ renderStrengthLog(); renderMobilityLog(); }catch(e){}
       try{ renderMatchRecord(); renderMatchHistory(); }catch(e){}
       try{ renderSavedBriefs(); }catch(e){}
       try{ renderWomensTab(); }catch(e){}
@@ -6247,7 +6564,7 @@ function renderDashboard(){
   const weightLog= JSON.parse(localStorage.getItem('fos_weight_log')||'[]');
   const curWt    = weightLog.length ? weightLog[weightLog.length-1].val : parseFloat(profile.weight)||null;
   const toCut    = (targetKg&&curWt) ? Math.max(0,curWt-targetKg).toFixed(1) : null;
-  const waterML  = parseInt(localStorage.getItem('fos_water_today')||'0');
+  const waterML  = loadWaterToday();
   const goalML   = (profile.waterTarget||3.5)*1000;
   const waterPct = Math.min(100,Math.round(waterML/goalML*100));
   const trainingLog = getTrainingLog();
@@ -6283,7 +6600,7 @@ function renderDashboard(){
   // ── Today's mini-cards ──
   const bodyLog    = JSON.parse(localStorage.getItem('fos_body_log')||'[]');
   const foodLog2   = JSON.parse(localStorage.getItem('fos_food_log')||'[]');
-  const waterML2   = parseInt(localStorage.getItem('fos_water_today')||'0');
+  const waterML2   = loadWaterToday();
   const now3       = new Date(); now3.setHours(0,0,0,0);
   const wsStart    = new Date(now3); wsStart.setDate(wsStart.getDate()-((now3.getDay()+6)%7));
   const trainingLog2 = getTrainingLog();
