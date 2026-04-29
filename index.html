@@ -27,7 +27,7 @@
 [data-theme="dark"]{--acc:#E8FF00;--acc2:#FF3B30;--bg:#0A0A0A;--surf:#141414;--surf2:#1C1C1C;--surf3:#242424;--bdr:rgba(255,255,255,0.06);--bdr2:rgba(255,255,255,0.11);--txt:#F0F0F0;--mut:#444;--mut2:#777;--grn:#00E676;--blu:#4C9FFF;--ora:#FF9F0A;--pur:#BF5FFF;--pink:#FF6B9D;color-scheme:dark;}
 [data-theme="light"]{--acc:#4A7000;--acc2:#CC1A10;--bg:#F2F2F7;--surf:#FFFFFF;--surf2:#F2F2F7;--surf3:#E8E8ED;--bdr:rgba(0,0,0,0.07);--bdr2:rgba(0,0,0,0.13);--txt:#1C1C1E;--mut:#C7C7CC;--mut2:#6C6C70;--grn:#28A745;--blu:#1A6FE0;--ora:#C96A00;--pur:#7A35CF;--pink:#C0185A;color-scheme:light;}
 html,body{height:100%;background:var(--bg);color:var(--txt);font-family:"DM Sans",sans-serif;font-size:14px;overflow:hidden;-webkit-font-smoothing:antialiased;}
-.app{display:flex;flex-direction:column;height:100vh;max-width:680px;margin:0 auto;}
+.app{display:flex;flex-direction:row;height:100vh;width:100%;} /* old rule — overridden by layout CSS below */
 /* TOPBAR */
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:54px;flex-shrink:0;background:var(--surf);border-bottom:1px solid var(--bdr);}
 .logo{font-family:"Bebas Neue",sans-serif;font-size:20px;letter-spacing:4px;color:var(--acc);}
@@ -4626,56 +4626,81 @@ function importMacroFactorToLog(){
   const parsed = window._mfParsed;
   if(!parsed || !parsed.length) return;
 
-  const existingLog  = JSON.parse(localStorage.getItem('fos_food_log')||'[]');
-  const existingDates = new Set(existingLog.map(e=>e.date));
+  const existingLog = JSON.parse(localStorage.getItem('fos_food_log')||'[]');
 
-  let imported = 0;
-  const newEntries = [];
+  let imported = 0, updated = 0, unchanged = 0;
 
+  // Build a map of parsed data by date for fast lookup
+  const parsedByDate = {};
   for(const day of parsed){
-    if(existingDates.has(day.date)) continue; // skip days already logged
-    newEntries.push({
-      date: day.date,
-      name: `MacroFactor daily total`,
-      cal:  day.cal,
-      pro:  day.pro,
-      carb: day.carb,
-      fat:  day.fat,
-      source: 'macrofactor',
-    });
-    imported++;
+    parsedByDate[day.date] = day;
   }
 
-  // Merge and save — newest first
-  const merged = [...newEntries, ...existingLog]
+  // Remove all existing MacroFactor entries for dates in the new import
+  // (keeps manually-entered food entries for those dates)
+  const filteredLog = existingLog.filter(entry => {
+    if(entry.source === 'macrofactor' && parsedByDate[entry.date]){
+      return false; // will be replaced by new data
+    }
+    return true;
+  });
+
+  // Count what changed
+  for(const day of parsed){
+    const oldEntry = existingLog.find(e => e.source === 'macrofactor' && e.date === day.date);
+    if(!oldEntry){
+      imported++;
+    } else if(oldEntry.cal !== day.cal || oldEntry.pro !== day.pro || oldEntry.carb !== day.carb || oldEntry.fat !== day.fat){
+      updated++;
+    } else {
+      unchanged++;
+    }
+  }
+
+  // Build new entries for all parsed dates
+  const newEntries = parsed.map(day => ({
+    id: Date.now() + Math.random(), // unique id per entry
+    date: day.date,
+    name: 'MacroFactor daily total',
+    cal: day.cal,
+    pro: day.pro,
+    carb: day.carb,
+    fat: day.fat,
+    source: 'macrofactor',
+  }));
+
+  // Merge: new entries + filtered existing, sort newest first
+  const merged = [...newEntries, ...filteredLog]
     .sort((a,b) => b.date.localeCompare(a.date))
-    .slice(0, 200); // keep up to 200 entries
+    .slice(0, 200);
 
   try{
     localStorage.setItem('fos_food_log', JSON.stringify(merged));
     debouncedSync();
   }catch(e){ console.error('Failed to save food log', e); }
 
-  // Update the import button to show success
+  // Update button to show success
   const btn = document.getElementById('mf-import-btn');
   if(btn){
-    btn.textContent = `✅ ${imported} day${imported!==1?'s':''} imported successfully`;
+    btn.textContent = `✅ Done — ${imported} new, ${updated} updated, ${unchanged} unchanged`;
     btn.style.opacity = '0.7';
     btn.disabled = true;
   }
 
-  // Show a breakdown of what was imported
+  // Show summary
   const today = todayStr();
-  const todayEntry = newEntries.find(e=>e.date===today);
+  const todayEntry = newEntries.find(e => e.date === today);
   let successMsg = `<div style="background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.2);border-radius:8px;padding:11px 13px;margin-top:8px;font-size:12px;line-height:1.8">
-    <strong style="color:var(--grn)">✅ ${imported} day${imported!==1?'s':''} imported to your food log</strong><br>`;
+    <strong style="color:var(--grn)">✅ Import complete</strong><br>
+    ${imported > 0 ? `<strong>${imported}</strong> new day${imported!==1?'s':''} added · ` : ''}${updated > 0 ? `<strong>${updated}</strong> day${updated!==1?'s':''} updated with new data · ` : ''}${unchanged > 0 ? `<strong>${unchanged}</strong> day${unchanged!==1?'s':''} unchanged` : ''}`;
+
   if(todayEntry){
-    successMsg += `Today's entry: <strong>${todayEntry.cal} kcal · ${todayEntry.pro}g protein · ${todayEntry.carb}g carbs · ${todayEntry.fat}g fat</strong><br>`;
+    successMsg += `<br>Today: <strong>${todayEntry.cal} kcal · ${todayEntry.pro}g protein · ${todayEntry.carb}g carbs · ${todayEntry.fat}g fat</strong>`;
   }
-  successMsg += `Dashboard and nutrition progress bars updated automatically.</div>`;
+  successMsg += `</div>`;
   btn?.insertAdjacentHTML('afterend', successMsg);
 
-  // Refresh all views that use food log data
+  // Refresh all views
   renderFoodLog();
   renderNutritionStats();
   renderDashboard();
