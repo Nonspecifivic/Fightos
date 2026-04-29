@@ -3920,7 +3920,7 @@ function addFoodEntry(){
   const pro  = parseInt(document.getElementById('f-pro').value)||0;
   const carb = parseInt(document.getElementById('f-carb').value)||0;
   const fat  = parseInt(document.getElementById('f-fat').value)||0;
-  const entry = { date:todayStr(), name, cal, pro, carb, fat };
+  const entry = { id:Date.now(), date:todayStr(), name, cal, pro, carb, fat };
   // Persist to localStorage
   const foodLog = JSON.parse(localStorage.getItem('fos_food_log')||'[]');
   foodLog.unshift(entry);
@@ -4693,13 +4693,18 @@ function renderFoodLog(){
     return;
   }
 
+  // Find index in full log for each today entry (needed for edit/delete)
   logEl.innerHTML = todayFood.map(f=>`
-    <div class="row">
-      <div>
+    <div class="row" style="align-items:center;gap:8px">
+      <div style="flex:1;min-width:0">
         <div class="meal-name">${f.name}${f.source==='macrofactor'?' <span style="font-size:10px;color:var(--mut2)">MF</span>':''}</div>
-        <div class="meal-macros">${f.pro}P · ${f.carb}C · ${f.fat}F</div>
+        <div class="meal-macros">${f.pro||0}P · ${f.carb||0}C · ${f.fat||0}F</div>
       </div>
-      <div class="meal-kcal">${f.cal}</div>
+      <div class="meal-kcal" style="flex-shrink:0">${f.cal}</div>
+      <div style="display:flex;gap:4px;flex-shrink:0">
+        <button onclick="editActivityEntry('food',${f.id||0})" style="padding:3px 7px;border-radius:5px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-size:11px;cursor:pointer">✏️</button>
+        <button onclick="deleteActivityEntry('food',${f.id||0})" style="padding:3px 7px;border-radius:5px;border:1px solid rgba(255,59,48,.2);background:transparent;color:var(--acc2);font-size:11px;cursor:pointer">✕</button>
+      </div>
     </div>`).join('');
 }
 
