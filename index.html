@@ -3148,14 +3148,26 @@ function renderWeightChart(){
     return `<div style="flex:1;display:flex;flex-direction:column;align-items:center"><div style="width:100%;height:${pct}%;background:${i===last7.length-1?'var(--acc2)':'var(--blu)'};border-radius:3px 3px 0 0;min-height:4px"></div></div>`;
   }).join('');
   if(labels) labels.innerHTML=last7.map(w=>`<div style="flex:1;text-align:center;font-size:9px;color:var(--mut2)">${w.date.slice(5)}</div>`).join('');
-  if(hist) hist.innerHTML=[...wLog].reverse().slice(0,10).map((w,i)=>`<div class="row"><span style="color:var(--mut2);font-size:12px">${fmtDate(w.date)}</span><span style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:${i===0?'var(--acc2)':'var(--txt)'}">${w.val}${loadProfile()?.weightUnit||'kg'}</span></div>`).join('');
+  if(hist) hist.innerHTML=[...wLog].reverse().slice(0,15).map((w,i)=>{
+    // Calculate original index in the non-reversed log for edit/delete
+    const origIdx = wLog.length - 1 - i;
+    const unit = loadProfile()?.weightUnit||'kg';
+    return `<div class="row" style="align-items:center;gap:8px">
+      <span style="color:var(--mut2);font-size:12px;flex:1">${fmtDate(w.date)}</span>
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:${i===0?'var(--acc2)':'var(--txt)'}">${w.val}${unit}</span>
+      <div style="display:flex;gap:4px;flex-shrink:0">
+        <button onclick="editActivityEntry('weight',${w.id||origIdx})" style="padding:3px 7px;border-radius:5px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-size:11px;cursor:pointer">✏️</button>
+        <button onclick="deleteActivityEntry('weight',${w.id||origIdx})" style="padding:3px 7px;border-radius:5px;border:1px solid rgba(255,59,48,.2);background:transparent;color:var(--acc2);font-size:11px;cursor:pointer">✕</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function logWeight(){
   const val=parseFloat(document.getElementById('wt-input').value);
   if(!val) return;
   const wLog=JSON.parse(localStorage.getItem('fos_weight_log')||'[]');
-  wLog.push({date:todayStr(),val});
+  wLog.push({id:Date.now(), date:todayStr(), val});
   try{ localStorage.setItem('fos_weight_log',JSON.stringify(wLog)); }catch(e){}
   // Update profile weight
   const profile=loadProfile();
