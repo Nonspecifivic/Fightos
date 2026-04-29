@@ -337,9 +337,32 @@ html,body{
   }
 }
 
-/* ── HIDE OLD NAV ELEMENTS ── */
-.nav,.bottom-bar,.desktop-topbar{display:none!important;}
-.tab-back-header{display:none;}
+/* ── DESKTOP CONTENT LAYOUT — use full screen width ── */
+@media(min-width:1024px){
+  .dash-desktop-grid{
+    display:grid;
+    grid-template-columns:1fr 340px;
+    gap:24px;
+    align-items:start;
+  }
+  /* On desktop: left col (order:1=AI brief) first, right col (order:2=stats) second */
+  .dash-desktop-grid > div[style*="order:1"]{ order:1; }
+  .dash-desktop-grid > div[style*="order:2"]{ order:2; }
+  .stat-grid{grid-template-columns:repeat(3,1fr)!important;}
+  .today-cards-grid{grid-template-columns:repeat(2,1fr)!important;}
+  .card{border-radius:16px;}
+  .content{padding:24px 32px calc(env(safe-area-inset-bottom,0px)+32px);}
+}
+@media(max-width:1023px){
+  /* On mobile/tablet: stack stats first (order:2 renders before order:1 when we set flex-direction) */
+  .dash-desktop-grid{ display:flex; flex-direction:column; }
+  .dash-desktop-grid > div[style*="order:2"]{ order:1; }
+  .dash-desktop-grid > div[style*="order:1"]{ order:2; }
+}
+@media(min-width:1400px){
+  .app-sidebar{width:260px;}
+  .dash-desktop-grid{grid-template-columns:1fr 380px;}
+}
 
 /* ── TABS ── */
 .tab{display:none;animation:fadeUp .18s ease;}
@@ -958,125 +981,115 @@ html,body{
 <!-- ==================== DASHBOARD ==================== -->
 <div class="tab active" id="tab-dashboard">
 
-  <!-- ── Greeting + refresh ── -->
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-    <div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;line-height:1" id="dash-greeting">YOUR COACH BRIEF</div>
-      <div style="font-size:12px;color:var(--mut2);margin-top:3px" id="dash-brief-context">Tap a focus then get your brief</div>
-    </div>
-    <div style="display:flex;align-items:center;gap:6px">
-      <span id="dash-brief-freshness" style="font-size:10px;color:var(--mut2)"></span>
-      <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px" onclick="refreshDashCoach()">↻</button>
-    </div>
-  </div>
-
-  <!-- ── Focus chips ── -->
-  <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px;scrollbar-width:none;-webkit-overflow-scrolling:touch">
-    <button class="focus-chip active-chip" onclick="setDashFocus(this,'Today')">Today</button>
-    <button class="focus-chip" onclick="setDashFocus(this,'Tomorrow')">Tomorrow</button>
-    <button class="focus-chip" onclick="setDashFocus(this,'This week')">This week</button>
-    <button class="focus-chip" onclick="setDashFocus(this,'Training load')">Training load</button>
-    <button class="focus-chip" onclick="setDashFocus(this,'Weight cut')">Weight cut</button>
-    <button class="focus-chip" onclick="setDashFocus(this,'Nutrition')">Nutrition</button>
-    <button class="focus-chip" onclick="setDashFocus(this,'Competition prep')">Competition</button>
-    <button class="focus-chip" onclick="setDashFocus(this,'Recovery')">Recovery</button>
-  </div>
-
-  <!-- ── Input + get brief ── -->
-  <div style="display:flex;gap:8px;margin-bottom:14px">
-    <input type="text" id="dash-coach-extra" placeholder="Add a note e.g. feeling tired today…" style="flex:1;font-size:13px">
-    <button class="btn btn-acc" onclick="getDashCoachBrief()" id="dash-coach-btn" style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;padding:0 18px;white-space:nowrap;flex-shrink:0">GO</button>
-  </div>
-
-  <!-- ── Brief output ── -->
-  <div id="dash-coach-output" style="margin-bottom:16px">
-    <div id="dash-coach-empty" style="background:linear-gradient(135deg,rgba(232,255,0,.06),rgba(232,255,0,.02));border:1px solid rgba(232,255,0,.15);border-radius:14px;padding:22px 18px;text-align:center">
-      <div style="font-size:32px;margin-bottom:10px">🥊</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;margin-bottom:6px">YOUR AI COACH IS READY</div>
-      <div style="font-size:13px;color:var(--mut2);line-height:1.65;max-width:260px;margin:0 auto">Select a focus above and tap <strong>GO</strong> for a plan based on everything you've logged.</div>
-    </div>
-    <div class="dots-loading" id="dash-coach-loading" style="display:none;justify-content:center;padding:24px"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-    <div id="dash-coach-content" style="display:none"></div>
-  </div>
-
   <!-- ── Smart alert ── -->
   <div id="dash-ai-banner"></div>
 
-  <!-- ── Today's stats ── -->
-  <div class="sec-title" style="margin-top:4px">Today at a glance</div>
-  <div class="stat-grid" id="dash-stat-grid" style="margin-bottom:10px"></div>
+  <div class="dash-desktop-grid">
 
-  <!-- ── Today's cards row ── -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-    <!-- Readiness -->
-    <div class="card" style="margin-bottom:0">
-      <div style="padding:12px 14px">
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);margin-bottom:6px;font-weight:600">Readiness</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1" id="dash-readiness-val">—</div>
-        <div id="dash-readiness-sub" style="font-size:11px;color:var(--mut2);margin-top:3px"></div>
-      </div>
-    </div>
-    <!-- Hydration -->
-    <div class="card" style="margin-bottom:0">
-      <div style="padding:12px 14px">
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);margin-bottom:6px;font-weight:600">Hydration</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1;color:var(--blu)" id="dash-water-val">—</div>
-        <div id="dash-water-sub" style="font-size:11px;color:var(--mut2);margin-top:3px"></div>
-      </div>
-    </div>
-    <!-- Nutrition -->
-    <div class="card" style="margin-bottom:0">
-      <div style="padding:12px 14px">
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);margin-bottom:6px;font-weight:600">Nutrition</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1;color:var(--acc)" id="dash-cal-val">—</div>
-        <div id="dash-cal-sub" style="font-size:11px;color:var(--mut2);margin-top:3px"></div>
-      </div>
-    </div>
-    <!-- Training this week -->
-    <div class="card" style="margin-bottom:0">
-      <div style="padding:12px 14px">
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);margin-bottom:6px;font-weight:600">This week</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1;color:var(--ora)" id="dash-sessions-val">—</div>
-        <div id="dash-sessions-sub" style="font-size:11px;color:var(--mut2);margin-top:3px"></div>
-      </div>
-    </div>
-  </div>
+    <!-- RIGHT col: stats + quick cards (shown first on mobile via order) -->
+    <div style="order:2">
+      <div class="sec-title" style="margin-top:4px">Today at a glance</div>
+      <div class="stat-grid" id="dash-stat-grid" style="margin-bottom:10px"></div>
 
-  <!-- ── Competition countdown (if applicable) ── -->
-  <div id="dash-comp-strip" style="display:none;background:linear-gradient(135deg,rgba(255,59,48,.08),rgba(255,59,48,.03));border:1px solid rgba(255,59,48,.2);border-radius:12px;padding:12px 14px;margin-bottom:14px;display:none">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--acc2);font-weight:600;margin-bottom:3px">Next competition</div>
-      <div style="font-size:13px;font-weight:600" id="dash-comp-name">—</div></div>
-      <div style="text-align:right"><div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--acc2);line-height:1" id="dash-comp-days-num">—</div><div style="font-size:10px;color:var(--mut2)">days</div></div>
-    </div>
-  </div>
+      <!-- Today's 4 mini-cards -->
+      <div class="today-cards-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div class="card" style="margin-bottom:0"><div style="padding:12px 14px">
+          <div class="stat-l">Readiness</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1" id="dash-readiness-val">—</div>
+          <div id="dash-readiness-sub" style="font-size:11px;color:var(--mut2);margin-top:3px"></div>
+        </div></div>
+        <div class="card" style="margin-bottom:0"><div style="padding:12px 14px">
+          <div class="stat-l">Hydration</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1;color:var(--blu)" id="dash-water-val">—</div>
+          <div id="dash-water-sub" style="font-size:11px;color:var(--mut2);margin-top:3px"></div>
+        </div></div>
+        <div class="card" style="margin-bottom:0"><div style="padding:12px 14px">
+          <div class="stat-l">Nutrition</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1;color:var(--acc)" id="dash-cal-val">—</div>
+          <div id="dash-cal-sub" style="font-size:11px;color:var(--mut2);margin-top:3px"></div>
+        </div></div>
+        <div class="card" style="margin-bottom:0"><div style="padding:12px 14px">
+          <div class="stat-l">This week</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1;color:var(--ora)" id="dash-sessions-val">—</div>
+          <div id="dash-sessions-sub" style="font-size:11px;color:var(--mut2);margin-top:3px"></div>
+        </div></div>
+      </div>
 
-  <!-- ── Quick log ── -->
-  <div style="margin-bottom:4px">
-    <div class="sec-title">Quick log</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
-      <button class="btn btn-ghost" onclick="showTab('training')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;font-size:11px;border-radius:12px">
-        <span style="font-size:20px">🏋️</span>Training
-      </button>
-      <button class="btn btn-ghost" onclick="showTab('body')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;font-size:11px;border-radius:12px">
-        <span style="font-size:20px">🫀</span>Body
-      </button>
-      <button class="btn btn-ghost" onclick="showTab('nutrition')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;font-size:11px;border-radius:12px">
-        <span style="font-size:20px">🥗</span>Food
-      </button>
-      <button class="btn btn-ghost" onclick="showTab('weight')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;font-size:11px;border-radius:12px">
-        <span style="font-size:20px">⚖️</span>Weight
-      </button>
-      <button class="btn btn-ghost" onclick="showTab('hydration')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;font-size:11px;border-radius:12px">
-        <span style="font-size:20px">💧</span>Water
-      </button>
-      <button class="btn btn-ghost" onclick="showTab('calendar')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;font-size:11px;border-radius:12px">
-        <span style="font-size:20px">📅</span>Calendar
-      </button>
-    </div>
-  </div>
+      <!-- Competition countdown -->
+      <div id="dash-comp-strip" style="display:none;background:linear-gradient(135deg,rgba(255,59,48,.08),rgba(255,59,48,.03));border:1px solid rgba(255,59,48,.2);border-radius:12px;padding:12px 14px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--acc2);font-weight:600;margin-bottom:3px">Next competition</div>
+            <div style="font-size:13px;font-weight:600" id="dash-comp-name">—</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--acc2);line-height:1" id="dash-comp-days-num">—</div>
+            <div style="font-size:10px;color:var(--mut2)">days away</div>
+          </div>
+        </div>
+      </div>
 
-</div>
+      <!-- Quick log -->
+      <div class="sec-title">Quick log</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px">
+        <button class="btn btn-ghost" onclick="showTab('training')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;font-size:11px;border-radius:12px"><span style="font-size:20px">🏋️</span>Training</button>
+        <button class="btn btn-ghost" onclick="showTab('body')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;font-size:11px;border-radius:12px"><span style="font-size:20px">🫀</span>Body</button>
+        <button class="btn btn-ghost" onclick="showTab('nutrition')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;font-size:11px;border-radius:12px"><span style="font-size:20px">🥗</span>Food</button>
+        <button class="btn btn-ghost" onclick="showTab('weight')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;font-size:11px;border-radius:12px"><span style="font-size:20px">⚖️</span>Weight</button>
+        <button class="btn btn-ghost" onclick="showTab('hydration')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;font-size:11px;border-radius:12px"><span style="font-size:20px">💧</span>Water</button>
+        <button class="btn btn-ghost" onclick="showTab('calendar')" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;font-size:11px;border-radius:12px"><span style="font-size:20px">📅</span>Calendar</button>
+      </div>
+    </div><!-- /right col -->
+
+    <!-- LEFT col: AI brief (shown second on mobile via order, first on desktop) -->
+    <div style="order:1">
+
+      <!-- Greeting + refresh -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;line-height:1" id="dash-greeting">YOUR COACH BRIEF</div>
+          <div style="font-size:12px;color:var(--mut2);margin-top:3px" id="dash-brief-context">Tap a focus then get your brief</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span id="dash-brief-freshness" style="font-size:10px;color:var(--mut2)"></span>
+          <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px" onclick="refreshDashCoach()">↻</button>
+        </div>
+      </div>
+
+      <!-- Focus chips -->
+      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px;scrollbar-width:none;-webkit-overflow-scrolling:touch">
+        <button class="focus-chip active-chip" onclick="setDashFocus(this,'Today')">Today</button>
+        <button class="focus-chip" onclick="setDashFocus(this,'Tomorrow')">Tomorrow</button>
+        <button class="focus-chip" onclick="setDashFocus(this,'This week')">This week</button>
+        <button class="focus-chip" onclick="setDashFocus(this,'Training load')">Training load</button>
+        <button class="focus-chip" onclick="setDashFocus(this,'Weight cut')">Weight cut</button>
+        <button class="focus-chip" onclick="setDashFocus(this,'Nutrition')">Nutrition</button>
+        <button class="focus-chip" onclick="setDashFocus(this,'Competition prep')">Competition</button>
+        <button class="focus-chip" onclick="setDashFocus(this,'Recovery')">Recovery</button>
+      </div>
+
+      <!-- Input + GO -->
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <input type="text" id="dash-coach-extra" placeholder="Add a note e.g. feeling tired today…" style="flex:1;font-size:13px">
+        <button class="btn btn-acc" onclick="getDashCoachBrief()" id="dash-coach-btn" style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;padding:0 18px;white-space:nowrap;flex-shrink:0">GO</button>
+      </div>
+
+      <!-- Brief output -->
+      <div id="dash-coach-output">
+        <div id="dash-coach-empty" style="background:linear-gradient(135deg,rgba(232,255,0,.06),rgba(232,255,0,.02));border:1px solid rgba(232,255,0,.15);border-radius:14px;padding:22px 18px;text-align:center">
+          <div style="font-size:32px;margin-bottom:10px">🥊</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;margin-bottom:6px">YOUR AI COACH IS READY</div>
+          <div style="font-size:13px;color:var(--mut2);line-height:1.65;max-width:260px;margin:0 auto">Select a focus above and tap <strong>GO</strong> for a plan based on everything you've logged.</div>
+        </div>
+        <div class="dots-loading" id="dash-coach-loading" style="display:none;justify-content:center;padding:24px"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        <div id="dash-coach-content" style="display:none"></div>
+      </div>
+
+    </div><!-- /left AI brief col -->
+
+  </div><!-- /dash-desktop-grid -->
+
+</div><!-- /tab-dashboard -->
 
 <!-- ==================== PROFILE ==================== -->
 <div class="tab" id="tab-profile">
@@ -1106,18 +1119,23 @@ html,body{
           <button class="ob-chip" onclick="peChip(this,'goal')">Turn professional</button>
         </div>
       </div>
-      <div class="fg"><label class="lbl">Target weight class</label>
+      <div class="fg"><label class="lbl">Target weight / weight class</label>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <input type="number" id="pe-goal-weight" min="30" max="200" step="0.5" placeholder="Custom goal weight (e.g. 68.5)" style="flex:1">
+          <select id="pe-goal-weight-unit" style="width:64px"><option>kg</option><option>lbs</option></select>
+        </div>
+        <div style="font-size:11px;color:var(--mut2);margin-bottom:8px">Or choose a standard weight class:</div>
         <div class="ob-chips" id="pe-wclass-chips" style="gap:7px;flex-wrap:wrap">
-          <button class="ob-chip" onclick="peChip(this,'wclass')">Strawweight ≤52kg</button>
-          <button class="ob-chip" onclick="peChip(this,'wclass')">Flyweight ≤57kg</button>
-          <button class="ob-chip" onclick="peChip(this,'wclass')">Bantamweight ≤61kg</button>
-          <button class="ob-chip" onclick="peChip(this,'wclass')">Featherweight ≤66kg</button>
-          <button class="ob-chip" onclick="peChip(this,'wclass')">Lightweight ≤70kg</button>
-          <button class="ob-chip" onclick="peChip(this,'wclass')">Welterweight ≤77kg</button>
-          <button class="ob-chip" onclick="peChip(this,'wclass')">Middleweight ≤84kg</button>
-          <button class="ob-chip" onclick="peChip(this,'wclass')">Light Heavyweight ≤93kg</button>
-          <button class="ob-chip" onclick="peChip(this,'wclass')">Heavyweight ≤120kg</button>
-          <button class="ob-chip" onclick="peChip(this,'wclass')">Open weight</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'Strawweight','52')">Strawweight ≤52kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'Flyweight','57')">Flyweight ≤57kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'Bantamweight','61')">Bantamweight ≤61kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'Featherweight','66')">Featherweight ≤66kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'Lightweight','70')">Lightweight ≤70kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'Welterweight','77')">Welterweight ≤77kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'Middleweight','84')">Middleweight ≤84kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'Light Heavyweight','93')">Light Heavyweight ≤93kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'Heavyweight','120')">Heavyweight ≤120kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'Open weight','')">Open weight</button>
         </div>
       </div>
       <div class="f2 fg">
@@ -5455,10 +5473,21 @@ function initGoogleFit(){
 const peEdits = {};
 
 function peChip(el, field){
-  // Single-select chip
   el.closest('.ob-chips').querySelectorAll('.ob-chip').forEach(c=>c.classList.remove('sel'));
   el.classList.add('sel');
   peEdits[field] = el.textContent.trim();
+}
+
+// Weight class chip — also populates the custom weight input
+function peChipWclass(el, name, kg){
+  el.closest('.ob-chips').querySelectorAll('.ob-chip').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  peEdits['wclass'] = name + (kg ? ' ≤'+kg+'kg' : '');
+  peEdits['goalWeight'] = kg || '';
+  const gwEl = document.getElementById('pe-goal-weight');
+  const gwUEl = document.getElementById('pe-goal-weight-unit');
+  if(gwEl && kg) { gwEl.value = kg; }
+  if(gwUEl) gwUEl.value = 'kg';
 }
 
 function peMultiChip(el, field){
@@ -5487,6 +5516,12 @@ function renderProfileTab(){
   // Goals
   preselect('pe-goal-chips',  p.goal);
   preselect('pe-wclass-chips', p.wclass);
+
+  // Populate custom goal weight field
+  const gwEl = document.getElementById('pe-goal-weight');
+  const gwUEl = document.getElementById('pe-goal-weight-unit');
+  if(gwEl) gwEl.value = p.goalWeight || (p.wclass?.match(/≤(\d+)kg/)?.[1]) || '';
+  if(gwUEl) gwUEl.value = p.goalWeightUnit || 'kg';
   preselectMulti('pe-weak-chips', p.weak||p.weaknesses||[]);
 
   const sessEl = document.getElementById('pe-sessions');
@@ -5543,6 +5578,15 @@ function saveProfileEdits(){
   // Goals
   const goal    = getChip('pe-goal-chips')   || p.goal;
   const wclass  = getChip('pe-wclass-chips') || p.wclass;
+
+  // Custom goal weight — takes precedence over chip selection
+  const rawGW       = getVal('pe-goal-weight');
+  const goalWeight  = rawGW ? parseFloat(rawGW) : (p.goalWeight || null);
+  const goalWeightUnit = getVal('pe-goal-weight-unit') || p.goalWeightUnit || 'kg';
+
+  // Derive targetKg for cut calculations (convert lbs if needed)
+  let targetKg = goalWeight;
+  if(goalWeight && goalWeightUnit === 'lbs') targetKg = Math.round(goalWeight * 0.453592 * 10) / 10;
   const weak    = getMultiChip('pe-weak-chips').length ? getMultiChip('pe-weak-chips') : (p.weak||p.weaknesses||[]);
   const sessions = getVal('pe-sessions') || p.sessionsPerWeek;
   const sleepH   = getVal('pe-sleep')    || p.sleepHours;
@@ -5582,6 +5626,7 @@ function saveProfileEdits(){
   const updated = {
     ...p,
     goal, wclass, weak, weaknesses:weak,
+    goalWeight, goalWeightUnit, targetKg,
     sessionsPerWeek:sessions, sleepHours:sleepH,
     weight, weightUnit:wUnit, height, heightUnit:hUnit, htu:hUnit, cut,
     sport, exp,
@@ -6571,58 +6616,65 @@ function renderDashboard(){
   if(greetEl) greetEl.textContent = `${greetWord}${profile.firstName?', '+profile.firstName.toUpperCase():''}`;
 
   // ── Stat grid ──
-  const wclassKg = (profile.wclass||'').match(/≤(\d+)/);
-  const targetKg = wclassKg ? parseInt(wclassKg[1]) : null;
-  const weightLog= JSON.parse(localStorage.getItem('fos_weight_log')||'[]');
-  const curWt    = weightLog.length ? weightLog[weightLog.length-1].val : parseFloat(profile.weight)||null;
-  const toCut    = (targetKg&&curWt) ? Math.max(0,curWt-targetKg).toFixed(1) : null;
+  // Use explicit goalWeight/targetKg if set, otherwise parse from wclass chip
+  const wclassKg  = (profile.wclass||'').match(/≤(\d+)/);
+  const targetKg  = profile.targetKg || (wclassKg ? parseInt(wclassKg[1]) : null);
+  const goalWtDisp= profile.goalWeight ? `${profile.goalWeight}${profile.goalWeightUnit||'kg'}` :
+                    (targetKg ? `≤${targetKg}kg` : null);
+  const weightLog = JSON.parse(localStorage.getItem('fos_weight_log')||'[]');
+  const curWt     = weightLog.length ? weightLog[weightLog.length-1].val : parseFloat(profile.weight)||null;
+  const toCut     = (targetKg && curWt) ? Math.max(0, curWt - targetKg).toFixed(1) : null;
   const waterML  = loadWaterToday();
   const goalML   = (profile.waterTarget||3.5)*1000;
   const waterPct = Math.min(100,Math.round(waterML/goalML*100));
   const trainingLog = getTrainingLog();
-  const weekStart= new Date(now); weekStart.setDate(now.getDate()-((now.getDay()+6)%7));
+  const now = new Date(); now.setHours(0,0,0,0);
+  const weekStart = new Date(now); weekStart.setDate(now.getDate()-((now.getDay()+6)%7));
   const thisWeek = trainingLog.filter(s=>{try{const d=parseDate(s.date);return d>=weekStart&&d<=now;}catch(e){return false;}});
+
+  // Today's food
+  const foodLogAll = JSON.parse(localStorage.getItem('fos_food_log')||'[]');
+  const todayFood  = foodLogAll.filter(f=>f.date===todayStr());
+  const tCalToday  = todayFood.reduce((s,f)=>s+(f.cal||0),0);
+  const tProToday  = todayFood.reduce((s,f)=>s+(f.pro||0),0);
+
+  // Body log for readiness
+  const bodyLogAll = JSON.parse(localStorage.getItem('fos_body_log')||'[]');
+  const lastBody   = bodyLogAll.find(b=>b.date===todayStr()) || bodyLogAll[0];
+  const soreness   = lastBody?.soreness ?? null;
+  const recentSess = trainingLog.slice(0,5);
+  const avgRPE     = recentSess.length?(recentSess.reduce((s,t)=>s+(t.rpe||5),0)/recentSess.length).toFixed(1):null;
 
   const grid = document.getElementById('dash-stat-grid');
   if(grid) grid.innerHTML = `
-    <div class="stat"><div class="stat-l">Weight</div>
+    <div class="stat"><div class="stat-l">Current weight</div>
       <div class="stat-v ${toCut>0?'red':'grn'}">${curWt||'—'}<span style="font-size:11px">${profile.weightUnit||'kg'}</span></div>
-      <div class="stat-s">${toCut!==null?(toCut>0?toCut+'kg to cut':'On weight'):'—'}</div></div>
-    <div class="stat"><div class="stat-l">Cal target</div>
-      <div class="stat-v acc">${profile.calTarget?fmtNum(profile.calTarget):'—'}</div>
-      <div class="stat-s">kcal/day</div></div>
-    <div class="stat"><div class="stat-l">Protein</div>
-      <div class="stat-v pur">${profile.proteinTarget||'—'}<span style="font-size:11px">g</span></div>
-      <div class="stat-s">daily target</div></div>
+      <div class="stat-s">${goalWtDisp?`Goal: ${goalWtDisp}`:'Set goal in Profile'}</div></div>
+    <div class="stat"><div class="stat-l">To cut</div>
+      <div class="stat-v ${toCut>0?'ora':'grn'}">${toCut!==null?(toCut>0?toCut:'0'):'—'}<span style="font-size:11px">${toCut!==null?profile.weightUnit||'kg':''}</span></div>
+      <div class="stat-s">${toCut!==null?(toCut>0?'to reach goal':'On weight ✅'):'Set goal weight'}</div></div>
+    <div class="stat"><div class="stat-l">Calories today</div>
+      <div class="stat-v acc">${tCalToday?fmtNum(tCalToday):'—'}<span style="font-size:11px">${tCalToday?'kcal':''}</span></div>
+      <div class="stat-s">${tCalToday?`of ${fmtNum(profile.calTarget||2000)} target`:'Not logged'}</div></div>
+    <div class="stat"><div class="stat-l">Protein today</div>
+      <div class="stat-v pur">${tProToday||'—'}<span style="font-size:11px">${tProToday?'g':''}</span></div>
+      <div class="stat-s">target ${profile.proteinTarget||'—'}g</div></div>
     <div class="stat"><div class="stat-l">Hydration</div>
       <div class="stat-v blu">${waterPct}<span style="font-size:11px">%</span></div>
       <div class="stat-s">${(waterML/1000).toFixed(1)}L of ${profile.waterTarget||3.5}L</div></div>
-    <div class="stat"><div class="stat-l">This week</div>
+    <div class="stat"><div class="stat-l">Sessions wk</div>
       <div class="stat-v ora">${thisWeek.length}</div>
-      <div class="stat-s">sessions</div></div>
-    <div class="stat"><div class="stat-l">Sleep</div>
-      <div class="stat-v pnk">${profile.sleepHours||'—'}<span style="font-size:11px">h</span></div>
-      <div class="stat-s">target</div></div>`;
+      <div class="stat-s">of ${profile.sessionsPerWeek||5} target</div></div>`;
 
-  // Load last saved brief if none showing
+  // Load last saved brief
   if(!document.getElementById('dash-coach-content')?.textContent?.trim()){
     loadLastCoachBrief();
   }
 
   // ── Today's mini-cards ──
-  const bodyLog    = JSON.parse(localStorage.getItem('fos_body_log')||'[]');
-  const foodLog2   = JSON.parse(localStorage.getItem('fos_food_log')||'[]');
-  const waterML2   = loadWaterToday();
-  const now3       = new Date(); now3.setHours(0,0,0,0);
-  const wsStart    = new Date(now3); wsStart.setDate(wsStart.getDate()-((now3.getDay()+6)%7));
-  const trainingLog2 = getTrainingLog();
-  const weekSess   = trainingLog2.filter(s=>{try{const d=parseDate(s.date);return d>=wsStart&&d<=now3;}catch(e){return false;}});
-  const lastBody   = bodyLog.find(b=>b.date===todayStr()) || bodyLog[0];
-  const soreness   = lastBody?.soreness ?? null;
-  const recentRPE  = trainingLog2.slice(0,5);
-  const avgRPE     = recentRPE.length?(recentRPE.reduce((s,t)=>s+(t.rpe||5),0)/recentRPE.length).toFixed(1):null;
+  const weekSess = thisWeek; // reuse
 
-  // Readiness card
+  // Readiness
   let readinessLabel='—', readinessColor='var(--mut2)';
   if(soreness!==null||avgRPE!==null){
     const s=soreness||0, r=parseFloat(avgRPE)||5;
@@ -6636,26 +6688,22 @@ function renderDashboard(){
   if(rds) rds.textContent=soreness!==null?`Soreness ${soreness}/10${avgRPE?' · RPE avg '+avgRPE:''}`:lastBody?'Based on last check-in':'Log a body check-in';
 
   // Hydration card
-  const goalML2=(profile.waterTarget||3.5)*1000;
-  const wPct=Math.min(100,Math.round(waterML2/goalML2*100));
   const wv=document.getElementById('dash-water-val');
-  if(wv) wv.textContent=wPct+'%';
+  if(wv) wv.textContent=waterPct+'%';
   const ws=document.getElementById('dash-water-sub');
-  if(ws) ws.textContent=`${(waterML2/1000).toFixed(1)}L of ${profile.waterTarget||3.5}L`;
+  if(ws) ws.textContent=`${(waterML/1000).toFixed(1)}L of ${profile.waterTarget||3.5}L`;
 
   // Nutrition card
-  const todayFood2=foodLog2.filter(f=>f.date===todayStr());
-  const tCal2=todayFood2.reduce((s,f)=>s+(f.cal||0),0);
   const cv=document.getElementById('dash-cal-val');
-  if(cv) cv.textContent=tCal2?fmtNum(tCal2)+'kcal':'—';
+  if(cv) cv.textContent=tCalToday?fmtNum(tCalToday)+'kcal':'—';
   const cs=document.getElementById('dash-cal-sub');
-  if(cs) cs.textContent=tCal2?`of ${fmtNum(profile.calTarget||2000)} target`:todayFood2.length?'':' Tap Food to log';
+  if(cs) cs.textContent=tCalToday?`of ${fmtNum(profile.calTarget||2000)} target`:'Tap Nutrition to log';
 
   // Sessions card
   const sv=document.getElementById('dash-sessions-val');
-  if(sv) sv.textContent=weekSess.length+' sess';
+  if(sv) sv.textContent=weekSess.length+(weekSess.length===1?' sess':' sess');
   const ss=document.getElementById('dash-sessions-sub');
-  if(ss) ss.textContent=weekSess.length?`last: ${fmtDate(weekSess[0].date)}`:'No sessions yet this week';
+  if(ss) ss.textContent=weekSess.length?`Last: ${fmtDate(weekSess[0].date)}`:'No sessions this week';
 
   // Competition strip
   const calEvts2=JSON.parse(localStorage.getItem('fos_cal_events')||'[]');
