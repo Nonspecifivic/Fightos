@@ -6654,22 +6654,30 @@ function renderDashboard(){
   const greetEl   = document.getElementById('dash-greeting');
   if(greetEl) greetEl.textContent = `${greetWord}${profile.firstName?', '+profile.firstName.toUpperCase():''}`;
 
-  // ── Stat grid ──
-  // Use explicit goalWeight/targetKg if set, otherwise parse from wclass chip
-  const wclassKg  = (profile.wclass||'').match(/≤(\d+)/);
-  const targetKg  = profile.targetKg || (wclassKg ? parseInt(wclassKg[1]) : null);
-  const goalWtDisp= profile.goalWeight ? `${profile.goalWeight}${profile.goalWeightUnit||'kg'}` :
-                    (targetKg ? `≤${targetKg}kg` : null);
-  const weightLog = JSON.parse(localStorage.getItem('fos_weight_log')||'[]');
-  const curWt     = weightLog.length ? weightLog[weightLog.length-1].val : parseFloat(profile.weight)||null;
-  const toCut     = (targetKg && curWt) ? Math.max(0, curWt - targetKg).toFixed(1) : null;
-  const waterML  = loadWaterToday();
-  const goalML   = (profile.waterTarget||3.5)*1000;
-  const waterPct = Math.min(100,Math.round(waterML/goalML*100));
+  // ── Goal weight resolution — custom goalWeight always takes priority over wclass chip ──
+  let targetKg = null;
+  if(profile.goalWeight && parseFloat(profile.goalWeight) > 0){
+    targetKg = parseFloat(profile.goalWeight);
+    if(profile.goalWeightUnit === 'lbs') targetKg = Math.round(targetKg * 0.453592 * 10) / 10;
+  } else if(profile.targetKg && parseFloat(profile.targetKg) > 0){
+    targetKg = parseFloat(profile.targetKg);
+  } else {
+    const m = (profile.wclass||'').match(/≤(\d+)/);
+    if(m) targetKg = parseInt(m[1]);
+  }
+
+  const goalWtDisp = targetKg ? `${targetKg}kg` : null;
+  const weightLog  = JSON.parse(localStorage.getItem('fos_weight_log')||'[]');
+  const curWt      = weightLog.length ? weightLog[weightLog.length-1].val : parseFloat(profile.weight)||null;
+  const toCut      = (targetKg && curWt) ? Math.max(0, curWt - targetKg).toFixed(1) : null;
+
+  const waterML    = loadWaterToday();
+  const goalML     = (profile.waterTarget||3.5)*1000;
+  const waterPct   = Math.min(100,Math.round(waterML/goalML*100));
   const trainingLog = getTrainingLog();
   const now = new Date(); now.setHours(0,0,0,0);
   const weekStart = new Date(now); weekStart.setDate(now.getDate()-((now.getDay()+6)%7));
-  const thisWeek = trainingLog.filter(s=>{try{const d=parseDate(s.date);return d>=weekStart&&d<=now;}catch(e){return false;}});
+  const thisWeek   = trainingLog.filter(s=>{try{const d=parseDate(s.date);return d>=weekStart&&d<=now;}catch(e){return false;}});
 
   // Today's food
   const foodLogAll = JSON.parse(localStorage.getItem('fos_food_log')||'[]');
@@ -6684,26 +6692,27 @@ function renderDashboard(){
   const recentSess = trainingLog.slice(0,5);
   const avgRPE     = recentSess.length?(recentSess.reduce((s,t)=>s+(t.rpe||5),0)/recentSess.length).toFixed(1):null;
 
+  // ── Stat grid — TARGETS only (no live today values; those are in mini-cards below) ──
   const grid = document.getElementById('dash-stat-grid');
   if(grid) grid.innerHTML = `
     <div class="stat"><div class="stat-l">Current weight</div>
-      <div class="stat-v ${toCut>0?'red':'grn'}">${curWt||'—'}<span style="font-size:11px">${profile.weightUnit||'kg'}</span></div>
-      <div class="stat-s">${goalWtDisp?`Goal: ${goalWtDisp}`:'Set goal in Profile'}</div></div>
+      <div class="stat-v ${parseFloat(toCut)>0?'red':'grn'}">${curWt||'—'}<span style="font-size:11px">${profile.weightUnit||'kg'}</span></div>
+      <div class="stat-s">${goalWtDisp?`Goal: ${goalWtDisp}`:'Set in Profile'}</div></div>
     <div class="stat"><div class="stat-l">To cut</div>
-      <div class="stat-v ${toCut>0?'ora':'grn'}">${toCut!==null?(toCut>0?toCut:'0'):'—'}<span style="font-size:11px">${toCut!==null?profile.weightUnit||'kg':''}</span></div>
-      <div class="stat-s">${toCut!==null?(toCut>0?'to reach goal':'On weight ✅'):'Set goal weight'}</div></div>
-    <div class="stat"><div class="stat-l">Calories today</div>
-      <div class="stat-v acc">${tCalToday?fmtNum(tCalToday):'—'}<span style="font-size:11px">${tCalToday?'kcal':''}</span></div>
-      <div class="stat-s">${tCalToday?`of ${fmtNum(profile.calTarget||2000)} target`:'Not logged'}</div></div>
-    <div class="stat"><div class="stat-l">Protein today</div>
-      <div class="stat-v pur">${tProToday||'—'}<span style="font-size:11px">${tProToday?'g':''}</span></div>
-      <div class="stat-s">target ${profile.proteinTarget||'—'}g</div></div>
-    <div class="stat"><div class="stat-l">Hydration</div>
-      <div class="stat-v blu">${waterPct}<span style="font-size:11px">%</span></div>
-      <div class="stat-s">${(waterML/1000).toFixed(1)}L of ${profile.waterTarget||3.5}L</div></div>
-    <div class="stat"><div class="stat-l">Sessions wk</div>
-      <div class="stat-v ora">${thisWeek.length}</div>
-      <div class="stat-s">of ${profile.sessionsPerWeek||5} target</div></div>`;
+      <div class="stat-v ${parseFloat(toCut)>0?'ora':'grn'}">${toCut!==null?(parseFloat(toCut)>0?toCut:'0'):'—'}<span style="font-size:11px">${toCut!==null?'kg':''}</span></div>
+      <div class="stat-s">${toCut!==null?(parseFloat(toCut)>0?'to reach goal':'On weight ✅'):'Set goal weight'}</div></div>
+    <div class="stat"><div class="stat-l">Cal target</div>
+      <div class="stat-v acc">${profile.calTarget?fmtNum(profile.calTarget):'—'}<span style="font-size:11px">${profile.calTarget?'kcal':''}</span></div>
+      <div class="stat-s">per day</div></div>
+    <div class="stat"><div class="stat-l">Protein target</div>
+      <div class="stat-v pur">${profile.proteinTarget||'—'}<span style="font-size:11px">${profile.proteinTarget?'g':''}</span></div>
+      <div class="stat-s">per day</div></div>
+    <div class="stat"><div class="stat-l">Water target</div>
+      <div class="stat-v blu">${profile.waterTarget||'—'}<span style="font-size:11px">${profile.waterTarget?'L':''}</span></div>
+      <div class="stat-s">per day</div></div>
+    <div class="stat"><div class="stat-l">Sessions</div>
+      <div class="stat-v ora">${profile.sessionsPerWeek||'—'}</div>
+      <div class="stat-s">per week target</div></div>`;
 
   // Load last saved brief
   if(!document.getElementById('dash-coach-content')?.textContent?.trim()){
