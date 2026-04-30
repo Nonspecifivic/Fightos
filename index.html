@@ -2723,6 +2723,136 @@ function renderMobilityLog(){
   }).join('');
 }
 
+// ===== AI STRENGTH PROGRAM GENERATOR =====
+async function generateStrengthProgram(){
+  const out     = document.getElementById('strength-program-output');
+  const dots    = document.getElementById('str-loading');
+  const content = document.getElementById('strength-program-content');
+  out.style.display='block'; dots.style.display='flex'; content.style.display='none'; content.innerHTML='';
+  out.scrollIntoView({behavior:'smooth', block:'nearest'});
+
+  const profile     = loadProfile()||{};
+  const fighterType = document.getElementById('str-fighter-type')?.value||'MMA fighter';
+  const goal        = document.getElementById('str-goal')?.value||'Functional fight strength';
+  const days        = document.getElementById('str-days')?.value||'3';
+  const weeks       = document.getElementById('str-weeks')?.value||'4 weeks';
+  const equip       = document.getElementById('str-equip')?.value||'Full gym';
+  const wt          = profile.weight||'—';
+  const inj         = profile.injuries||'none';
+  const exp         = profile.exp||'Intermediate';
+
+  const prompt = `You are an elite strength & conditioning coach specialising in combat sports. Build a complete, detailed strength program.
+
+ATHLETE: ${profile.firstName||'Fighter'} | ${fighterType} | ${exp}
+Weight: ${wt}${profile.weightUnit||'kg'} | Injuries/limitations: ${inj}
+Competition: ${profile.wclass||'Open weight'} | Goal: ${profile.goal||'—'}
+
+PROGRAM PARAMETERS:
+Training days per week: ${days}
+Program length: ${weeks}
+Goal: ${goal}
+Equipment: ${equip}
+
+Respond using these exact section headers in CAPS on their own lines:
+
+PROGRAM OVERVIEW
+Brief summary of the philosophy, periodisation approach and how it supports fight performance
+
+WEEKLY STRUCTURE
+Day-by-day breakdown of what each training day targets (e.g. Day 1: Lower power, Day 2: Upper push/pull etc.)
+
+${Array.from({length:parseInt(days)},(_,i)=>`DAY ${i+1} — WORKOUT`).join('\n')}
+For each day list exercises with sets × reps, rest periods, and coaching cues. Format each exercise as:
+Exercise name — X sets × Y reps @ RPE Z | Rest: Xs | Cue: brief technique note
+
+PROGRESSION GUIDE
+How to progress week by week across the ${weeks}. Include specific % or RPE targets per week.
+
+FIGHT CAMP MODIFICATIONS
+How to adapt this program when within 6 weeks of competition — what to reduce, what to maintain.
+
+RECOVERY NOTES
+Sleep, nutrition timing and recovery protocols to support this program.
+
+Be specific with exercises, sets, reps and weights/RPE. Reference the athlete's sport and limitations.`;
+
+  try{
+    const text = await anthropicCall(prompt, 1500);
+    dots.style.display='none'; content.style.display='block';
+    content.innerHTML = renderCoachOutput(text);
+    content.scrollIntoView({behavior:'smooth', block:'start'});
+  }catch(e){
+    showAIError(content, dots, e.message);
+  }
+}
+
+// ===== AI MOBILITY ROUTINE GENERATOR =====
+async function generateMobilityRoutine(){
+  const out     = document.getElementById('mobility-output');
+  const dots    = document.getElementById('mob-loading');
+  const content = document.getElementById('mobility-content');
+  out.style.display='block'; dots.style.display='flex'; content.style.display='none'; content.innerHTML='';
+  out.scrollIntoView({behavior:'smooth', block:'nearest'});
+
+  const profile    = loadProfile()||{};
+  const focusArea  = document.getElementById('mob-focus-area')?.value||'Full body — general';
+  const duration   = document.getElementById('mob-duration')?.value||'15 minutes';
+  const soreness   = document.getElementById('mob-soreness-level')?.value||'None — feeling fresh';
+  const mobType    = document.getElementById('mob-type')?.value||'Active mobility (movement-based)';
+  const inj        = profile.injuries||'none';
+  const sport      = profile.sport||'MMA';
+
+  // Get today's body check-in for context
+  const bodyLog    = JSON.parse(localStorage.getItem('fos_body_log')||'[]');
+  const todayBody  = bodyLog.find(b=>b.date===todayStr())||bodyLog[0];
+  const bodyNote   = todayBody ? `Body check-in: soreness ${todayBody.soreness}/10, sleep ${todayBody.sleepHours||'?'}h` : 'No body check-in logged today';
+
+  const prompt = `You are an elite mobility and movement coach specialising in combat sports athletes. Generate a complete, actionable mobility routine.
+
+ATHLETE: ${profile.firstName||'Fighter'} | ${sport} | ${profile.exp||'Intermediate'}
+Injuries/limitations: ${inj}
+${bodyNote}
+
+ROUTINE PARAMETERS:
+Focus area: ${focusArea}
+Duration: ${duration}
+Current soreness: ${soreness}
+Routine type: ${mobType}
+
+Respond using these exact section headers in CAPS on their own lines:
+
+ROUTINE OVERVIEW
+Brief explanation of why this routine suits the focus area and current state. One paragraph.
+
+WARM-UP (2–3 minutes)
+2–3 light movements to prepare the body. Format each as:
+Movement — Xreps/Xs hold | Purpose: brief note
+
+MAIN ROUTINE
+All exercises to fill the duration. Format each as:
+Exercise name — X reps or X second hold × X sets | Technique: brief coaching cue | Modification: easier/harder option
+
+COOL-DOWN (2 minutes)
+2–3 finishing holds or breathing exercises.
+
+FIGHTER APPLICATION
+How this routine directly improves ${sport} performance — specific positions, movements or situations it helps.
+
+FREQUENCY RECOMMENDATION
+How often to do this routine and when in the training week (pre-training, post-training, rest day etc.)
+
+Be precise with timing and reps. Include coaching cues a self-coached athlete can use alone.`;
+
+  try{
+    const text = await anthropicCall(prompt, 1200);
+    dots.style.display='none'; content.style.display='block';
+    content.innerHTML = renderCoachOutput(text);
+    content.scrollIntoView({behavior:'smooth', block:'start'});
+  }catch(e){
+    showAIError(content, dots, e.message);
+  }
+}
+
 // ===== MOBILITY SAVE =====
 function saveMobilityLog(){
   const routine=document.getElementById('mob-routine')?.value||'';
