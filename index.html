@@ -2804,14 +2804,25 @@ Be specific with exercises, sets, reps and weights/RPE. Reference the athlete's 
   try{
     const text = await anthropicCall(prompt, 1500);
     dots.style.display='none'; content.style.display='block';
-    content.innerHTML = renderCoachOutput(text);
+    const fighterType = document.getElementById('str-fighter-type')?.value||'Fighter';
+    const goal        = document.getElementById('str-goal')?.value||'Strength';
+    const weeks       = document.getElementById('str-weeks')?.value||'4 weeks';
+    const days        = document.getElementById('str-days')?.value||'3';
+    content.innerHTML = `
+      <div style="background:linear-gradient(135deg,rgba(232,255,0,.08),rgba(232,255,0,.03));border:1px solid rgba(232,255,0,.2);border-radius:14px;padding:16px 18px;margin-bottom:16px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--acc);margin-bottom:4px">YOUR STRENGTH PROGRAM</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">
+          <span style="padding:4px 10px;border-radius:20px;background:var(--surf);border:1px solid var(--bdr2);font-size:12px">🥋 ${fighterType}</span>
+          <span style="padding:4px 10px;border-radius:20px;background:var(--surf);border:1px solid var(--bdr2);font-size:12px">🎯 ${goal}</span>
+          <span style="padding:4px 10px;border-radius:20px;background:var(--surf);border:1px solid var(--bdr2);font-size:12px">📅 ${days} days/wk · ${weeks}</span>
+        </div>
+      </div>
+      ${renderCoachOutput(text)}`;
     content.scrollIntoView({behavior:'smooth', block:'start'});
   }catch(e){
     showAIError(content, dots, e.message);
   }
 }
-
-// ===== AI MOBILITY ROUTINE GENERATOR =====
 async function generateMobilityRoutine(){
   const out     = document.getElementById('mobility-output');
   const dots    = document.getElementById('mob-loading');
@@ -2871,14 +2882,24 @@ Be precise with timing and reps. Include coaching cues a self-coached athlete ca
   try{
     const text = await anthropicCall(prompt, 1200);
     dots.style.display='none'; content.style.display='block';
-    content.innerHTML = renderCoachOutput(text);
+    const focusArea = document.getElementById('mob-focus-area')?.value||'Full body';
+    const duration  = document.getElementById('mob-duration')?.value||'15 minutes';
+    const mobType   = document.getElementById('mob-type')?.value||'Active mobility';
+    content.innerHTML = `
+      <div style="background:linear-gradient(135deg,rgba(191,95,255,.08),rgba(191,95,255,.03));border:1px solid rgba(191,95,255,.2);border-radius:14px;padding:16px 18px;margin-bottom:16px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--pur);margin-bottom:4px">YOUR MOBILITY ROUTINE</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">
+          <span style="padding:4px 10px;border-radius:20px;background:var(--surf);border:1px solid var(--bdr2);font-size:12px">🎯 ${focusArea}</span>
+          <span style="padding:4px 10px;border-radius:20px;background:var(--surf);border:1px solid var(--bdr2);font-size:12px">⏱ ${duration}</span>
+          <span style="padding:4px 10px;border-radius:20px;background:var(--surf);border:1px solid var(--bdr2);font-size:12px">🧘 ${mobType}</span>
+        </div>
+      </div>
+      ${renderCoachOutput(text)}`;
     content.scrollIntoView({behavior:'smooth', block:'start'});
   }catch(e){
     showAIError(content, dots, e.message);
   }
 }
-
-// ===== MOBILITY SAVE =====
 function saveMobilityLog(){
   const routine=document.getElementById('mob-routine')?.value||'';
   const dur    =document.getElementById('mob-dur')?.value||'';
@@ -4417,8 +4438,23 @@ function renderCoachOutput(text, context='coach'){
     {keys:['PEAK WEEK'],             icon:'🔥', color:'var(--acc2)', style:'list'},
     {keys:['FIGHT DAY'],             icon:'🥊', color:'var(--acc)',  style:'list'},
     {keys:['RED FLAG'],              icon:'🚩', color:'var(--acc2)', style:'list'},
-    // Nutrition sections
-    {keys:['ADHERENCE SUMMARY'],     icon:'📊', color:'var(--blu)',  style:'highlight'},
+    // Strength program sections
+    {keys:['PROGRAM OVERVIEW'],       icon:'🏗️', color:'var(--acc)',  style:'highlight'},
+    {keys:['WEEKLY STRUCTURE'],       icon:'📅', color:'var(--blu)',  style:'week-structure'},
+    {keys:['DAY 1'],                  icon:'1️⃣', color:'var(--grn)',  style:'workout-day', day:1},
+    {keys:['DAY 2'],                  icon:'2️⃣', color:'var(--blu)',  style:'workout-day', day:2},
+    {keys:['DAY 3'],                  icon:'3️⃣', color:'var(--ora)',  style:'workout-day', day:3},
+    {keys:['DAY 4'],                  icon:'4️⃣', color:'var(--pur)',  style:'workout-day', day:4},
+    {keys:['PROGRESSION GUIDE'],      icon:'📈', color:'var(--acc)',  style:'list'},
+    {keys:['FIGHT CAMP MODIF'],       icon:'🥊', color:'var(--acc2)', style:'highlight'},
+    {keys:['RECOVERY NOTE'],          icon:'😴', color:'var(--pur)',  style:'list'},
+    // Mobility routine sections
+    {keys:['ROUTINE OVERVIEW'],       icon:'🧘', color:'var(--blu)',  style:'highlight'},
+    {keys:['WARM-UP'],                icon:'🔥', color:'var(--ora)',  style:'exercise-list'},
+    {keys:['MAIN ROUTINE'],           icon:'💪', color:'var(--grn)',  style:'exercise-list'},
+    {keys:['COOL-DOWN'],              icon:'❄️', color:'var(--blu)',  style:'exercise-list'},
+    {keys:['FIGHTER APPLICATION'],    icon:'🥋', color:'var(--acc)',  style:'highlight'},
+    {keys:['FREQUENCY RECOMMEND'],    icon:'🗓️', color:'var(--pur)',  style:'highlight'},
     {keys:['KEY PATTERN'],           icon:'🔍', color:'var(--pur)',  style:'list'},
     {keys:['PERFORMANCE IMPACT'],    icon:'⚡', color:'var(--grn)',  style:'highlight'},
     {keys:['PROBLEM AREA'],          icon:'⚠️', color:'var(--acc2)', style:'list'},
@@ -4520,33 +4556,106 @@ function renderCoachOutput(text, context='coach'){
 
     if(sec.style==='numbered'){
       let num=0;
-      return `<div style="background:var(--surf);border:1px solid var(--bdr);border-radius:12px;padding:14px;margin-bottom:12px">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-          <span style="font-size:18px">${sec.icon}</span>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;color:${sec.color}">${sec.title}</div>
-        </div>
-        ${sec.lines.filter(l=>l.type==='text').map(l=>{
-          num++;
-          return `<div style="display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--bdr)">
-            <div style="width:26px;height:26px;border-radius:50%;background:${sec.color};color:#000;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${num}</div>
-            <div style="font-size:13px;line-height:1.65;padding-top:3px">${l.text}</div>
-          </div>`;
-        }).join('')}
-      </div>`;
+      const items = sec.lines.filter(function(l){return l.type==='text';}).map(function(l){
+        num++;
+        return '<div style="display:flex;gap:12px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--bdr)">'
+          +'<div style="width:26px;height:26px;border-radius:50%;background:'+sec.color+';color:#000;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+num+'</div>'
+          +'<div style="font-size:13px;line-height:1.65;padding-top:3px">'+l.text+'</div></div>';
+      }).join('');
+      return '<div style="background:var(--surf);border:1px solid var(--bdr);border-radius:12px;padding:14px;margin-bottom:12px">'
+        +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'
+        +'<span style="font-size:18px">'+sec.icon+'</span>'
+        +'<div style="font-family:"Bebas Neue",sans-serif;font-size:15px;letter-spacing:1px;color:'+sec.color+'">'+sec.title+'</div>'
+        +'</div>'+items+'</div>';
     }
 
+    // Workout day card (strength program)
+    if(sec.style==='workout-day'){
+      const dayColors=['var(--grn)','var(--blu)','var(--ora)','var(--pur)'];
+      const col = dayColors[(sec.day||1)-1] || sec.color;
+      const exercises = sec.lines.filter(function(l){return l.type==='text';}).map(function(l){
+        const exMatch = l.text.match(/^(.+?)\s*[\u2014\u2013-]\s*(.+)/);
+        if(!exMatch) return '<div style="padding:8px 0;border-bottom:1px solid var(--bdr);font-size:13px;line-height:1.6">'+l.text+'</div>';
+        const name=exMatch[1].trim(), detail=exMatch[2].trim();
+        const srMatch=detail.match(/(\d+)\s*[x\u00d7]\s*(\d+[\u2013-]?\d*)\s*(?:reps?)?/i);
+        const srChip=srMatch?'<span style="padding:2px 8px;border-radius:12px;background:'+col+'30;color:'+col+';font-size:11px;font-weight:600">'+srMatch[1]+'\u00d7'+srMatch[2]+'</span>':'';
+        const rpeMatch=detail.match(/RPE\s*(\d+)/i);
+        const rpeChip=rpeMatch?'<span style="padding:2px 8px;border-radius:12px;background:rgba(232,255,0,.1);color:var(--acc);font-size:11px;font-weight:600">RPE '+rpeMatch[1]+'</span>':'';
+        const restMatch=detail.match(/Rest[:\s]+(\d+[\u2013-]?\d*\s*s(?:ec)?)/i);
+        const restChip=restMatch?'<span style="padding:2px 8px;border-radius:12px;background:var(--surf2);color:var(--mut2);font-size:11px">\u23f1 '+restMatch[1]+'</span>':'';
+        const cueMatch=detail.match(/Cue:\s*(.+)/i);
+        const cueText=cueMatch?'<div style="font-size:11px;color:var(--mut2);margin-top:3px;font-style:italic">\ud83d\udca1 '+cueMatch[1].trim()+'</div>':'';
+        return '<div style="padding:10px 0;border-bottom:1px solid var(--bdr)">'
+          +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">'
+          +'<span style="font-size:13px;font-weight:600;flex:1;min-width:100px">'+name+'</span>'
+          +'<div style="display:flex;gap:4px;flex-wrap:wrap">'+srChip+rpeChip+restChip+'</div>'
+          +'</div>'+cueText+'</div>';
+      }).join('');
+      return '<div style="background:var(--surf);border:1px solid '+col+'40;border-top:3px solid '+col+';border-radius:12px;overflow:hidden;margin-bottom:12px">'
+        +'<div style="background:'+col+'14;padding:12px 16px;display:flex;align-items:center;gap:10px">'
+        +'<div style="width:36px;height:36px;border-radius:50%;background:'+col+';display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">'+sec.icon+'</div>'
+        +'<div style="font-family:\'Bebas Neue\',sans-serif;font-size:17px;letter-spacing:1px;color:'+col+'">'+sec.title+'</div>'
+        +'</div><div style="padding:4px 16px 12px">'+(exercises||'<div style="padding:8px 0;color:var(--mut2);font-size:13px">See program overview</div>')+'</div></div>';
+    }
+
+    // Weekly structure card
+    if(sec.style==='week-structure'){
+      const wDayColors=['var(--grn)','var(--blu)','var(--ora)','var(--pur)','var(--acc)','var(--pink)','var(--mut2)'];
+      let wRows='';
+      sec.lines.filter(function(l){return l.type==='text';}).forEach(function(l,i){
+        const wCol=wDayColors[i%wDayColors.length];
+        const dm=l.text.match(/^(Day\s*\d+|Rest)[:\s\u2013\u2014-]*(.*)/i);
+        if(dm){
+          wRows+='<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bdr)">'
+            +'<span style="font-family:\'Bebas Neue\',sans-serif;font-size:13px;color:'+wCol+';width:50px;flex-shrink:0">'+dm[1].toUpperCase()+'</span>'
+            +'<span style="font-size:13px;line-height:1.5">'+dm[2]+'</span></div>';
+        } else {
+          wRows+='<div style="padding:7px 0;border-bottom:1px solid var(--bdr);font-size:13px;line-height:1.6">'+l.text+'</div>';
+        }
+      });
+      return '<div style="background:var(--surf);border:1px solid var(--bdr);border-radius:12px;padding:14px;margin-bottom:12px">'
+        +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'
+        +'<span style="font-size:18px">'+sec.icon+'</span>'
+        +'<div style="font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:1px;color:'+sec.color+'">'+sec.title+'</div>'
+        +'</div>'+wRows+'</div>';
+    }
+
+    // Exercise list (mobility routines)
+    if(sec.style==='exercise-list'){
+      const mobExercises=sec.lines.filter(function(l){return l.type==='text';}).map(function(l){
+        const em=l.text.match(/^(.+?)\s*[\u2014\u2013-]\s*(.+)/);
+        if(!em) return '<div style="padding:8px 0;border-bottom:1px solid var(--bdr);font-size:13px;line-height:1.6">'+l.text+'</div>';
+        const mName=em[1].trim(), mDetail=em[2].trim();
+        const durM=mDetail.match(/(\d+\s*(?:s(?:ec(?:ond)?s?)?|reps?|x\s*\d+))/i);
+        const durC=durM?'<span style="padding:2px 8px;border-radius:12px;background:'+sec.color+'20;color:'+sec.color+';font-size:11px;font-weight:600">'+durM[1]+'</span>':''
+        const techM=mDetail.match(/Technique:\s*([^|]+)/i);
+        const techT=techM?'<div style="font-size:11px;color:var(--mut2);margin-top:3px">&#128161; '+techM[1].trim()+'</div>':''
+        const modM=mDetail.match(/Modification:\s*(.+)/i);
+        const modT=modM?'<div style="font-size:11px;color:var(--pur);margin-top:2px">&#11014; '+modM[1].trim()+'</div>':''
+        return '<div style="padding:10px 0;border-bottom:1px solid var(--bdr)">'
+          +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
+          +'<span style="font-size:13px;font-weight:600;flex:1">'+mName+'</span>'+durC
+          +'</div>'+techT+modT+'</div>';
+      }).join('');
+      return '<div style="background:var(--surf);border:1px solid '+sec.color+'30;border-top:3px solid '+sec.color+';border-radius:12px;overflow:hidden;margin-bottom:12px">'
+        +'<div style="background:'+sec.color+'12;padding:11px 16px;display:flex;align-items:center;gap:8px">'
+        +'<span style="font-size:18px">'+sec.icon+'</span>'
+        +'<div style="font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:1px;color:'+sec.color+'">'+sec.title+'</div>'
+        +'</div><div style="padding:4px 16px 12px">'+( mobExercises||'<div style="padding:8px 0;color:var(--mut2);font-size:13px">See routine details</div>')+'</div></div>';
+    }
+    // ── Nutrition sections ──
     // Default: list style
-    return `<div style="background:var(--surf);border:1px solid var(--bdr);border-radius:12px;padding:14px;margin-bottom:12px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-        <span style="font-size:18px">${sec.icon}</span>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;color:${sec.color}">${sec.title}</div>
-      </div>
-      ${sec.lines.filter(l=>l.type==='text').map(l=>`
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--bdr)">
-          <div style="width:5px;height:5px;border-radius:50%;background:${sec.color};flex-shrink:0;margin-top:6px"></div>
-          <div style="font-size:13px;line-height:1.65">${l.text}</div>
-        </div>`).join('')}
-    </div>`;
+    return '<div style="background:var(--surf);border:1px solid var(--bdr);border-radius:12px;padding:14px;margin-bottom:12px">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+      +'<span style="font-size:18px">'+sec.icon+'</span>'
+      +'<div style="font-family:\'Bebas Neue\',sans-serif;font-size:15px;letter-spacing:1px;color:'+sec.color+'">'+sec.title+'</div>'
+      +'</div>'
+      +sec.lines.filter(function(l){return l.type==='text';}).map(function(l){
+        return '<div style="display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--bdr)">'
+          +'<div style="width:5px;height:5px;border-radius:50%;background:'+sec.color+';flex-shrink:0;margin-top:6px"></div>'
+          +'<div style="font-size:13px;line-height:1.65">'+l.text+'</div></div>';
+      }).join('')
+      +'</div>';
 
   }).join('');
 }
