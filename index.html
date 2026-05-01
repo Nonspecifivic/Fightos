@@ -6380,6 +6380,25 @@ function updateSyncBadge(syncing=false,error=false){
   else { badge.textContent='✓ Synced'; badge.className='pill pill-grn'; if(detail&&ACCT.lastSynced) detail.textContent='Last synced '+ACCT.lastSynced; }
 }
 
+// All localStorage keys that should sync to cloud
+const SYNC_KEYS = {
+  profile:      { key:'fightos_profile',     parse:true  },
+  training_log: { key:'fos_training_log',    parse:true  },
+  body_log:     { key:'fos_body_log',        parse:true  },
+  food_log:     { key:'fos_food_log',        parse:true  },
+  weight_log:   { key:'fos_weight_log',      parse:true  },
+  water_today:  { key:'fos_water_today',     parse:true  },
+  strength_log: { key:'fos_strength_log',    parse:true  },
+  mobility_log: { key:'fos_mobility_log',    parse:true  },
+  calendar:     { key:'fos_cal_events',      parse:true  },
+  match_history:{ key:'fos_match_history',   parse:true  },
+  coach_briefs: { key:'fos_briefs',          parse:true  },
+  cycle:        { key:'fos_cycle',           parse:true  },
+  womens_log:   { key:'fos_womens_log',      parse:true  },
+  techniques:   { key:'fos_techniques',      parse:true  },
+  notes:        { key:'fos_daily_notes',     parse:true  },
+};
+
 async function syncToCloud(){
   if(!isSignedIn()||ACCT.syncing) return;
   ACCT.syncing=true; updateSyncBadge(true);
@@ -6388,14 +6407,21 @@ async function syncToCloud(){
     const bu=ACCT.backendUrl;
     const h={'Content-Type':'application/json','Authorization':'Bearer '+token};
     const post=(type,data)=>fetch(`${bu}/api/data/sync`,{method:'POST',headers:h,body:JSON.stringify({type,data})});
-    const profile=loadProfile();
-    await Promise.all([
-      profile?post('profile',profile):Promise.resolve(),
-      post('training_log',getTrainingLog()),
-      post('calendar',JSON.parse(localStorage.getItem('fos_cal_events')||'[]')),
-      post('match_history',getMatchHistory()),
-      post('coach_briefs',JSON.parse(localStorage.getItem('fos_briefs')||'[]')),
-    ]);
+
+    // Build payload — collect all non-null data
+    const syncs=[];
+    for(const [type, cfg] of Object.entries(SYNC_KEYS)){
+      try{
+        const raw=localStorage.getItem(cfg.key);
+        if(!raw) continue;
+        const data=cfg.parse?JSON.parse(raw):raw;
+        // Skip empty arrays/objects
+        if(Array.isArray(data)&&!data.length) continue;
+        syncs.push(post(type,data));
+      }catch(e){}
+    }
+
+    await Promise.all(syncs);
     ACCT.lastSynced=new Date().toLocaleTimeString(userLocale,{hour:'2-digit',minute:'2-digit'});
     saveAccountSession(); updateSyncBadge();
   }catch(e){ console.error('Sync failed',e); updateSyncBadge(false,true); }
@@ -6410,23 +6436,76 @@ async function loadFromCloud(){
     const res=await fetch(`${ACCT.backendUrl}/api/data/sync?type=all`,{headers:{'Authorization':'Bearer '+token}});
     if(!res.ok) throw new Error('HTTP '+res.status);
     const d=await res.json();
-    if(d.profile) try{ localStorage.setItem('fightos_profile',JSON.stringify(d.profile)); }catch(e){}
-    if(d.training_log?.length) saveTrainingLog(d.training_log);
-    if(d.calendar?.length) try{ localStorage.setItem('fos_cal_events',JSON.stringify(d.calendar)); }catch(e){}
-    if(d.match_history?.length) saveMatchHistory(d.match_history);
-    if(d.coach_briefs?.length) try{ localStorage.setItem('fos_briefs',JSON.stringify(d.coach_briefs)); }catch(e){}
-    const profile=loadProfile();
-    if(profile){ applyProfile(profile); renderNutritionStats(); renderWeightStats(); renderTDEECard(); }
-    renderTrainingLog(); renderCal(); renderMatchRecord(); renderMatchHistory(); renderSavedBriefs();
+
+    // Write each received data type to localStorage
+    let changed=false;
+    for(const [type, cfg] of Object.entries(SYNC_KEYS)){
+      if(d[type]===undefined||d[type]===null) continue;
+      try{
+        const newVal = JSON.stringify(d[type]);
+        const oldVal = localStorage.getItem(cfg.key);
+
+        // Merge strategy: for arrays, keep whichever has more entries
+        // For objects (profile, cycle, water), prefer cloud if newer
+        if(Array.isArray(d[type])){
+          const oldArr = oldVal ? JSON.parse(oldVal) : [];
+          if(d[type].length >= oldArr.length){
+            localStorage.setItem(cfg.key, newVal);
+            changed=true;
+          }
+        } else {
+          // For non-arrays (profile, water_today, cycle), prefer cloud
+          localStorage.setItem(cfg.key, newVal);
+          changed=true;
+        }
+      }catch(e){}
+    }
+
+    if(changed){
+      // Re-apply profile and re-render all active views
+      const profile=loadProfile();
+      if(profile){ applyProfile(profile); }
+      waterML=loadWaterToday();
+      try{ renderDashboard(); }catch(e){}
+      try{ renderTrainingLog(); }catch(e){}
+      try{ renderCal(); }catch(e){}
+      try{ renderMatchRecord(); renderMatchHistory(); }catch(e){}
+      try{ renderSavedBriefs(); }catch(e){}
+      try{ renderFoodLog(); renderNutritionStats(); }catch(e){}
+      try{ renderWeightChart(); }catch(e){}
+      try{ renderBodyLog(); }catch(e){}
+      try{ renderStrengthLog(); renderMobilityLog(); }catch(e){}
+      try{ renderWaterDisplay(); renderWaterLog(); }catch(e){}
+      try{ renderWomensTab(); }catch(e){}
+    }
+
     ACCT.lastSynced=new Date().toLocaleTimeString(userLocale,{hour:'2-digit',minute:'2-digit'});
     saveAccountSession(); updateSyncBadge();
   }catch(e){ console.error('Load from cloud failed',e); updateSyncBadge(false,true); }
 }
 
-async function manualSync(){ await syncToCloud(); await loadFromCloud(); }
+async function manualSync(){
+  await syncToCloud();
+  await loadFromCloud();
+  // Show confirmation
+  const badge=document.getElementById('sync-status');
+  if(badge){ badge.textContent='✅ All data synced'; setTimeout(()=>badge.textContent='',3000); }
+}
 
 let _syncTimer=null;
-function debouncedSync(){ clearTimeout(_syncTimer); _syncTimer=setTimeout(()=>{ if(isSignedIn()) syncToCloud(); },3000); }
+function debouncedSync(){
+  clearTimeout(_syncTimer);
+  _syncTimer=setTimeout(()=>{ if(isSignedIn()) syncToCloud(); }, 2000);
+}
+
+// Auto-pull from cloud when user returns to the tab/window (catches mobile→desktop flow)
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible' && isSignedIn()){
+    // Only pull if last sync was more than 30 seconds ago
+    const lastSync=ACCT.lastSynced;
+    loadFromCloud().catch(()=>{});
+  }
+});
 
 function renderMarkdown(text){
   return text.split('\n').map(line=>{
