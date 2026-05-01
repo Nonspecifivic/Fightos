@@ -1127,8 +1127,10 @@ html,body{
           <input type="number" id="pe-goal-weight" min="30" max="200" step="0.5" placeholder="Custom goal weight (e.g. 68.5)" style="flex:1" oninput="onCustomGoalWeightInput()">
           <select id="pe-goal-weight-unit" style="width:64px"><option>kg</option><option>lbs</option></select>
         </div>
-        <div style="font-size:11px;color:var(--mut2);margin-bottom:8px">Or choose a standard weight class:</div>
-        <div class="ob-chips" id="pe-wclass-chips" style="gap:7px;flex-wrap:wrap">
+        <div style="font-size:11px;color:var(--mut2);margin-bottom:6px">Or choose a standard weight class — tap one to auto-fill:</div>
+
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);margin-bottom:5px;font-weight:600">MMA / Boxing / Kickboxing</div>
+        <div class="ob-chips" id="pe-wclass-chips" style="gap:6px;flex-wrap:wrap;margin-bottom:10px">
           <button class="ob-chip" onclick="peChipWclass(this,'Strawweight','52')">Strawweight ≤52kg</button>
           <button class="ob-chip" onclick="peChipWclass(this,'Flyweight','57')">Flyweight ≤57kg</button>
           <button class="ob-chip" onclick="peChipWclass(this,'Bantamweight','61')">Bantamweight ≤61kg</button>
@@ -1138,7 +1140,39 @@ html,body{
           <button class="ob-chip" onclick="peChipWclass(this,'Middleweight','84')">Middleweight ≤84kg</button>
           <button class="ob-chip" onclick="peChipWclass(this,'Light Heavyweight','93')">Light Heavyweight ≤93kg</button>
           <button class="ob-chip" onclick="peChipWclass(this,'Heavyweight','120')">Heavyweight ≤120kg</button>
-          <button class="ob-chip" onclick="peChipWclass(this,'Open weight','')">Open weight</button>
+        </div>
+
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);margin-bottom:5px;font-weight:600">Wrestling (UWW / Olympic)</div>
+        <div class="ob-chips" id="pe-wclass-wrestling-chips" style="gap:6px;flex-wrap:wrap;margin-bottom:10px">
+          <button class="ob-chip" onclick="peChipWclass(this,'Wrestling 50kg','50')">50kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'Wrestling 53kg','53')">53kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'Wrestling 57kg','57')">57kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'Wrestling 62kg','62')">62kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'Wrestling 65kg','65')">65kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'Wrestling 68kg','68')">68kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'Wrestling 74kg','74')">74kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'Wrestling 79kg','79')">79kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'Wrestling 86kg','86')">86kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'Wrestling 92kg','92')">92kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'Wrestling 97kg','97')">97kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'Wrestling 125kg','125')">125kg</button>
+        </div>
+
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);margin-bottom:5px;font-weight:600">BJJ / Grappling (IBJJF)</div>
+        <div class="ob-chips" id="pe-wclass-bjj-chips" style="gap:6px;flex-wrap:wrap;margin-bottom:10px">
+          <button class="ob-chip" onclick="peChipWclass(this,'BJJ Rooster','57.5')">Rooster ≤57.5kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'BJJ Light Feather','64')">Light Feather ≤64kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'BJJ Feather','70')">Feather ≤70kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'BJJ Light','76')">Light ≤76kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'BJJ Middle','82.3')">Middle ≤82.3kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'BJJ Medium Heavy','88.3')">Medium Heavy ≤88.3kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'BJJ Heavy','94.3')">Heavy ≤94.3kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'BJJ Super Heavy','100.5')">Super Heavy ≤100.5kg</button>
+          <button class="ob-chip" onclick="peChipWclass(this,'BJJ Ultra Heavy','100.5+')">Ultra Heavy +100.5kg</button>
+        </div>
+
+        <div class="ob-chips" style="margin-top:2px">
+          <button class="ob-chip" onclick="peChipWclass(this,'Open weight','')">Open weight / no class</button>
         </div>
       </div>
       <div class="f2 fg">
@@ -4274,18 +4308,23 @@ function renderNutritionStats(profile){
 
 // ===== WEIGHT STATS FROM PROFILE =====
 function renderWeightStats(profile){
-  const p=profile||loadProfile()||{};
-  const wclass=p.wclass||'';
-  const m=wclass.match(/≤(\d+)/);
-  const targetKg=m?parseInt(m[1]):null;
-  const currentKg=parseFloat(weightData[weightData.length-1])||parseFloat(p.weight)||80;
-  const toCut=targetKg?Math.max(0,currentKg-targetKg).toFixed(1):null;
-  const unit=p.weightUnit||'kg';
-  const grid=document.getElementById('wt-stats-grid');
-  if(grid) grid.innerHTML=`
-    <div class="stat"><div class="stat-l">Current</div><div class="stat-v ${toCut>0?'red':'grn'}">${currentKg}<span style="font-size:12px">${unit}</span></div><div class="stat-s">${toCut!==null?'Cut: '+toCut+'kg':'On weight'}</div></div>
-    <div class="stat"><div class="stat-l">Target class</div><div class="stat-v acc">${targetKg?targetKg+'kg':'Open'}</div><div class="stat-s">${wclass||'—'}</div></div>
-    <div class="stat"><div class="stat-l">To cut</div><div class="stat-v" style="color:${toCut>0?'var(--ora)':'var(--grn)'}">${toCut!==null?toCut+'kg':'—'}</div><div class="stat-s">remaining</div></div>`;
+  const p       = profile||loadProfile()||{};
+  const targetKg = getTargetKg(p);
+  const targetDisp = getTargetKgDisplay(p);
+  const currentKg  = parseFloat(weightData[weightData.length-1])||parseFloat(p.weight)||null;
+  const toCut      = (targetKg && currentKg) ? Math.max(0, currentKg - targetKg).toFixed(1) : null;
+  const unit       = p.weightUnit||'kg';
+  const grid       = document.getElementById('wt-stats-grid');
+  if(grid) grid.innerHTML = `
+    <div class="stat"><div class="stat-l">Current</div>
+      <div class="stat-v ${parseFloat(toCut)>0?'red':'grn'}">${currentKg||'—'}<span style="font-size:12px">${unit}</span></div>
+      <div class="stat-s">${toCut!==null?(parseFloat(toCut)>0?'Cut: '+toCut+unit:'✅ On weight'):'Log a weight entry'}</div></div>
+    <div class="stat"><div class="stat-l">Goal weight</div>
+      <div class="stat-v acc">${targetKg?targetKg+'kg':'Not set'}</div>
+      <div class="stat-s">${targetDisp||'Set in Profile'}</div></div>
+    <div class="stat"><div class="stat-l">To cut</div>
+      <div class="stat-v" style="color:${parseFloat(toCut)>0?'var(--ora)':'var(--grn)'}">${toCut!==null?(parseFloat(toCut)>0?toCut+unit:'0'):'—'}</div>
+      <div class="stat-s">${toCut!==null?'remaining':'Set goal in Profile'}</div></div>`;
 }
 
 // ===== AI MEAL PLANNER (profile-aware) =====
@@ -5908,20 +5947,26 @@ function peChip(el, field){
 
 // Weight class chip — also populates the custom weight input
 function peChipWclass(el, name, kg){
-  el.closest('.ob-chips').querySelectorAll('.ob-chip').forEach(c=>c.classList.remove('sel'));
+  // Deselect all chips across ALL sport groups
+  ['pe-wclass-chips','pe-wclass-wrestling-chips','pe-wclass-bjj-chips'].forEach(id=>{
+    document.querySelectorAll('#'+id+' .ob-chip').forEach(c=>c.classList.remove('sel'));
+  });
   el.classList.add('sel');
-  peEdits['wclass'] = name + (kg ? ' ≤'+kg+'kg' : '');
+  peEdits['wclass'] = name + (kg && kg !== '' ? ' ≤'+kg+'kg' : '');
   peEdits['goalWeight'] = kg || '';
   const gwEl = document.getElementById('pe-goal-weight');
   const gwUEl = document.getElementById('pe-goal-weight-unit');
-  if(gwEl && kg) { gwEl.value = kg; }
+  if(gwEl && kg && kg !== '') { gwEl.value = kg; }
+  if(gwEl && kg === '') { gwEl.value = ''; } // clear for Open weight
   if(gwUEl) gwUEl.value = 'kg';
 }
 
-// When user types a custom weight — deselect all weight class chips
+// When user types a custom weight — deselect ALL weight class chips across all groups
 function onCustomGoalWeightInput(){
-  document.querySelectorAll('#pe-wclass-chips .ob-chip').forEach(c=>c.classList.remove('sel'));
-  peEdits['wclass'] = '';  // clear chip selection so only custom weight is used
+  ['pe-wclass-chips','pe-wclass-wrestling-chips','pe-wclass-bjj-chips'].forEach(id=>{
+    document.querySelectorAll('#'+id+' .ob-chip').forEach(c=>c.classList.remove('sel'));
+  });
+  peEdits['wclass'] = '';
 }
 
 function peMultiChip(el, field){
@@ -5950,7 +5995,16 @@ function renderProfileTab(){
   // Goals
   preselect('pe-goal-chips',  p.goal);
   // Only pre-select weight class chip if NO custom goalWeight is set
-  if(!p.goalWeight) preselect('pe-wclass-chips', p.wclass);
+  if(!p.goalWeight){
+    // Check all three chip groups
+    ['pe-wclass-chips','pe-wclass-wrestling-chips','pe-wclass-bjj-chips'].forEach(id=>{
+      document.querySelectorAll('#'+id+' .ob-chip').forEach(c=>{
+        c.classList.remove('sel');
+        // Match by chip's wclass name or weight value
+        if(p.wclass && c.textContent.trim().startsWith(p.wclass.split(' ')[0])) c.classList.add('sel');
+      });
+    });
+  }
 
   // Populate custom goal weight field
   const gwEl = document.getElementById('pe-goal-weight');
@@ -6019,7 +6073,9 @@ function saveProfileEdits(){
   const goalWeightUnit = getVal('pe-goal-weight-unit') || p.goalWeightUnit || 'kg';
 
   // Only use wclass chip if user did NOT type a custom weight
-  const chipWclass = getChip('pe-wclass-chips');
+  const chipWclass = ['pe-wclass-chips','pe-wclass-wrestling-chips','pe-wclass-bjj-chips']
+    .map(id => { const sel=document.querySelector('#'+id+' .ob-chip.sel'); return sel?sel.textContent.trim():null; })
+    .find(v => v !== null) || null;
   const wclass = goalWeight
     ? ''           // custom weight set — clear wclass so it doesn't confuse the AI
     : (chipWclass || p.wclass || '');
