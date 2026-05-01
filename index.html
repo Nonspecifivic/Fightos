@@ -3913,7 +3913,7 @@ const PHASE_GUIDES = {
 function getCycleData(){
   try{ return JSON.parse(localStorage.getItem('fos_cycle')||'null'); }catch(e){ return null; }
 }
-function saveCycleData(d){ try{ localStorage.setItem('fos_cycle',JSON.stringify(d)); }catch(e){} }
+function saveCycleData(d){ try{ localStorage.setItem('fos_cycle',JSON.stringify(d)); debouncedSync(); }catch(e){} }
 
 function getCurrentPhase(lastDate, cycleLen, periodLen){
   if(!lastDate) return null;
@@ -7339,7 +7339,43 @@ function renderDashAIBanner(){
       indicator.style.height='48px';
       label.textContent='Refreshing…';
       arrow.style.display='none';
-      setTimeout(()=>window.location.reload(), 700);
+
+      // Smart refresh: pull from cloud then re-render the CURRENT tab in-place
+      // (don't reload the page — that navigates to dashboard and loses scroll position)
+      const doRefresh = async () => {
+        try{
+          // 1. Pull latest data from cloud if signed in
+          if(typeof isSignedIn === 'function' && isSignedIn()){
+            await loadFromCloud();
+          }
+
+          // 2. Re-render whichever tab is currently active
+          const activeTab = document.querySelector('.tab.active');
+          const tabId = activeTab?.id?.replace('tab-','');
+          if(tabId && typeof showTab === 'function'){
+            // Re-run the per-tab render without switching tabs
+            if(tabId==='dashboard')    { try{renderDashboard();}catch(e){} }
+            if(tabId==='training')     { try{renderTrainingLog();}catch(e){} }
+            if(tabId==='nutrition')    { try{resetDailyIfNeeded();renderNutritionStats();renderFoodLog();}catch(e){} }
+            if(tabId==='hydration')    { try{resetDailyIfNeeded();renderWaterDisplay();renderWaterLog();}catch(e){} }
+            if(tabId==='weight')       { try{renderWeightChart();}catch(e){} }
+            if(tabId==='body')         { try{renderBodyLog();}catch(e){} }
+            if(tabId==='calendar')     { try{renderCal();renderCompCountdown();}catch(e){} }
+            if(tabId==='womens')       { try{renderWomensTab();}catch(e){} }
+            if(tabId==='strength')     { try{renderStrengthLog();}catch(e){} }
+            if(tabId==='mobility')     { try{renderMobilityLog();}catch(e){} }
+            if(tabId==='analysis')     { try{renderMatchRecord();renderMatchHistory();}catch(e){} }
+            if(tabId==='coach')        { try{renderSavedBriefs();}catch(e){} }
+            if(tabId==='trackers')     { try{syncGoogleFit();}catch(e){} }
+          }
+        }catch(e){ console.error('PTR refresh error:', e); }
+
+        hidePTR();
+      };
+
+      // Show spinner for at least 600ms so it feels responsive
+      setTimeout(doRefresh, 600);
+
     } else {
       hidePTR();
     }
