@@ -1204,6 +1204,21 @@ html,body{
             <span style="font-size:12px;color:var(--mut2)">sessions target</span>
           </div>
         </div>
+        <div><label class="lbl">Avg session duration (hrs)</label>
+          <input type="number" id="pe-session-duration" min="0.5" max="4" step="0.25" placeholder="e.g. 1.5">
+        </div>
+      </div>
+      <div class="fg"><label class="lbl">Daily life activity — job &amp; lifestyle</label>
+        <select id="pe-job-activity">
+          <option value="sedentary">Sedentary — desk job, mostly sitting</option>
+          <option value="light">Light — standing, light walking</option>
+          <option value="moderate">Moderate — on feet most of the day</option>
+          <option value="active">Active — physical job (nurse, teacher, retail)</option>
+          <option value="heavy">Heavy manual — construction, trades, farming</option>
+        </select>
+        <div style="font-size:10px;color:var(--mut2);margin-top:3px">Used to calculate your non-exercise daily calorie burn (NEAT)</div>
+      </div>
+      <div class="f2 fg">
         <div><label class="lbl">Sleep target (hrs)</label>
           <input type="number" id="pe-sleep" min="4" max="12" step="0.5" placeholder="e.g. 8">
         </div>
@@ -6321,6 +6336,10 @@ function renderProfileTab(){
 
   const sessEl = document.getElementById('pe-sessions');
   if(sessEl) sessEl.value = p.sessionsPerWeek||'';
+  const durEl = document.getElementById('pe-session-duration');
+  if(durEl) durEl.value = p.sessionDuration||'';
+  const jobEl = document.getElementById('pe-job-activity');
+  if(jobEl) jobEl.value = p.jobActivity||'moderate';
   const sleepEl = document.getElementById('pe-sleep');
   if(sleepEl) sleepEl.value = p.sleepHours||'';
 
@@ -6399,8 +6418,10 @@ function saveProfileEdits(){
     targetKg = parseFloat(p.targetKg);
   }
   const weak    = getMultiChip('pe-weak-chips').length ? getMultiChip('pe-weak-chips') : (p.weak||p.weaknesses||[]);
-  const sessions = getVal('pe-sessions') || p.sessionsPerWeek;
-  const sleepH   = getVal('pe-sleep')    || p.sleepHours;
+  const sessions      = getVal('pe-sessions')          || p.sessionsPerWeek;
+  const sessionDuration = getVal('pe-session-duration') || p.sessionDuration || '1.5';
+  const jobActivity   = getVal('pe-job-activity')       || p.jobActivity     || 'moderate';
+  const sleepH        = getVal('pe-sleep')              || p.sleepHours;
 
   // Weight & body
   const weight  = getVal('pe-weight')      || p.weight;
@@ -6438,7 +6459,7 @@ function saveProfileEdits(){
     ...p,
     goal, wclass, weak, weaknesses:weak,
     goalWeight, goalWeightUnit, targetKg,
-    sessionsPerWeek:sessions, sleepHours:sleepH,
+    sessionsPerWeek: sessions, sessionDuration, jobActivity, sleepHours: sleepH,
     weight, weightUnit:wUnit, height, heightUnit:hUnit, htu:hUnit, cut,
     sport, exp,
     injuries, diet,
@@ -7302,14 +7323,20 @@ function fmtNum(n){
 }
 
 // ===== BMR / TDEE CALCULATIONS =====
+// Uses Mifflin-St Jeor BMR + sport-specific TDEE multipliers
+// factoring in training sessions, session types, non-exercise activity and weight cut state
+
 function computeBMR(profile){
-  const weightKg = parseFloat(profile.weight)||80;
+  // Use current logged weight if available, else profile weight
+  const wLog = JSON.parse(localStorage.getItem('fos_weight_log')||'[]');
+  const curWt = wLog.length ? parseFloat(wLog[wLog.length-1].val) : parseFloat(profile.weight)||80;
+  const weightKg = curWt;
   const heightCm = profile.heightUnit==='ft'
     ? (parseFloat(profile.height)||5.9)*30.48
     : parseFloat(profile.height)||178;
-  const age=profile.age||25;
-  const isMale=(profile.sex||'Male')==='Male';
-  // Mifflin-St Jeor
+  const age = parseInt(profile.age)||25;
+  const isMale = (profile.sex||'Male')==='Male';
+  // Mifflin-St Jeor — most validated for athletes
   const bmr = isMale
     ? 10*weightKg + 6.25*heightCm - 5*age + 5
     : 10*weightKg + 6.25*heightCm - 5*age - 161;
@@ -7317,56 +7344,194 @@ function computeBMR(profile){
 }
 
 function computeTDEE(profile){
-  const bmr=computeBMR(profile);
-  const sessions=parseInt(profile.sessionsPerWeek)||5;
-  // Moderate activity multipliers
-  const mult = sessions>=12 ? 1.9
-    : sessions>=8 ? 1.75
-    : sessions>=5 ? 1.55
-    : sessions>=3 ? 1.375
-    : 1.2;
-  return {bmr, tdee:Math.round(bmr*mult), mult};
+  const bmr = computeBMR(profile);
+  const sessions = parseInt(profile.sessionsPerWeek)||5;
+  const sport    = (profile.sport||'MMA').toLowerCase();
+  const job      = (profile.jobActivity||'moderate').toLowerCase();
+  const goal     = (profile.goal||'').toLowerCase();
+  const isCutting = goal.includes('cut')||goal.includes('weight');
+
+  // ── Step 1: Non-Exercise Activity Thermogenesis (NEAT) ──
+  // Based on daily occupation / lifestyle
+  const neatMult = job.includes('desk')||job.includes('sedentary')   ? 1.2
+    : job.includes('light')||job.includes('standing')                 ? 1.3
+    : job.includes('moderate')||job.includes('active')                ? 1.4
+    : job.includes('heavy')||job.includes('physical')||job.includes('manual') ? 1.5
+    : 1.35; // default moderate
+
+  // ── Step 2: Exercise Activity Thermogenesis (EAT) ──
+  // Sport-specific session cost — combat sports vary enormously
+  // Source: ACSM, sports science literature
+  const sportSessionCostPerHour = {
+    mma:          700,  // sparring/drilling — high intensity mixed
+    wrestling:    800,  // very high — explosive, full-body
+    bjj:          500,  // moderate — positional, less cardio
+    boxing:       650,  // high — constant movement
+    kickboxing:   680,  // high
+    muay_thai:    680,
+    judo:         600,
+    sambo:        700,
+    grappling:    550,
+    strength:     350,  // weight training — lower than most think
+    cardio:       550,  // steady-state running/cycling
+    hiit:         600,
+  };
+  // Match profile sport to closest key
+  const sportKey = sport.includes('wrestl') ? 'wrestling'
+    : sport.includes('bjj')||sport.includes('jiu') ? 'bjj'
+    : sport.includes('box') ? 'boxing'
+    : sport.includes('kick')||sport.includes('muay') ? 'kickboxing'
+    : sport.includes('judo') ? 'judo'
+    : sport.includes('sambo') ? 'sambo'
+    : sport.includes('grappl') ? 'grappling'
+    : 'mma';
+
+  const sessionCost = sportSessionCostPerHour[sportKey] || 600;
+  const sessionHours = parseFloat(profile.sessionDuration)||1.5;
+  // Weekly EAT spread across 7 days
+  const dailyEAT = (sessions * sessionCost * sessionHours) / 7;
+
+  // ── Step 3: Thermic Effect of Food (TEF) ──
+  // ~10% of total intake (applied after combining BMR + NEAT + EAT)
+  const tdeeBeforeTEF = Math.round(bmr * neatMult + dailyEAT);
+  const tdee = Math.round(tdeeBeforeTEF * 1.1); // +10% TEF
+
+  // ── Step 4: Weight cut adjustment ──
+  // During a cut, metabolic adaptation reduces TDEE by ~5–10%
+  const targetKg = getTargetKg(profile);
+  const wLog = JSON.parse(localStorage.getItem('fos_weight_log')||'[]');
+  const curWt = wLog.length ? parseFloat(wLog[wLog.length-1].val) : parseFloat(profile.weight)||80;
+  const toCut = targetKg ? Math.max(0, curWt - targetKg) : 0;
+  const adaptationFactor = isCutting && toCut > 2 ? 0.95 : 1.0; // 5% metabolic adaptation if cutting >2kg
+
+  const tdeeAdjusted = Math.round(tdee * adaptationFactor);
+
+  // Activity label for display
+  const label = sessions >= 10 ? 'Elite/twice daily'
+    : sessions >= 7  ? 'Highly active'
+    : sessions >= 5  ? 'Very active'
+    : sessions >= 3  ? 'Active'
+    : 'Lightly active';
+
+  return {
+    bmr,
+    tdee: tdeeAdjusted,
+    tdeeRaw: tdee,
+    mult: Math.round((tdeeAdjusted/bmr)*100)/100,
+    neatMult,
+    dailyEAT: Math.round(dailyEAT),
+    sportKey,
+    sessionCost,
+    label,
+    isCutting,
+    toCut: Math.round(toCut*10)/10,
+  };
 }
 
 function computeCalTarget(profile){
-  const {tdee}=computeTDEE(profile);
-  const goal=(profile.goal||'').toLowerCase();
-  if(goal.includes('cut')||goal.includes('weight')) return Math.round(tdee*0.85);
-  if(goal.includes('strength')||goal.includes('gain')||goal.includes('professional')) return Math.round(tdee*1.08);
-  return tdee; // maintenance / performance
+  const {tdee, isCutting, toCut} = computeTDEE(profile);
+  const goal = (profile.goal||'').toLowerCase();
+
+  if(isCutting && toCut > 0){
+    // Deficit scales with how much needs to be cut
+    // >5kg to cut = aggressive deficit (500 kcal/day = ~0.5kg/wk)
+    // 2–5kg = moderate deficit (350 kcal/day)
+    // <2kg = conservative deficit (200 kcal/day) to preserve muscle
+    const deficit = toCut > 5 ? 500 : toCut > 2 ? 350 : 200;
+    return Math.round(tdee - deficit);
+  }
+  if(goal.includes('strength')||goal.includes('gain')||goal.includes('mass')||goal.includes('professional')){
+    return Math.round(tdee * 1.08); // lean bulk ~8% surplus
+  }
+  if(goal.includes('maintain')||goal.includes('performance')){
+    return tdee;
+  }
+  return tdee; // default maintenance
+}
+
+function computeMacros(profile){
+  const wLog = JSON.parse(localStorage.getItem('fos_weight_log')||'[]');
+  const curWt = wLog.length ? parseFloat(wLog[wLog.length-1].val) : parseFloat(profile.weight)||80;
+  const cals = computeCalTarget(profile);
+  const {isCutting, toCut} = computeTDEE(profile);
+  const goal = (profile.goal||'').toLowerCase();
+
+  // ── Protein: higher during cuts to preserve muscle ──
+  // ISSN guidelines for combat athletes:
+  // Maintenance/performance: 1.8–2.2g/kg
+  // Cutting: 2.4–3.0g/kg (higher = more muscle preservation)
+  // Aggressive cut: up to 3.1g/kg
+  let protPerKg = 2.0;
+  if(isCutting && toCut > 5) protPerKg = 3.0;
+  else if(isCutting && toCut > 2) protPerKg = 2.6;
+  else if(isCutting) protPerKg = 2.2;
+  else if(goal.includes('strength')||goal.includes('gain')) protPerKg = 2.4;
+
+  const protein = Math.round(curWt * protPerKg);
+  const protCals = protein * 4;
+
+  // ── Fat: minimum 20% of calories for hormonal health ──
+  // Athletes need higher fat for testosterone, recovery
+  const fatCals  = Math.max(Math.round(cals * 0.25), 50 * 9); // min 50g fat
+  const fat      = Math.round(fatCals / 9);
+
+  // ── Carbs: fill remaining calories ──
+  // Combat athletes are glycolytic — carbs fuel training
+  const carbCals = Math.max(0, cals - protCals - fatCals);
+  const carbs    = Math.round(carbCals / 4);
+
+  return { protein, carbs, fat, protPerKg: Math.round(protPerKg*10)/10 };
 }
 
 function renderTDEECard(profile){
-  const {bmr,tdee,mult}=computeTDEE(profile);
-  const calTarget=computeCalTarget(profile);
-  const diff=calTarget-tdee;
-  const surplusOrDeficit=diff>0?`+${fmtNum(diff)} surplus`:`${fmtNum(diff)} deficit`;
-  const sdColor=diff>0?'var(--grn)':'var(--ora)';
-  const activityLabel=mult>=1.9?'Very active':mult>=1.725?'Highly active':mult>=1.55?'Active':mult>=1.375?'Lightly active':'Sedentary';
+  const result = computeTDEE(profile);
+  const {bmr, tdee, neatMult, dailyEAT, sportKey, sessionCost, label, isCutting, toCut} = result;
+  const cals = computeCalTarget(profile);
+  const macros = computeMacros(profile);
+  const diff = cals - tdee;
+  const surplusOrDeficit = diff > 0 ? `+${fmtNum(diff)} surplus` : `${fmtNum(Math.abs(diff))} deficit`;
+  const sdColor = diff > 0 ? 'var(--grn)' : 'var(--ora)';
 
-  const card=document.getElementById('tdee-card');
-  const body=document.getElementById('tdee-body');
-  const badge=document.getElementById('tdee-badge');
+  const card  = document.getElementById('tdee-card');
+  const body  = document.getElementById('tdee-body');
+  const badge = document.getElementById('tdee-badge');
   if(!card) return;
-  card.style.display='block';
-  badge.textContent=surplusOrDeficit;
-  badge.style.background=diff>0?'rgba(0,230,118,.12)':'rgba(255,149,0,.15)';
-  badge.style.color=sdColor;
+  card.style.display = 'block';
+  badge.textContent = surplusOrDeficit;
+  badge.style.background = diff > 0 ? 'rgba(0,230,118,.12)' : 'rgba(255,149,0,.15)';
+  badge.style.color = sdColor;
 
-  body.innerHTML=`
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:12px">
-      <div class="stat"><div class="stat-l">BMR</div><div class="stat-v" style="color:var(--pur)">${fmtNum(bmr)}</div><div class="stat-s">kcal at rest</div></div>
-      <div class="stat"><div class="stat-l">TDEE</div><div class="stat-v blu">${fmtNum(tdee)}</div><div class="stat-s">${activityLabel}</div></div>
-      <div class="stat"><div class="stat-l">Cal target</div><div class="stat-v acc">${fmtNum(calTarget)}</div><div class="stat-s">${diff>0?'Surplus':'Deficit'}</div></div>
+  const sessions = parseInt(profile.sessionsPerWeek)||5;
+  const sessionHours = parseFloat(profile.sessionDuration)||1.5;
+  const jobActivity = profile.jobActivity||'moderate';
+  const neatLabel = neatMult >= 1.5 ? 'Heavy physical job'
+    : neatMult >= 1.4 ? 'Active job'
+    : neatMult >= 1.3 ? 'Light active job'
+    : 'Desk/sedentary job';
+
+  body.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:14px">
+      <div class="stat"><div class="stat-l">BMR</div><div class="stat-v pur">${fmtNum(bmr)}</div><div class="stat-s">kcal at rest</div></div>
+      <div class="stat"><div class="stat-l">TDEE</div><div class="stat-v blu">${fmtNum(tdee)}</div><div class="stat-s">${label}</div></div>
+      <div class="stat"><div class="stat-l">Cal target</div><div class="stat-v acc">${fmtNum(cals)}</div><div class="stat-s">${diff>0?'Surplus':'Deficit'}</div></div>
       <div class="stat"><div class="stat-l">Balance</div><div class="stat-v" style="color:${sdColor}">${diff>0?'+':''}${fmtNum(diff)}</div><div class="stat-s">kcal/day</div></div>
     </div>
-    <div style="font-size:12px;color:var(--mut2);line-height:1.6">
-      <strong style="color:var(--txt)">How it's calculated:</strong> BMR uses the Mifflin-St Jeor formula (most accurate for athletes). TDEE applies an activity multiplier of ${mult}× based on ${profile.sessionsPerWeek||5} sessions/week. Target is adjusted ${diff<0?'down':'up'} for your goal: <em>${profile.goal||'performance'}</em>.
+
+    <div style="background:var(--surf2);border:1px solid var(--bdr);border-radius:10px;padding:12px;margin-bottom:12px;font-size:12px;line-height:1.9">
+      <div style="font-weight:600;color:var(--txt);margin-bottom:6px">How your TDEE is calculated</div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--mut2)">BMR (Mifflin-St Jeor)</span><strong>${fmtNum(bmr)} kcal</strong></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--mut2)">Daily life activity (NEAT × ${neatMult})</span><strong>+${fmtNum(Math.round(bmr*(neatMult-1)))} kcal</strong></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--mut2)">Training (${sessions} × ${sessionHours}h ${sportKey} @ ~${sessionCost} kcal/h)</span><strong>+${fmtNum(dailyEAT)}/day</strong></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--mut2)">Thermic effect of food (TEF +10%)</span><strong>included</strong></div>
+      ${isCutting && toCut > 2 ? '<div style="display:flex;justify-content:space-between"><span style="color:var(--ora)">Metabolic adaptation (cutting)</span><strong style="color:var(--ora)">−5%</strong></div>' : ''}
+      <div style="border-top:1px solid var(--bdr);margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;font-weight:700"><span>Total TDEE</span><span style="color:var(--blu)">${fmtNum(tdee)} kcal</span></div>
     </div>
-    <div style="margin-top:10px;font-size:12px;color:var(--mut2)">
-      Protein: <strong style="color:var(--txt)">${Math.round((parseFloat(profile.weight)||80)*2.2)}g</strong> ·
-      Carbs: <strong style="color:var(--txt)">${Math.round(calTarget*0.45/4)}g</strong> ·
-      Fat: <strong style="color:var(--txt)">${Math.round(calTarget*0.25/9)}g</strong>
+
+    <div style="background:var(--surf2);border:1px solid var(--bdr);border-radius:10px;padding:12px;font-size:12px;line-height:1.9">
+      <div style="font-weight:600;color:var(--txt);margin-bottom:6px">Daily macro targets${isCutting?' (cut protocol — high protein to preserve muscle)':''}</div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--pur)">Protein (${macros.protPerKg}g/kg bodyweight)</span><strong>${macros.protein}g · ${macros.protein*4} kcal</strong></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--ora)">Fat (hormonal & recovery support)</span><strong>${macros.fat}g · ${macros.fat*9} kcal</strong></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--acc)">Carbohydrates (training fuel)</span><strong>${macros.carbs}g · ${macros.carbs*4} kcal</strong></div>
     </div>`;
 }
 
