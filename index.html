@@ -4540,27 +4540,47 @@ function addFoodEntry(){
 
 // ===== NUTRITION STATS FROM PROFILE =====
 function renderNutritionStats(profile){
-  const p=profile||loadProfile()||{};
-  const cal=p.calTarget||2000, pro=p.proteinTarget||160, carb=p.carbTarget||220, fat=p.fatTarget||55;
-  const grid=document.getElementById('nut-stat-grid');
-  if(grid) grid.innerHTML=`
-    <div class="stat"><div class="stat-l">Cal target</div><div class="stat-v acc">${cal.toLocaleString()}</div><div class="stat-s">kcal/day</div></div>
-    <div class="stat"><div class="stat-l">Protein</div><div class="stat-v" style="color:var(--pur)">${pro}g</div><div class="stat-s">target</div></div>
+  const p = profile||loadProfile()||{};
+
+  // Always compute fresh from the profile's current state — never stale stored values
+  // This ensures Nutrition tab always matches what Profile/TDEE card shows
+  let cal, pro, carb, fat;
+  if(p.weight && p.age){
+    // Enough data to compute properly
+    cal  = computeCalTarget(p);
+    const macros = computeMacros(p);
+    pro  = macros.protein;
+    carb = macros.carbs;
+    fat  = macros.fat;
+    // Also update stored targets if they differ (keeps everything in sync)
+    if(p.calTarget !== cal || p.proteinTarget !== pro){
+      p.calTarget = cal; p.proteinTarget = pro; p.carbTarget = carb; p.fatTarget = fat;
+      saveProfile(p);
+    }
+  } else {
+    // Fall back to stored targets
+    cal  = p.calTarget  || 2000;
+    pro  = p.proteinTarget || 160;
+    carb = p.carbTarget || 220;
+    fat  = p.fatTarget  || 55;
+  }
+
+  const grid = document.getElementById('nut-stat-grid');
+  if(grid) grid.innerHTML = `
+    <div class="stat"><div class="stat-l">Cal target</div><div class="stat-v acc">${fmtNum(cal)}</div><div class="stat-s">kcal/day</div></div>
+    <div class="stat"><div class="stat-l">Protein</div><div class="stat-v pur">${pro}g</div><div class="stat-s">target</div></div>
     <div class="stat"><div class="stat-l">Carbs</div><div class="stat-v blu">${carb}g</div><div class="stat-s">target</div></div>
     <div class="stat"><div class="stat-l">Fat</div><div class="stat-v ora">${fat}g</div><div class="stat-s">target</div></div>`;
-  // Pre-fill meal planner info banner
-  const banner=document.getElementById('meal-targets-banner');
-  if(banner) banner.textContent=`Your targets: ${cal.toLocaleString()} kcal · Protein ${pro}g · Carbs ${carb}g · Fat ${fat}g · Diet: ${p.diet||'No restrictions'}`;
-  // Pre-fill diet select
-  const ds=document.getElementById('meal-diet');
+
+  const banner = document.getElementById('meal-targets-banner');
+  if(banner) banner.textContent = `Your targets: ${fmtNum(cal)} kcal · Protein ${pro}g · Carbs ${carb}g · Fat ${fat}g · Diet: ${p.diet||'No restrictions'}`;
+  const ds = document.getElementById('meal-diet');
   if(ds&&p.diet){ for(let i=0;i<ds.options.length;i++) if(ds.options[i].text.toLowerCase().includes((p.diet||'').toLowerCase().split(' ')[0])){ ds.selectedIndex=i; break; } }
-  // Pre-fill goal select based on profile goal
-  const gs=document.getElementById('meal-goal');
+  const gs = document.getElementById('meal-goal');
   if(gs&&p.goal&&p.goal.toLowerCase().includes('cut')) gs.selectedIndex=0;
   else if(gs&&p.goal) gs.selectedIndex=2;
-  // Sub label
-  const sub=document.getElementById('meal-planner-sub');
-  if(sub) sub.textContent=`Tailored for ${p.sport||'fighters'} · ${p.diet||'no restrictions'} · Goal: ${p.goal||'performance'}`;
+  const sub = document.getElementById('meal-planner-sub');
+  if(sub) sub.textContent = `Tailored for ${p.sport||'fighters'} · ${p.diet||'no restrictions'} · Goal: ${p.goal||'performance'}`;
 }
 
 // ===== WEIGHT STATS FROM PROFILE =====
@@ -6467,16 +6487,17 @@ function saveProfileEdits(){
   };
 
   // Recompute nutrition targets if weight/age/sex/sessions changed
-  if(weight || age || sex || sessions){
-    updated.bmr       = computeBMR(updated);
-    const {tdee}      = computeTDEE(updated);
-    updated.tdee      = tdee;
-    updated.calTarget = computeCalTarget(updated);
-    updated.proteinTarget = Math.round((parseFloat(weight)||80)*2.2);
-    updated.carbTarget    = Math.round(updated.calTarget*0.45/4);
-    updated.fatTarget     = Math.round(updated.calTarget*0.25/9);
-    updated.waterTarget   = Math.max(2.5, Math.round((parseFloat(weight)||80)*0.04*10)/10);
-  }
+  // Always recompute TDEE and macro targets when profile is saved
+  // This ensures Nutrition tab and TDEE card always match
+  updated.bmr        = computeBMR(updated);
+  const tdeeResult   = computeTDEE(updated);
+  updated.tdee       = tdeeResult.tdee;
+  updated.calTarget  = computeCalTarget(updated);
+  const macros       = computeMacros(updated);
+  updated.proteinTarget = macros.protein;
+  updated.carbTarget    = macros.carbs;
+  updated.fatTarget     = macros.fat;
+  updated.waterTarget   = Math.max(2.5, Math.round((parseFloat(weight)||parseFloat(updated.weight)||80)*0.04*10)/10);
 
   saveProfile(updated);
   applyProfile(updated);
@@ -6505,6 +6526,9 @@ function recalcTargets(){
   const dob    = getVal('pe-dob')||p.dob;
   const goal   = getChip('pe-goal-chips')||p.goal||'';
   const sessions = parseInt(getVal('pe-sessions')||p.sessionsPerWeek)||5;
+  const sessionDuration = parseFloat(getVal('pe-session-duration')||p.sessionDuration)||1.5;
+  const jobActivity = getVal('pe-job-activity')||p.jobActivity||'moderate';
+  const sport = getChip('pe-sport-chips')||p.sport||'MMA';
   let age = p.age||25;
   if(dob){
     const b=new Date(dob),now=new Date();
@@ -6512,14 +6536,16 @@ function recalcTargets(){
     if(now.getMonth()<b.getMonth()||(now.getMonth()===b.getMonth()&&now.getDate()<b.getDate())) a--;
     if(a>0) age=a;
   }
-  const mock = {weight,height,heightUnit:hUnit,htu:hUnit,sex,age,goal,sessionsPerWeek:sessions};
+  // Build mock with all fields needed for accurate calculation
+  const mock = {weight,height,heightUnit:hUnit,sex,age,goal,sessionsPerWeek:sessions,sessionDuration,jobActivity,sport,goalWeight:p.goalWeight,goalWeightUnit:p.goalWeightUnit,targetKg:p.targetKg,wclass:p.wclass};
   const bmr  = computeBMR(mock);
   const {tdee, label} = computeTDEE(mock);
   const cal  = computeCalTarget(mock);
-  const prot = Math.round(weight*2.2);
-  const carb = Math.round(cal*0.45/4);
-  const fat  = Math.round(cal*0.25/9);
-  const water= Math.max(2.5,Math.round(weight*0.04*10)/10);
+  const macros = computeMacros(mock);
+  const prot = macros.protein;
+  const carb = macros.carbs;
+  const fat  = macros.fat;
+  const water = Math.max(2.5, Math.round(weight*0.04*10)/10);
 
   const preview = document.getElementById('pe-targets-preview');
   preview.style.display='block';
@@ -6532,7 +6558,7 @@ function recalcTargets(){
       <div><span style="color:var(--mut2)">Protein</span> <strong>${prot}g</strong></div>
       <div><span style="color:var(--mut2)">Carbs</span> <strong>${carb}g</strong> / <strong>Fat ${fat}g</strong></div>
     </div>
-    <div style="margin-top:10px;font-size:11px;color:var(--mut2)">Based on: ${weight}kg · ${age}yrs · ${sex} · ${sessions} sessions/week · Goal: ${goal||'—'}</div>
+    <div style="margin-top:10px;font-size:11px;color:var(--mut2)">Based on: ${weight}kg · ${age}yrs · ${sex} · ${sport} · ${sessions} sessions/week · ${sessionDuration}h/session · ${jobActivity} job · Goal: ${goal||'—'}</div>
     <button class="btn btn-acc btn-full" onclick="applyRecalcTargets(${bmr},${tdee},${cal},${prot},${carb},${fat},${water})" style="margin-top:10px;font-size:12px">Apply these targets →</button>`;
 }
 
