@@ -3137,14 +3137,28 @@ function renderLinkedProviders(){
 
 async function linkOAuthProvider(provider){
   if(!isSignedIn()){ alert('You must be signed in to link accounts.'); return; }
-  const backendUrl = ACCT.backendUrl;
+  const backendUrl = ACCT.backendUrl || gfitBackendUrl();
   if(!backendUrl){ alert('Backend URL not configured.'); return; }
 
   try{
     const token = await getValidToken();
-    // Redirect to backend linking endpoint — it'll redirect back with link_result=success
-    window.location.href = `${backendUrl}/api/account/oauth-link?provider=${provider}&token=${encodeURIComponent(token)}`;
+    // POST to get the redirect URL, then navigate to it
+    const res = await fetch(`${backendUrl}/api/account/oauth-link?provider=${provider}`, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok){
+      alert('Could not start linking: ' + (data.error || `HTTP ${res.status}`));
+      return;
+    }
+    // If backend returns a redirect URL in JSON, navigate to it
+    if(data.url){
+      window.location.href = data.url;
+    }
   }catch(e){
+    // If the fetch itself failed (e.g. CORS redirect), try direct navigation with token in header
+    // via a form POST trick
     alert('Could not start linking: '+e.message);
   }
 }
