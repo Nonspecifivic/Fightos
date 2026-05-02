@@ -3107,116 +3107,115 @@ const PROVIDER_META = {
   apple:  { name:'Apple',     icon:'<svg width="16" height="16" viewBox="0 0 814 1000"><path fill="currentColor" d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-37.9-155.5-127.4C46.5 720 1 568.8 1 440.6c0-201.6 131.4-308.4 260.5-308.4 70.1 0 128.4 40.3 173.2 40.3 42.9 0 110.2-42.8 193-42.8z"/></svg>', color:'#000000' },
 };
 
-function renderLinkedProviders(){
-  const el = document.getElementById('acct-linked-providers');
-  if(!el || !ACCT.user) return;
-
-  const identities = ACCT.user.identities || [];
-  const sessionProvider = ACCT.user.provider || ACCT.user.app_metadata?.provider || '';
-
-  // Load primary provider preference from profile
-  const profile = loadProfile() || {};
-  const storedPrimary = profile.primaryProvider || sessionProvider || (identities[0]?.provider) || 'email';
-
-  // Build a flat list of all linked identities with display info
-  const linkedList = [];
-
-  // Add email identity if present
-  const emailIdentity = identities.find(id => id.provider === 'email');
-  if(emailIdentity || (!identities.length)){
-    linkedList.push({
-      provider: 'email',
-      email: emailIdentity?.identity_data?.email || ACCT.user.email || '—',
-      icon: '✉️',
-      color: '#4C9FFF',
-      name: 'Email',
-      createdAt: emailIdentity?.created_at || '',
-    });
-  }
-
-  // Add OAuth identities
-  for(const [key, meta] of Object.entries(PROVIDER_META)){
-    const identity = identities.find(id => id.provider === key);
-    if(identity){
-      linkedList.push({
-        provider: key,
-        email: identity.identity_data?.email || identity.identity_data?.name || ACCT.user.email || '—',
-        icon: meta.icon,
-        color: meta.color,
-        name: meta.name,
-        createdAt: identity.created_at || '',
-      });
-    }
-  }
-
-  // Sort: primary first, then by created_at
-  linkedList.sort((a, b) => {
-    if(a.provider === storedPrimary) return -1;
-    if(b.provider === storedPrimary) return 1;
-    return (a.createdAt > b.createdAt ? 1 : -1);
-  });
-
-  // Rank labels
-  const rankLabels = ['Primary', 'Secondary', 'Additional'];
-
-  const linkedRows = linkedList.map((item, i) => {
-    const isPrimary = item.provider === storedPrimary;
-    const rankLabel = rankLabels[i] || 'Additional';
-    const rankColor = i === 0 ? 'var(--grn)' : i === 1 ? 'var(--blu)' : 'var(--mut2)';
-    const rankBg    = i === 0 ? 'rgba(0,230,118,.1)' : i === 1 ? 'rgba(76,159,255,.1)' : 'var(--surf2)';
-
-    const setPrimaryBtn = !isPrimary
-      ? `<button onclick="setPrimaryProvider('${item.provider}')" title="Set as primary"
-           style="font-size:10px;padding:3px 8px;border-radius:20px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);cursor:pointer;margin-right:4px;transition:all .15s"
-           onmouseover="this.style.borderColor='var(--acc)';this.style.color='var(--acc)'"
-           onmouseout="this.style.borderColor='';this.style.color=''">★ Set primary</button>`
-      : '';
-
-    // icon: string emoji or SVG
-    const iconEl = typeof item.icon === 'string' && item.icon.length <= 2
-      ? `<span style="font-size:16px">${item.icon}</span>`
-      : item.icon;
-
-    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surf2);border:1px solid ${isPrimary?'rgba(0,230,118,.25)':'var(--bdr)'};border-radius:9px">
-      <div style="width:30px;height:30px;border-radius:8px;background:${item.color}18;border:1px solid ${item.color}40;display:flex;align-items:center;justify-content:center;flex-shrink:0">${iconEl}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.name}</div>
-        <div style="font-size:11px;color:var(--mut2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.email}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
-        ${setPrimaryBtn}
-        <span style="font-size:10px;padding:2px 8px;border-radius:20px;background:${rankBg};color:${rankColor};font-weight:600;white-space:nowrap">${isPrimary?'★ ':''} ${rankLabel}</span>
-      </div>
-    </div>`;
-  }).join('');
-
-  // Unlinked providers — show Link → buttons for providers not yet connected
-  const linkedProviders = new Set(linkedList.map(l => l.provider));
-  const unlinkedRows = Object.entries(PROVIDER_META)
-    .filter(([key]) => !linkedProviders.has(key))
-    .map(([key, meta]) => {
-      const iconEl = meta.icon;
-      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surf2);border:1px solid var(--bdr);border-radius:9px;opacity:.7">
-        <div style="width:30px;height:30px;border-radius:8px;background:var(--surf);border:1px solid var(--bdr2);display:flex;align-items:center;justify-content:center;flex-shrink:0">${iconEl}</div>
-        <div style="flex:1">
-          <div style="font-size:12px;font-weight:600">${meta.name}</div>
-          <div style="font-size:11px;color:var(--mut2)">Not linked</div>
-        </div>
-        <button onclick="linkOAuthProvider('${key}')"
-          style="font-size:11px;padding:5px 12px;border-radius:20px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);cursor:pointer;transition:all .15s;white-space:nowrap"
-          onmouseover="this.style.borderColor='${meta.color}';this.style.color='${meta.color}'"
-          onmouseout="this.style.borderColor='';this.style.color=''">Link →</button>
-      </div>`;
-    }).join('');
-
-  el.innerHTML = `
-    <div style="font-size:11px;color:var(--mut2);margin-bottom:6px;line-height:1.5">
-      All linked accounts share the same FightOS data. The <strong style="color:var(--grn)">★ Primary</strong> account is shown as your main identity.
-    </div>
-    ${linkedRows}
-    ${unlinkedRows}`;
+// Fetch fresh user data from Supabase including identities array
+async function refreshUserIdentities(){
+  try{
+    const supabaseUrl='https://resihztyebxmlxsllttx.supabase.co';
+    const supabaseAnonKey='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJlc2loenR5ZWJ4bWx4c2xsdHR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4MzYwMzMsImV4cCI6MjA1OTQxMjAzM30.6yiGcle38HTlxFuYJMx24-0hZphxHqRjRLB52HFkb8I';
+    const token=await getValidToken();
+    if(!token) return;
+    const res=await fetch(supabaseUrl+'/auth/v1/user',{headers:{'Authorization':'Bearer '+token,'apikey':supabaseAnonKey}});
+    if(!res.ok) return;
+    const freshUser=await res.json();
+    if(freshUser&&freshUser.id){ ACCT.user={...ACCT.user,...freshUser}; saveAccountSession(); }
+  }catch(e){ console.warn('refreshUserIdentities:',e.message); }
 }
 
+function renderLinkedProviders(){
+  const el=document.getElementById('acct-linked-providers');
+  if(!el||!ACCT.user) return;
+  const identities=ACCT.user.identities||[];
+  const sessionProvider=ACCT.user.provider||ACCT.user.app_metadata?.provider||'';
+  const profile=loadProfile()||{};
+  const firstProvider=identities.length?[...identities].sort((a,b)=>a.created_at>b.created_at?1:-1)[0]?.provider:sessionProvider||'email';
+  const storedPrimary=profile.primaryProvider||firstProvider||'email';
+
+  const linkedList=[];
+  for(const ident of identities){
+    const k=ident.provider, m=PROVIDER_META[k];
+    const emailVal=ident.identity_data?.email||ident.identity_data?.name||ACCT.user.email||'';
+    if(m) linkedList.push({provider:k,email:emailVal,icon:m.icon,color:m.color,name:m.name,createdAt:ident.created_at||''});
+    else if(k==='email') linkedList.push({provider:'email',email:emailVal,icon:'\u2709\uFE0F',color:'#4C9FFF',name:'Email / Password',createdAt:ident.created_at||''});
+  }
+  if(!linkedList.length&&ACCT.user.email){
+    const m=PROVIDER_META[sessionProvider]||{};
+    linkedList.push({provider:sessionProvider||'email',email:ACCT.user.email,icon:m.icon||'\u2709\uFE0F',color:m.color||'#4C9FFF',name:m.name||'Email',createdAt:''});
+  }
+  linkedList.sort((a,b)=>{
+    if(a.provider===storedPrimary) return -1;
+    if(b.provider===storedPrimary) return 1;
+    return a.createdAt<b.createdAt?-1:1;
+  });
+
+  const RANKS=[
+    {label:'Primary',  color:'var(--grn)',bg:'rgba(0,230,118,.1)', border:'rgba(0,230,118,.3)',  star:'\u2605'},
+    {label:'Secondary',color:'var(--blu)',bg:'rgba(76,159,255,.1)',border:'rgba(76,159,255,.3)', star:'\u2736'},
+    {label:'Third',    color:'var(--ora)',bg:'rgba(255,149,0,.1)', border:'rgba(255,149,0,.25)', star:'\u2022'},
+  ];
+  const linkedSet=new Set(linkedList.map(l=>l.provider));
+
+  function mkIcon(icon){
+    return (typeof icon==='string'&&[...icon].length<=2)
+      ?'<span style="font-size:16px">'+icon+'</span>':icon;
+  }
+
+  const linkedRows=linkedList.map(function(item,i){
+    const r=RANKS[Math.min(i,RANKS.length-1)];
+    const isPrimary=(i===0);
+    const borderCol=isPrimary?r.border:'var(--bdr)';
+    const makeBtn=isPrimary?'':[
+      '<button data-pv="'+item.provider+'"',
+      ' onclick="setPrimaryProvider(this.dataset.pv)"',
+      ' style="font-size:10px;padding:3px 9px;border-radius:20px;',
+      'border:1px solid var(--bdr2);background:transparent;',
+      'color:var(--mut2);cursor:pointer;margin-right:4px;white-space:nowrap"',
+      ' onmouseover="this.style.color=\'var(--acc)\';this.style.borderColor=\'var(--acc)\'"',
+      ' onmouseout="this.style.color=\'\';this.style.borderColor=\'\'">',
+      '\u2605 Make primary</button>'
+    ].join('');
+    return [
+      '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;',
+      'background:var(--surf2);border:1px solid '+borderCol+';border-radius:9px">',
+      '<div style="width:30px;height:30px;border-radius:8px;',
+      'background:'+item.color+'18;border:1px solid '+item.color+'40;',
+      'display:flex;align-items:center;justify-content:center;flex-shrink:0">'+mkIcon(item.icon)+'</div>',
+      '<div style="flex:1;min-width:0">',
+      '<div style="font-size:12px;font-weight:600">'+item.name+'</div>',
+      '<div style="font-size:11px;color:var(--mut2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+item.email+'</div>',
+      '</div>',
+      '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">',
+      makeBtn,
+      '<span style="font-size:10px;padding:2px 9px;border-radius:20px;',
+      'background:'+r.bg+';color:'+r.color+';font-weight:700;',
+      'border:1px solid '+r.border+';white-space:nowrap">',
+      r.star+' '+r.label+'</span>',
+      '</div></div>'
+    ].join('');
+  }).join('');
+
+  const unlinkedRows=Object.entries(PROVIDER_META).filter(function(e){return!linkedSet.has(e[0]);}).map(function(e){
+    const key=e[0], meta=e[1];
+    return [
+      '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;',
+      'background:var(--surf2);border:1px solid var(--bdr);border-radius:9px;opacity:.6">',
+      '<div style="width:30px;height:30px;border-radius:8px;background:var(--surf);',
+      'border:1px solid var(--bdr2);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+mkIcon(meta.icon)+'</div>',
+      '<div style="flex:1">',
+      '<div style="font-size:12px;font-weight:600">'+meta.name+'</div>',
+      '<div style="font-size:11px;color:var(--mut2)">Not linked</div>',
+      '</div>',
+      '<button data-pk="'+key+'" onclick="linkOAuthProvider(this.dataset.pk)"',
+      ' style="font-size:11px;padding:5px 12px;border-radius:20px;',
+      'border:1px solid var(--bdr2);background:transparent;color:var(--mut2);cursor:pointer;white-space:nowrap"',
+      ' onmouseover="this.style.borderColor=\''+meta.color+'\';this.style.color=\''+meta.color+'\'"',
+      ' onmouseout="this.style.borderColor=\'\';this.style.color=\'\'">',
+      'Link \u2192</button>',
+      '</div>'
+    ].join('');
+  }).join('');
+
+  el.innerHTML=linkedRows+(unlinkedRows?'<div style="height:6px"></div>'+unlinkedRows:'');
+}
 function setPrimaryProvider(provider){
   const profile = loadProfile() || {};
   profile.primaryProvider = provider;
@@ -3272,17 +3271,17 @@ function checkLinkResult(){
   const provider = params.get('provider');
   if(result === 'success' && provider){
     const meta = PROVIDER_META[provider];
-    // Clean URL
     window.history.replaceState({}, '', window.location.pathname + window.location.hash);
-    // Show success notification
-    setTimeout(()=>{
+    setTimeout(async ()=>{
+      // Refresh the user object to get updated identities, then re-render
+      await refreshUserIdentities();
       const name = meta?.name || provider;
       const msg = document.createElement('div');
-      msg.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--grn);color:#000;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.3)';
-      msg.textContent = `✅ ${name} account linked successfully`;
+      msg.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--grn);color:#000;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.3);white-space:nowrap';
+      msg.textContent = `✅ ${name} linked successfully`;
       document.body.appendChild(msg);
       setTimeout(()=>msg.remove(), 4000);
-      // Refresh linked providers display
+      // Open account modal with fresh data
       openAccountModal();
     }, 500);
   }
@@ -6585,8 +6584,10 @@ function showSignedInPanel(){
   document.getElementById('acct-signed-in-panel').style.display='block';
   document.getElementById('acct-social-pending').style.display='none';
   document.getElementById('acct-email-display').textContent=ACCT.user?.email||'';
-  // Render linked providers
+  // Render with cached data immediately, then refresh from server
   try{ renderLinkedProviders(); }catch(e){}
+  // Fetch fresh identities in background and re-render
+  refreshUserIdentities().then(()=>{ try{ renderLinkedProviders(); }catch(e){} });
   // Provider display
   const provider=ACCT.user?.provider||'email';
   const providerMap={google:{icon:'🔵',label:'Signed in with Google'},azure:{icon:'🟦',label:'Signed in with Microsoft'},apple:{icon:'⚫',label:'Signed in with Apple'},email:{icon:'📧',label:'Email account'}};
