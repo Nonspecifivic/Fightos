@@ -784,17 +784,28 @@ html,body{
 <!-- ==================== API KEY MODAL ==================== -->
 <div id="apikey-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2000;align-items:center;justify-content:center;padding:20px">
   <div style="background:var(--surf);border:1px solid var(--bdr2);border-radius:14px;padding:22px;width:100%;max-width:420px">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;margin-bottom:4px">API Key Required</div>
-    <p style="font-size:13px;color:var(--mut2);line-height:1.6;margin-bottom:16px">This app uses the Anthropic API for AI features. You need your own API key — it's stored only in your browser and never sent anywhere except Anthropic's servers.</p>
-    <div style="background:var(--surf2);border:1px solid var(--bdr);border-radius:8px;padding:11px;margin-bottom:14px;font-size:12px;line-height:1.7">
-      <strong>How to get your key:</strong><br>
-      1. Go to <a href="https://console.anthropic.com" target="_blank" style="color:var(--acc)">console.anthropic.com</a><br>
-      2. Sign in or create a free account<br>
-      3. Click <strong>API Keys → Create Key</strong><br>
-      4. Copy and paste it below
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;margin-bottom:4px">API Key</div>
+
+    <!-- Shown when a default admin key is already active -->
+    <div id="apikey-admin-hint" style="display:none;background:rgba(0,230,118,.07);border:1px solid rgba(0,230,118,.2);border-radius:8px;padding:11px;margin-bottom:14px;font-size:12px;line-height:1.7;color:var(--grn)">
+      ✅ <strong>AI is already active</strong> — a shared API key has been pre-configured. You don't need to add your own key to use AI features.<br>
+      <span style="color:var(--mut2)">Optionally paste your own key below to use your personal quota instead.</span>
     </div>
+
+    <!-- Shown when no default key exists -->
+    <div id="apikey-nodefault-hint">
+      <p style="font-size:13px;color:var(--mut2);line-height:1.6;margin-bottom:14px">This app uses the Anthropic API for AI features. Paste your API key below — it's stored only in your browser.</p>
+      <div style="background:var(--surf2);border:1px solid var(--bdr);border-radius:8px;padding:11px;margin-bottom:14px;font-size:12px;line-height:1.7">
+        <strong>How to get your key:</strong><br>
+        1. Go to <a href="https://console.anthropic.com" target="_blank" style="color:var(--acc)">console.anthropic.com</a><br>
+        2. Sign in or create a free account<br>
+        3. Click <strong>API Keys → Create Key</strong><br>
+        4. Copy and paste it below
+      </div>
+    </div>
+
     <div style="margin-bottom:12px">
-      <label style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);display:block;margin-bottom:5px">Your Anthropic API Key</label>
+      <label style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);display:block;margin-bottom:5px">Your Anthropic API Key (optional if AI is already active)</label>
       <div style="display:flex;gap:8px">
         <input type="password" id="apikey-input" placeholder="sk-ant-api03-..." style="flex:1;background:var(--surf2);border:1.5px solid var(--bdr2);border-radius:8px;padding:9px 12px;color:var(--txt);font-family:monospace;font-size:13px;outline:none">
         <button onclick="toggleKeyVis()" style="padding:0 10px;border-radius:8px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);cursor:pointer;font-size:14px" id="key-eye">👁</button>
@@ -884,21 +895,20 @@ html,body{
         </div>
       </div>
 
+      <!-- Connected accounts — link OAuth providers -->
+      <div style="margin-bottom:14px">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);font-weight:600;margin-bottom:8px">Connected accounts</div>
+        <div id="acct-linked-providers" style="display:flex;flex-direction:column;gap:6px">
+          <!-- populated by renderLinkedProviders() -->
+        </div>
+      </div>
+
       <div style="background:var(--surf2);border:1px solid var(--bdr);border-radius:9px;padding:12px;margin-bottom:14px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
           <span style="font-size:13px;font-weight:500">Cloud sync</span>
           <span id="acct-sync-badge" class="pill pill-grn">✓ Synced</span>
         </div>
-        <div style="font-size:11px;color:var(--mut2);line-height:1.6" id="acct-sync-detail">Profile, training log, calendar and match history synced across all your devices.</div>
-      </div>
-
-      <!-- What's synced -->
-      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px">
-        <span style="font-size:10px;padding:3px 8px;border-radius:20px;background:var(--surf2);border:1px solid var(--bdr);color:var(--mut2)">🏋️ Training log</span>
-        <span style="font-size:10px;padding:3px 8px;border-radius:20px;background:var(--surf2);border:1px solid var(--bdr);color:var(--mut2)">📅 Calendar</span>
-        <span style="font-size:10px;padding:3px 8px;border-radius:20px;background:var(--surf2);border:1px solid var(--bdr);color:var(--mut2)">🎯 Profile</span>
-        <span style="font-size:10px;padding:3px 8px;border-radius:20px;background:var(--surf2);border:1px solid var(--bdr);color:var(--mut2)">🥋 Match history</span>
-        <span style="font-size:10px;padding:3px 8px;border-radius:20px;background:var(--surf2);border:1px solid var(--bdr);color:var(--mut2)">🧠 Coach briefs</span>
+        <div style="font-size:11px;color:var(--mut2);line-height:1.6" id="acct-sync-detail">All your data synced across devices.</div>
       </div>
 
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -1621,7 +1631,7 @@ html,body{
   <div class="card">
     <div class="card-header"><h3>7-day trend</h3></div>
     <div style="padding:13px">
-      <div style="display:flex;align-items:flex-end;gap:3px;height:70px" id="wt-chart"></div>
+      <div style="width:100%;height:150px;overflow:visible" id="wt-chart"></div>
       <div style="display:flex;gap:3px;margin-top:4px" id="wt-labels"></div>
     </div>
   </div>
@@ -1887,17 +1897,25 @@ html,body{
         <p style="font-size:13px;color:var(--mut2);line-height:1.6;margin-bottom:12px">
           Connects to the <strong>Google Fit REST API</strong> to pull resting heart rate, sleep, steps, active calories and weight. Requires the Google Fit app to be installed and collecting data on your device.
         </p>
-        <div style="background:var(--surf2);border:1px solid var(--bdr);border-radius:8px;padding:11px;margin-bottom:12px;font-size:12px;line-height:1.8">
+        <div id="gfit-setup-steps" style="background:var(--surf2);border:1px solid var(--bdr);border-radius:8px;padding:11px;margin-bottom:12px;font-size:12px;line-height:1.8">
           <strong>Before connecting:</strong><br>
           1. Install <strong>Google Fit</strong> on your phone (Android) or connect it to Apple Health (iPhone) — <a href="https://fit.google.com" target="_blank" style="color:var(--acc)">fit.google.com</a><br>
-          2. Deploy the <strong>fightos-backend</strong> folder to Vercel (see README)<br>
-          3. Enter your backend URL below and click Connect
+          <span id="gfit-step-backend">2. Deploy the <strong>fightos-backend</strong> folder to Vercel (see README)<br>
+          3. Enter your backend URL below and click Connect</span>
+          <span id="gfit-step-simple" style="display:none">2. Tap <strong>Connect Google Fit</strong> below</span>
         </div>
-        <div class="fg">
+        <div class="fg" id="gfit-backend-url-section">
           <label class="lbl">Your Vercel backend URL</label>
-          <input type="url" id="gfit-backend-url" placeholder="https://fightos-backend-abc123.vercel.app"
-            value="" style="font-family:monospace;font-size:12px">
-          <div style="font-size:10px;color:var(--mut2);margin-top:3px">Paste the URL from your Vercel dashboard after deploying</div>
+          <!-- Shown when no default is set -->
+          <div id="gfit-url-input-wrap">
+            <input type="url" id="gfit-backend-url" placeholder="https://fightos-backend-abc123.vercel.app"
+              value="" style="font-family:monospace;font-size:12px">
+            <div style="font-size:10px;color:var(--mut2);margin-top:3px">Paste the URL from your Vercel dashboard after deploying</div>
+          </div>
+          <!-- Shown when admin default is active -->
+          <div id="gfit-url-default-notice" style="display:none;background:rgba(0,230,118,.07);border:1px solid rgba(0,230,118,.2);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--grn)">
+            ✅ Backend URL pre-configured. No setup needed.
+          </div>
         </div>
         <button class="btn btn-acc btn-full btn-hero" onclick="connectGoogleFit()">CONNECT GOOGLE FIT</button>
       </div>
@@ -1957,57 +1975,7 @@ html,body{
     </div>
   </div>
 
-  <!-- Integration status cards -->
-  <div class="card" style="margin-top:10px">
-    <div class="card-header"><h3>Requested integrations</h3><span style="font-size:10px;color:var(--mut2)">Status & roadmap</span></div>
 
-    <!-- Google Photos -->
-    <div class="row" style="align-items:flex-start;gap:10px;padding:13px">
-      <div style="font-size:22px;flex-shrink:0">📸</div>
-      <div style="flex:1">
-        <div style="font-size:13px;font-weight:600;margin-bottom:3px">Google Photos — Match footage</div>
-        <div style="font-size:11px;color:var(--mut2);line-height:1.6;margin-bottom:6px">
-          Google Photos has a <strong>read-only Picker API</strong> available in browsers. This app already lets you upload local images/video directly from device — which also picks from your Photos library on iOS and Android via the native file picker.<br><br>
-          A full Google Photos OAuth integration (browse albums, import videos) requires a backend server to handle the OAuth flow securely. For now the quickest workaround is: open Google Photos → download the clip → upload it here.
-        </div>
-        <span class="pill pill-ora">Partial — local upload works now</span>
-      </div>
-    </div>
-
-    <!-- Fitbit -->
-    <div class="row" style="align-items:flex-start;gap:10px;padding:13px">
-      <div style="font-size:22px;flex-shrink:0">💚</div>
-      <div style="flex:1">
-        <div style="font-size:13px;font-weight:600;margin-bottom:3px">Fitbit Web API</div>
-        <div style="font-size:11px;color:var(--mut2);line-height:1.6;margin-bottom:6px">
-          <strong>What's available:</strong> Resting HR, sleep stages, sleep score, active zone minutes, daily steps, calories.<br>
-          <strong>Why it needs a backend:</strong> Fitbit uses OAuth 2.0 with a Client Secret that must never be exposed in browser code. A tiny server (free-tier Vercel/Render function) handles the token exchange and relays data to this app.<br>
-          <strong>To set up manually right now:</strong><br>
-          1. <a href="https://dev.fitbit.com" target="_blank" style="color:var(--acc)">dev.fitbit.com</a> → Create app → get Client ID &amp; Secret<br>
-          2. Complete OAuth at fitbit.com/oauth2/authorize<br>
-          3. Exchange code for token at api.fitbit.com/oauth2/token<br>
-          4. Call endpoints like <code style="font-size:10px;background:var(--surf2);padding:1px 4px;border-radius:3px">/1/user/-/sleep/date/today.json</code>
-        </div>
-        <span class="pill pill-ora">Needs backend — setup guide above</span>
-      </div>
-    </div>
-
-    <!-- MacroFactor -->
-    <div class="row" style="align-items:flex-start;gap:10px;padding:13px">
-      <div style="font-size:22px;flex-shrink:0">🥗</div>
-      <div style="flex:1">
-        <div style="font-size:13px;font-weight:600;margin-bottom:3px">MacroFactor — Nutrition sync</div>
-        <div style="font-size:11px;color:var(--mut2);line-height:1.6;margin-bottom:6px">
-          <strong>MacroFactor does not have a public API</strong> as of 2025 — it's a closed platform with no third-party integration support.<br><br>
-          <strong>Best workarounds today:</strong><br>
-          1. <strong>Manual entry</strong> — use the food log in this app's Nutrition tab to mirror your MacroFactor intake<br>
-          2. <strong>CSV export</strong> — MacroFactor supports data export from Settings. If you export a CSV, you can upload it here and the AI Coach can analyse your weekly nutrition patterns<br>
-          3. <strong>Watch for API release</strong> — MacroFactor has mentioned developer access on their roadmap
-        </div>
-        <span class="pill pill-red">No public API — use manual log or CSV export</span>
-      </div>
-    </div>
-  </div>
 </div>
 
 <!-- ==================== AI COACH ==================== -->
@@ -2076,7 +2044,7 @@ html,body{
       <div id="gphotos-btn-wrap" style="margin-bottom:10px">
         <button class="btn btn-full" onclick="openGooglePhotosPicker()" style="background:rgba(66,133,244,.1);border:1px solid rgba(66,133,244,.3);color:#4285F4;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px">
           <svg width="16" height="16" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-          Pick from Google Photos
+          📷 Camera / Photo Library
         </button>
         <div style="font-size:10px;color:var(--mut2);text-align:center;margin-top:4px">Opens photo library on mobile · Download guide on desktop</div>
       </div>
@@ -3109,7 +3077,83 @@ function saveActivityEdit(type, idOrIdx){
   if(renders[type]) renders[type]();
 }
 
-// ===== RPE & MOOD SELECTORS =====
+// ===== LINKED ACCOUNTS / IDENTITY LINKING =====
+const PROVIDER_META = {
+  google: { name:'Google',    icon:'<svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>', color:'#4285F4' },
+  azure:  { name:'Microsoft', icon:'<svg width="16" height="16" viewBox="0 0 23 23"><path fill="#F25022" d="M1 1h10v10H1z"/><path fill="#7FBA00" d="M12 1h10v10H12z"/><path fill="#00A4EF" d="M1 12h10v10H1z"/><path fill="#FFB900" d="M12 12h10v10H12z"/></svg>', color:'#0078D4' },
+  apple:  { name:'Apple',     icon:'<svg width="16" height="16" viewBox="0 0 814 1000"><path fill="currentColor" d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-37.9-155.5-127.4C46.5 720 1 568.8 1 440.6c0-201.6 131.4-308.4 260.5-308.4 70.1 0 128.4 40.3 173.2 40.3 42.9 0 110.2-42.8 193-42.8z"/></svg>', color:'#000000' },
+};
+
+function renderLinkedProviders(){
+  const el = document.getElementById('acct-linked-providers');
+  if(!el || !ACCT.user) return;
+
+  // Detect which providers are already linked from the user's identities
+  const identities = ACCT.user.identities || [];
+  const linked = new Set(identities.map(id => id.provider));
+
+  // Determine the signup method — if they signed up with email, show linking buttons
+  const isEmailUser = linked.has('email') || !linked.size;
+  const backendUrl  = ACCT.backendUrl;
+
+  const rows = Object.entries(PROVIDER_META).map(([key, meta]) => {
+    const isLinked = linked.has(key);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surf2);border:1px solid var(--bdr);border-radius:9px">
+      <div style="width:28px;height:28px;border-radius:6px;background:${isLinked?meta.color+'18':'var(--surf)'};border:1px solid ${isLinked?meta.color+'40':'var(--bdr2)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">${meta.icon}</div>
+      <span style="flex:1;font-size:13px;font-weight:500">${meta.name}</span>
+      ${isLinked
+        ? `<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(0,230,118,.1);color:var(--grn)">✓ Connected</span>`
+        : `<button onclick="linkOAuthProvider('${key}')" style="font-size:11px;padding:5px 12px;border-radius:20px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='${meta.color}';this.style.color='${meta.color}'" onmouseout="this.style.borderColor='';this.style.color=''">Link →</button>`
+      }
+    </div>`;
+  }).join('');
+
+  // Show email row at top
+  const emailRow = `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surf2);border:1px solid var(--bdr);border-radius:9px">
+    <div style="width:28px;height:28px;border-radius:6px;background:rgba(76,159,255,.1);border:1px solid rgba(76,159,255,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px">✉️</div>
+    <span style="flex:1;font-size:13px;font-weight:500">${ACCT.user.email||'—'}</span>
+    <span style="font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(76,159,255,.1);color:var(--blu)">${linked.has('email')?'✓ Primary':'OAuth user'}</span>
+  </div>`;
+
+  el.innerHTML = emailRow + rows;
+}
+
+async function linkOAuthProvider(provider){
+  if(!isSignedIn()){ alert('You must be signed in to link accounts.'); return; }
+  const backendUrl = ACCT.backendUrl;
+  if(!backendUrl){ alert('Backend URL not configured.'); return; }
+
+  try{
+    const token = await getValidToken();
+    // Redirect to backend linking endpoint — it'll redirect back with link_result=success
+    window.location.href = `${backendUrl}/api/account/oauth-link?provider=${provider}&token=${encodeURIComponent(token)}`;
+  }catch(e){
+    alert('Could not start linking: '+e.message);
+  }
+}
+
+// Check URL for link_result on page load
+function checkLinkResult(){
+  const params = new URLSearchParams(window.location.search);
+  const result = params.get('link_result');
+  const provider = params.get('provider');
+  if(result === 'success' && provider){
+    const meta = PROVIDER_META[provider];
+    // Clean URL
+    window.history.replaceState({}, '', window.location.pathname + window.location.hash);
+    // Show success notification
+    setTimeout(()=>{
+      const name = meta?.name || provider;
+      const msg = document.createElement('div');
+      msg.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--grn);color:#000;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.3)';
+      msg.textContent = `✅ ${name} account linked successfully`;
+      document.body.appendChild(msg);
+      setTimeout(()=>msg.remove(), 4000);
+      // Refresh linked providers display
+      openAccountModal();
+    }, 500);
+  }
+}
 function selRPE(el,val){
   document.querySelectorAll('.rpe-btn').forEach(b=>b.classList.remove('sel'));
   el.classList.add('sel'); selectedRPE=val;
@@ -3497,23 +3541,89 @@ function renderWeightChart(){
   const labels=document.getElementById('wt-labels');
   const hist=document.getElementById('wt-history');
   if(!wLog.length){
-    if(chart) chart.innerHTML='<div style="color:var(--mut2);font-size:12px;text-align:center;padding:10px">No weight entries yet</div>';
+    if(chart) chart.innerHTML='<div style="color:var(--mut2);font-size:12px;text-align:center;padding:20px 0">No weight entries yet — log your first weight above.</div>';
     if(labels) labels.innerHTML='';
     if(hist) hist.innerHTML='<div class="row" style="color:var(--mut2);font-size:13px">No weight logged yet.</div>';
     return;
   }
+
   const last7=wLog.slice(-7);
-  const vals=last7.map(w=>w.val);
-  const mn=Math.min(...vals)-0.3, mx=Math.max(...vals)+0.1;
-  if(chart) chart.innerHTML=last7.map((w,i)=>{
-    const pct=Math.max(4,Math.round(((w.val-mn)/(mx-mn))*100));
-    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center"><div style="width:100%;height:${pct}%;background:${i===last7.length-1?'var(--acc2)':'var(--blu)'};border-radius:3px 3px 0 0;min-height:4px"></div></div>`;
-  }).join('');
-  if(labels) labels.innerHTML=last7.map(w=>`<div style="flex:1;text-align:center;font-size:9px;color:var(--mut2)">${w.date.slice(5)}</div>`).join('');
+  const vals=last7.map(w=>parseFloat(w.val));
+  const profile=loadProfile()||{};
+  const unit=profile.weightUnit||'kg';
+  const targetKg=getTargetKg(profile);
+
+  // Build SVG line chart
+  const W=560, H=120, padL=46, padR=20, padT=14, padB=28;
+  const mn=Math.min(...vals,targetKg||Infinity)-0.5;
+  const mx=Math.max(...vals,targetKg||0)+0.5;
+  const range=Math.max(mx-mn, 1);
+  const xStep=(W-padL-padR)/Math.max(last7.length-1,1);
+
+  const toX=i=>padL+i*xStep;
+  const toY=v=>padT+(H-padT-padB)*(1-(v-mn)/range);
+
+  // Grid lines
+  const gridCount=4;
+  let gridLines='', gridLabels='';
+  for(let i=0;i<=gridCount;i++){
+    const v=mn+range*(i/gridCount);
+    const y=toY(v);
+    gridLines+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="var(--bdr2)" stroke-width="1" stroke-dasharray="4,4"/>`;
+    gridLabels+=`<text x="${padL-6}" y="${y+4}" text-anchor="end" fill="var(--mut2)" font-size="9">${v.toFixed(1)}</text>`;
+  }
+
+  // Target weight line
+  let targetLine='';
+  if(targetKg && targetKg >= mn && targetKg <= mx){
+    const ty=toY(targetKg);
+    targetLine=`<line x1="${padL}" y1="${ty}" x2="${W-padR}" y2="${ty}" stroke="var(--acc2)" stroke-width="1.5" stroke-dasharray="6,3"/>
+      <text x="${W-padR+4}" y="${ty+4}" fill="var(--acc2)" font-size="9">goal</text>`;
+  }
+
+  // Data line path
+  const pts=last7.map((w,i)=>`${toX(i)},${toY(w.val)}`).join(' ');
+  const polyPoints=pts;
+
+  // Fill area under line
+  const fillPath=`M${toX(0)},${toY(last7[0].val)} `
+    +last7.map((w,i)=>`L${toX(i)},${toY(w.val)}`).join(' ')
+    +` L${toX(last7.length-1)},${H-padB} L${toX(0)},${H-padB} Z`;
+
+  // Dots
+  const dots=last7.map((w,i)=>
+    `<circle cx="${toX(i)}" cy="${toY(w.val)}" r="4" fill="${i===last7.length-1?'var(--acc2)':'var(--blu)'}" stroke="var(--surf)" stroke-width="2"/>
+     <text x="${toX(i)}" y="${toY(w.val)-8}" text-anchor="middle" fill="${i===last7.length-1?'var(--acc2)':'var(--txt)'}" font-size="9" font-weight="${i===last7.length-1?'700':'400'}">${w.val}</text>`
+  ).join('');
+
+  // Date labels
+  const dateLabels=last7.map((w,i)=>
+    `<text x="${toX(i)}" y="${H-padB+16}" text-anchor="middle" fill="var(--mut2)" font-size="9">${w.date.slice(5)}</text>`
+  ).join('');
+
+  const svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;overflow:visible">
+    <defs>
+      <linearGradient id="wgFill" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="var(--blu)" stop-opacity="0.25"/>
+        <stop offset="100%" stop-color="var(--blu)" stop-opacity="0.02"/>
+      </linearGradient>
+    </defs>
+    ${gridLines}${gridLabels}${targetLine}
+    <path d="${fillPath}" fill="url(#wgFill)"/>
+    <polyline points="${polyPoints}" fill="none" stroke="var(--blu)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    ${dots}${dateLabels}
+  </svg>`;
+
+  if(chart){
+    chart.style.height='140px';
+    chart.style.padding='8px 0 4px';
+    chart.innerHTML=svg;
+  }
+  if(labels) labels.innerHTML=''; // labels now inside SVG
+
+  // History list
   if(hist) hist.innerHTML=[...wLog].reverse().slice(0,15).map((w,i)=>{
-    // Calculate original index in the non-reversed log for edit/delete
-    const origIdx = wLog.length - 1 - i;
-    const unit = loadProfile()?.weightUnit||'kg';
+    const origIdx=wLog.length-1-i;
     return `<div class="row" style="align-items:center;gap:8px">
       <span style="color:var(--mut2);font-size:12px;flex:1">${fmtDate(w.date)}</span>
       <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:${i===0?'var(--acc2)':'var(--txt)'}">${w.val}${unit}</span>
@@ -5578,7 +5688,21 @@ function showTech(i){
 }
 
 // ===== API KEY MANAGEMENT =====
-function getAPIKey(){ return localStorage.getItem('fos_api_key')||''; }
+// ===== API KEY — admin default with user override =====
+// DEFAULT_API_KEY: set once by admin. Public users get AI without needing their own key.
+// Admins can override via 🔑 button. Users can also set their own key which takes priority.
+const DEFAULT_API_KEY = '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
+'; // ← ADMIN: paste your Anthropic key here between the quotes
+
+function getAPIKey(){
+  // Priority: 1) user's own stored key, 2) admin default key
+  return localStorage.getItem('fos_api_key') || DEFAULT_API_KEY || '';
+}
+
+function isAdminKeyDefault(){
+  // Returns true if user is using the default admin key (not their own)
+  return !localStorage.getItem('fos_api_key') && !!DEFAULT_API_KEY;
+}
 
 function saveAPIKey(){
   const key=document.getElementById('apikey-input').value.trim();
@@ -5597,8 +5721,12 @@ function saveAPIKey(){
 function openKeyModal(){
   const modal=document.getElementById('apikey-modal');
   modal.style.display='flex';
-  const existing=getAPIKey();
-  if(existing) document.getElementById('apikey-input').value=existing;
+  // Only show user's OWN key — never expose the admin default key
+  const userKey=localStorage.getItem('fos_api_key');
+  document.getElementById('apikey-input').value=userKey||'';
+  // Show admin hint if user is running on the default key
+  const hint=document.getElementById('apikey-admin-hint');
+  if(hint) hint.style.display=isAdminKeyDefault()?'block':'none';
   document.getElementById('apikey-input').focus();
 }
 
@@ -5625,7 +5753,7 @@ function updateKeyStatus(){
     badge.style.color='var(--grn)';
     btn.style.color='var(--grn)';
     btn.style.borderColor='rgba(0,230,118,.3)';
-    btn.textContent='🔑 Key set';
+    btn.textContent=isAdminKeyDefault()?'🔑 AI Active':'🔑 Key set';
   } else {
     badge.textContent='No API Key';
     badge.style.background='rgba(255,149,0,.12)';
@@ -5694,15 +5822,24 @@ function showAIError(contentEl, loadingEl, msg){
 }
 
 // ===== GOOGLE FIT INTEGRATION =====
-// Config — update backendUrl after you deploy the Vercel backend
+// ADMIN: update DEFAULT_BACKEND_URL to your deployed Vercel URL
+// Users will never need to enter this manually
+const DEFAULT_BACKEND_URL = 'https://fightos-backend.vercel.app'; // ← update if your URL changes
+
 const GFIT_CONFIG = {
   clientId: '220380054235-f0h68ii97ecoemvrmmq2st73ef16vthm.apps.googleusercontent.com',
-  backendUrl: '', // filled from localStorage or UI input
+  backendUrl: '',
 };
 
 function gfitBackendUrl(){
+  // Priority: 1) user-saved URL, 2) admin default
   return localStorage.getItem('gfit_backend_url') ||
-    document.getElementById('gfit-backend-url')?.value?.trim() || '';
+    document.getElementById('gfit-backend-url')?.value?.trim() ||
+    DEFAULT_BACKEND_URL || '';
+}
+
+function isDefaultBackendUrl(){
+  return !localStorage.getItem('gfit_backend_url') && !!DEFAULT_BACKEND_URL;
 }
 
 function gfitAccessToken(){ return localStorage.getItem('gfit_access_token')||''; }
@@ -5923,10 +6060,37 @@ function disconnectGoogleFit(){
 }
 
 function initGoogleFit(){
+  // Show/hide URL input based on whether admin has pre-configured a backend URL
+  const hasDefault = !!DEFAULT_BACKEND_URL;
+  const inputWrap    = document.getElementById('gfit-url-input-wrap');
+  const defaultNotice = document.getElementById('gfit-url-default-notice');
+  const stepBackend  = document.getElementById('gfit-step-backend');
+  const stepSimple   = document.getElementById('gfit-step-simple');
+
+  if(hasDefault){
+    if(inputWrap)     inputWrap.style.display    = 'none';
+    if(defaultNotice) defaultNotice.style.display = 'block';
+    if(stepBackend)   stepBackend.style.display   = 'none';
+    if(stepSimple)    stepSimple.style.display     = 'inline';
+    // Also pre-save so connectGoogleFit() works without user typing it
+    if(!localStorage.getItem('gfit_backend_url')){
+      localStorage.setItem('gfit_backend_url', DEFAULT_BACKEND_URL);
+    }
+  } else {
+    if(inputWrap)     inputWrap.style.display    = 'block';
+    if(defaultNotice) defaultNotice.style.display = 'none';
+    if(stepBackend)   stepBackend.style.display   = 'inline';
+    if(stepSimple)    stepSimple.style.display     = 'none';
+  }
+
+  // Pre-fill input with saved URL for admin editing
+  const saved = localStorage.getItem('gfit_backend_url') || DEFAULT_BACKEND_URL || '';
+  const inp = document.getElementById('gfit-backend-url');
+  if(inp && saved) inp.value = saved;
+
   handleGfitCallback(); // check if returning from OAuth
   if(gfitConnected()){
     renderGfitConnectedState();
-    // Load cached data instantly, then sync fresh
     const cached = localStorage.getItem('gfit_latest');
     if(cached){ try{ renderGfitData(JSON.parse(cached)); }catch(e){} }
     syncGoogleFit();
@@ -6278,6 +6442,8 @@ function showSignedInPanel(){
   document.getElementById('acct-signed-in-panel').style.display='block';
   document.getElementById('acct-social-pending').style.display='none';
   document.getElementById('acct-email-display').textContent=ACCT.user?.email||'';
+  // Render linked providers
+  try{ renderLinkedProviders(); }catch(e){}
   // Provider display
   const provider=ACCT.user?.provider||'email';
   const providerMap={google:{icon:'🔵',label:'Signed in with Google'},azure:{icon:'🟦',label:'Signed in with Microsoft'},apple:{icon:'⚫',label:'Signed in with Apple'},email:{icon:'📧',label:'Email account'}};
@@ -6350,7 +6516,7 @@ function handleAccountOAuthCallback(){
     ACCT.accessToken = accessToken;
     ACCT.refreshToken= refreshToken;
     ACCT.expiresAt   = Date.now() + expiresIn * 1000;
-    ACCT.backendUrl  = localStorage.getItem('gfit_backend_url') || '';
+    ACCT.backendUrl  = localStorage.getItem('gfit_backend_url') || DEFAULT_BACKEND_URL || '';
     window.history.replaceState(null,'',window.location.pathname);
     saveAccountSession();
     updateAccountBtn();
@@ -6376,7 +6542,7 @@ function handleAccountOAuthCallback(){
     ACCT.accessToken = params.get('acct_access_token');
     ACCT.refreshToken= params.get('acct_refresh_token');
     ACCT.expiresAt   = Date.now() + (parseInt(params.get('acct_expires_in')||'3600')) * 1000;
-    ACCT.backendUrl  = localStorage.getItem('gfit_backend_url') || '';
+    ACCT.backendUrl  = localStorage.getItem('gfit_backend_url') || DEFAULT_BACKEND_URL || '';
     window.history.replaceState(null,'',window.location.pathname);
     saveAccountSession();
     updateAccountBtn();
@@ -6660,7 +6826,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
       try{ renderTDEECard(profile); renderNutritionStats(profile); }catch(e){}
       try{ initGoogleFit(); initGooglePhotosUI(); }catch(e){}
       try{ initBodyParts(); }catch(e){}
-      try{ handleAccountOAuthCallback(); }catch(e){}
+      try{ handleAccountOAuthCallback(); checkLinkResult(); }catch(e){}
       if(isSignedIn()) loadFromCloud().catch(()=>{});
     }, 0);
 
@@ -6730,7 +6896,7 @@ function obSwitchEmailTab(mode){
 }
 
 function obSocialLogin(provider){
-  const backendUrl = ACCT.backendUrl || gfitBackendUrl() || localStorage.getItem('gfit_backend_url') || '';
+  const backendUrl = ACCT.backendUrl || gfitBackendUrl() || localStorage.getItem('gfit_backend_url') || DEFAULT_BACKEND_URL || '';
   if(!backendUrl){
     // Prompt for backend URL
     const url = prompt('Enter your Vercel backend URL to enable account sync:\n(e.g. https://fightos-backend.vercel.app)\n\nLeave blank to continue without an account.');
@@ -6754,7 +6920,7 @@ async function obSubmitEmail(){
 
   if(!email||!password){ errEl.textContent='Please enter your email and password.'; errEl.style.display='block'; return; }
 
-  const backendUrl = ACCT.backendUrl || gfitBackendUrl() || localStorage.getItem('gfit_backend_url') || '';
+  const backendUrl = ACCT.backendUrl || gfitBackendUrl() || localStorage.getItem('gfit_backend_url') || DEFAULT_BACKEND_URL || '';
   if(!backendUrl){
     const url = prompt('Enter your Vercel backend URL:\n(e.g. https://fightos-backend.vercel.app)');
     if(!url){ errEl.textContent='Backend URL required for account creation. Use "Continue without account" to skip.'; errEl.style.display='block'; return; }
