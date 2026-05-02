@@ -5691,8 +5691,7 @@ function showTech(i){
 // ===== API KEY — admin default with user override =====
 // DEFAULT_API_KEY: set once by admin. Public users get AI without needing their own key.
 // Admins can override via 🔑 button. Users can also set their own key which takes priority.
-const DEFAULT_API_KEY = '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
-'; // ← ADMIN: paste your Anthropic key here between the quotes
+const DEFAULT_API_KEY = ''; // ← ADMIN: paste your Anthropic key here between the quotes
 
 function getAPIKey(){
   // Priority: 1) user's own stored key, 2) admin default key
@@ -5742,18 +5741,19 @@ function toggleKeyVis(){
 }
 
 function updateKeyStatus(){
-  const key=getAPIKey();
+  const userKey = localStorage.getItem('fos_api_key');
+  const hasProxy = !!DEFAULT_BACKEND_URL || !!localStorage.getItem('gfit_backend_url');
   const badge=document.getElementById('ai-status-badge');
   const btn=document.getElementById('apikey-btn');
   if(!badge||!btn) return;
-  if(key){
+  if(userKey || hasProxy){
     badge.textContent='AI Active';
     badge.style.background='rgba(0,230,118,.12)';
     badge.style.borderColor='rgba(0,230,118,.3)';
     badge.style.color='var(--grn)';
     btn.style.color='var(--grn)';
     btn.style.borderColor='rgba(0,230,118,.3)';
-    btn.textContent=isAdminKeyDefault()?'🔑 AI Active':'🔑 Key set';
+    btn.textContent = userKey ? '🔑 Key set' : '🔑 AI Active';
   } else {
     badge.textContent='No API Key';
     badge.style.background='rgba(255,149,0,.12)';
@@ -5766,41 +5766,51 @@ function updateKeyStatus(){
 }
 
 // ===== ANTHROPIC API CALL =====
+// Route 1: User has their own key → direct call (key never leaves browser)
+// Route 2: No user key → proxy via fightos-backend (key stored in Vercel env var, never in code)
 async function anthropicCall(prompt, maxTokens=1000, imageContent=null){
-  const key=getAPIKey();
-  if(!key){
-    openKeyModal();
-    throw new Error('no_key');
+  const userKey = localStorage.getItem('fos_api_key');
+  const backendUrl = gfitBackendUrl();
+
+  if(userKey && userKey.startsWith('sk-ant-')){
+    // Direct call with user's own key
+    let userContent = imageContent && imageContent.length
+      ? [...imageContent, {type:'text',text:prompt}]
+      : prompt;
+    const resp = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'anthropic-version':'2023-06-01',
+        'x-api-key':userKey,
+        'anthropic-dangerous-direct-browser-access':'true',
+      },
+      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:maxTokens,messages:[{role:'user',content:userContent}]})
+    });
+    if(!resp.ok){
+      const err=await resp.json().catch(()=>({error:{message:resp.statusText}}));
+      const msg=(err.error?.message)||resp.statusText||'API error';
+      if(msg.toLowerCase().includes('api_key')||msg.toLowerCase().includes('authentication')){
+        localStorage.removeItem('fos_api_key'); updateKeyStatus();
+      }
+      throw new Error(msg);
+    }
+    const data=await resp.json();
+    return data.content?.map(b=>b.text||'').join('')||'';
   }
-  let userContent;
-  if(imageContent && imageContent.length){
-    userContent=[...imageContent,{type:'text',text:prompt}];
-  } else {
-    userContent=prompt;
-  }
-  const resp=await fetch('https://api.anthropic.com/v1/messages',{
+
+  // Proxy via backend (no user key needed — key is in Vercel environment)
+  if(!backendUrl){ openKeyModal(); throw new Error('no_key'); }
+  const body = { prompt, maxTokens };
+  if(imageContent && imageContent.length) body.imageContent = imageContent;
+  const resp = await fetch(`${backendUrl}/api/ai/chat`,{
     method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'anthropic-version':'2023-06-01',
-      'x-api-key':key,
-      'anthropic-dangerous-direct-browser-access':'true',
-    },
-    body:JSON.stringify({
-      model:'claude-sonnet-4-5',
-      max_tokens:maxTokens,
-      messages:[{role:'user',content:userContent}]
-    })
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(body),
   });
   if(!resp.ok){
-    const err=await resp.json().catch(()=>({error:{message:resp.statusText}}));
-    const msg=(err.error?.message)||resp.statusText||'API error';
-    // If key is wrong, clear it so user knows to re-enter
-    if(msg.toLowerCase().includes('api_key')||msg.toLowerCase().includes('authentication')){
-      localStorage.removeItem('fos_api_key');
-      updateKeyStatus();
-    }
-    throw new Error(msg);
+    const err=await resp.json().catch(()=>({error:`HTTP ${resp.status}`}));
+    throw new Error(err.error||`AI proxy error ${resp.status}`);
   }
   const data=await resp.json();
   return data.content?.map(b=>b.text||'').join('')||'';
@@ -5811,7 +5821,7 @@ function showAIError(contentEl, loadingEl, msg){
   if(!contentEl) return;
   contentEl.style.display='block';
   if(msg==='no_key'){
-    contentEl.innerHTML=`<div class="warn">🔑 <strong>API key required.</strong> The setup panel has opened — paste your key to activate AI features.</div>`;
+    contentEl.innerHTML=`<div class="warn">⚠️ <strong>AI unavailable.</strong> The backend server is not configured. Contact the app admin or add your own API key via the 🔑 button.</div>`;
     return;
   }
   const keyHint=msg.toLowerCase().includes('key')||msg.toLowerCase().includes('auth')
