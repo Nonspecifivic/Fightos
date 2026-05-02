@@ -887,35 +887,47 @@ html,body{
 
     <!-- ── SIGNED IN PANEL ── -->
     <div id="acct-signed-in-panel" style="display:none">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
-        <div id="acct-provider-icon" style="width:42px;height:42px;border-radius:10px;background:var(--surf2);border:1px solid var(--bdr2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">👤</div>
-        <div>
-          <div style="font-size:14px;font-weight:600" id="acct-email-display"></div>
-          <div style="font-size:11px;color:var(--mut2)" id="acct-provider-display">Email account</div>
+
+      <!-- Account header -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--bdr)">
+        <div id="acct-provider-icon" style="width:44px;height:44px;border-radius:12px;background:var(--surf2);border:1px solid var(--bdr2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">👤</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="acct-email-display"></div>
+          <div style="font-size:11px;color:var(--mut2)" id="acct-provider-display">FightOS account</div>
         </div>
+        <span style="font-size:10px;padding:3px 8px;border-radius:20px;background:rgba(0,230,118,.1);color:var(--grn);border:1px solid rgba(0,230,118,.2);flex-shrink:0">● Active</span>
       </div>
 
-      <!-- Connected accounts — link OAuth providers -->
+      <!-- One account explanation -->
+      <div style="background:rgba(232,255,0,.05);border:1px solid rgba(232,255,0,.15);border-radius:10px;padding:11px 13px;margin-bottom:14px">
+        <div style="font-size:12px;font-weight:600;color:var(--acc);margin-bottom:4px">One account, multiple sign-in methods</div>
+        <div style="font-size:12px;color:var(--mut2);line-height:1.6">Link Google, Microsoft or Apple below. Any of them will open <strong style="color:var(--txt)">this same account</strong> with all your data. You sign in with one at a time — not all at once.</div>
+      </div>
+
+      <!-- Sign-in methods -->
       <div style="margin-bottom:14px">
-        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);font-weight:600;margin-bottom:8px">Connected accounts</div>
-        <div id="acct-linked-providers" style="display:flex;flex-direction:column;gap:6px">
-          <!-- populated by renderLinkedProviders() -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--mut2);font-weight:600">Sign-in methods</div>
+          <div style="font-size:10px;color:var(--mut2)">★ = preferred display name</div>
         </div>
+        <div id="acct-linked-providers" style="display:flex;flex-direction:column;gap:6px"></div>
       </div>
 
-      <div style="background:var(--surf2);border:1px solid var(--bdr);border-radius:9px;padding:12px;margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <!-- Sync row -->
+      <div style="background:var(--surf2);border:1px solid var(--bdr);border-radius:9px;padding:11px 13px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
           <span style="font-size:13px;font-weight:500">Cloud sync</span>
           <span id="acct-sync-badge" class="pill pill-grn">✓ Synced</span>
         </div>
-        <div style="font-size:11px;color:var(--mut2);line-height:1.6" id="acct-sync-detail">All your data synced across devices.</div>
+        <div style="font-size:11px;color:var(--mut2)" id="acct-sync-detail">Data synced across all your devices.</div>
       </div>
 
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div style="display:flex;gap:8px">
         <button onclick="manualSync()" class="btn btn-ghost" style="flex:1;font-size:12px">↻ Sync now</button>
         <button onclick="signOut()" class="btn" style="flex:1;font-size:12px;background:rgba(255,59,48,.08);color:var(--acc2);border:1px solid rgba(255,59,48,.2)">Sign out</button>
       </div>
       <button onclick="closeAccountModal()" class="btn btn-ghost" style="width:100%;font-size:12px;margin-top:8px">Close</button>
+
     </div>
 
     <!-- ── SOCIAL LOGIN PENDING ── -->
