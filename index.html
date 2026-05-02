@@ -2612,7 +2612,18 @@ No generic advice. Every sentence must reference something specific from their d
     if(window.innerWidth<768) content.scrollIntoView({behavior:'smooth',block:'nearest'});
   }catch(e){
     loading.style.display='none'; content.style.display='block';
-    content.innerHTML=`<div class="warn">Could not load brief — ${e.message}. Make sure your API key is set (🔑 button).</div>`;
+    let errMsg = e.message || 'Unknown error';
+    let hint = '';
+    if(errMsg.includes('ANTHROPIC_API_KEY not configured')){
+      hint = 'The server AI key has not been set up yet. Go to your <strong>Vercel dashboard → fightos-backend → Settings → Environment Variables</strong> and add <code>ANTHROPIC_API_KEY</code>.';
+    } else if(errMsg.includes('authentication') || errMsg.includes('Invalid') || errMsg.includes('401')){
+      hint = 'API key authentication failed. Check that your Anthropic key is correct in Vercel environment variables.';
+    } else if(errMsg.includes('fetch') || errMsg.includes('network') || errMsg.includes('CORS')){
+      hint = 'Cannot reach the AI server. Check that <code>DEFAULT_BACKEND_URL</code> in the app code points to your deployed Vercel backend.';
+    } else if(errMsg === 'no_key'){
+      hint = 'No backend URL configured. Set <code>DEFAULT_BACKEND_URL</code> in the app code.';
+    }
+    content.innerHTML=`<div class="warn"><strong>Could not load brief:</strong> ${errMsg}${hint?'<br><br>'+hint:''}</div>`;
   }
   btn.disabled=false; btn.textContent='GET BRIEF';
 }
@@ -3088,51 +3099,126 @@ function renderLinkedProviders(){
   const el = document.getElementById('acct-linked-providers');
   if(!el || !ACCT.user) return;
 
-  // Get all linked identity providers
   const identities = ACCT.user.identities || [];
-  const linked = new Set(identities.map(id => id.provider));
-
-  // Also check the provider stored on the session (how they signed in this session)
   const sessionProvider = ACCT.user.provider || ACCT.user.app_metadata?.provider || '';
-  if(sessionProvider && sessionProvider !== 'email') linked.add(sessionProvider);
 
-  const isEmailUser = linked.has('email') || (!linked.size);
+  // Load primary provider preference from profile
+  const profile = loadProfile() || {};
+  const storedPrimary = profile.primaryProvider || sessionProvider || (identities[0]?.provider) || 'email';
 
-  const rows = Object.entries(PROVIDER_META).map(([key, meta]) => {
-    const isLinked = linked.has(key);
-    // Determine button state
-    let badge;
-    if(isLinked){
-      // Check if this is their PRIMARY sign-in method (how they originally registered)
-      const isPrimary = sessionProvider === key ||
-        identities.some(id => id.provider === key && id.identity_data?.email === ACCT.user.email);
-      badge = isPrimary
-        ? `<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(0,230,118,.1);color:var(--grn)">✓ Primary</span>`
-        : `<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(0,230,118,.1);color:var(--grn)">✓ Connected</span>`;
-    } else {
-      badge = `<button onclick="linkOAuthProvider('${key}')" style="font-size:11px;padding:5px 12px;border-radius:20px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='${meta.color}';this.style.color='${meta.color}'" onmouseout="this.style.borderColor='';this.style.color=''">Link →</button>`;
+  // Build a flat list of all linked identities with display info
+  const linkedList = [];
+
+  // Add email identity if present
+  const emailIdentity = identities.find(id => id.provider === 'email');
+  if(emailIdentity || (!identities.length)){
+    linkedList.push({
+      provider: 'email',
+      email: emailIdentity?.identity_data?.email || ACCT.user.email || '—',
+      icon: '✉️',
+      color: '#4C9FFF',
+      name: 'Email',
+      createdAt: emailIdentity?.created_at || '',
+    });
+  }
+
+  // Add OAuth identities
+  for(const [key, meta] of Object.entries(PROVIDER_META)){
+    const identity = identities.find(id => id.provider === key);
+    if(identity){
+      linkedList.push({
+        provider: key,
+        email: identity.identity_data?.email || identity.identity_data?.name || ACCT.user.email || '—',
+        icon: meta.icon,
+        color: meta.color,
+        name: meta.name,
+        createdAt: identity.created_at || '',
+      });
     }
+  }
 
-    return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surf2);border:1px solid var(--bdr);border-radius:9px">
-      <div style="width:28px;height:28px;border-radius:6px;background:${isLinked?meta.color+'18':'var(--surf)'};border:1px solid ${isLinked?meta.color+'40':'var(--bdr2)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">${meta.icon}</div>
-      <span style="flex:1;font-size:13px;font-weight:500">${meta.name}</span>
-      ${badge}
+  // Sort: primary first, then by created_at
+  linkedList.sort((a, b) => {
+    if(a.provider === storedPrimary) return -1;
+    if(b.provider === storedPrimary) return 1;
+    return (a.createdAt > b.createdAt ? 1 : -1);
+  });
+
+  // Rank labels
+  const rankLabels = ['Primary', 'Secondary', 'Additional'];
+
+  const linkedRows = linkedList.map((item, i) => {
+    const isPrimary = item.provider === storedPrimary;
+    const rankLabel = rankLabels[i] || 'Additional';
+    const rankColor = i === 0 ? 'var(--grn)' : i === 1 ? 'var(--blu)' : 'var(--mut2)';
+    const rankBg    = i === 0 ? 'rgba(0,230,118,.1)' : i === 1 ? 'rgba(76,159,255,.1)' : 'var(--surf2)';
+
+    const setPrimaryBtn = !isPrimary
+      ? `<button onclick="setPrimaryProvider('${item.provider}')" title="Set as primary"
+           style="font-size:10px;padding:3px 8px;border-radius:20px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);cursor:pointer;margin-right:4px;transition:all .15s"
+           onmouseover="this.style.borderColor='var(--acc)';this.style.color='var(--acc)'"
+           onmouseout="this.style.borderColor='';this.style.color=''">★ Set primary</button>`
+      : '';
+
+    // icon: string emoji or SVG
+    const iconEl = typeof item.icon === 'string' && item.icon.length <= 2
+      ? `<span style="font-size:16px">${item.icon}</span>`
+      : item.icon;
+
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surf2);border:1px solid ${isPrimary?'rgba(0,230,118,.25)':'var(--bdr)'};border-radius:9px">
+      <div style="width:30px;height:30px;border-radius:8px;background:${item.color}18;border:1px solid ${item.color}40;display:flex;align-items:center;justify-content:center;flex-shrink:0">${iconEl}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.name}</div>
+        <div style="font-size:11px;color:var(--mut2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.email}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+        ${setPrimaryBtn}
+        <span style="font-size:10px;padding:2px 8px;border-radius:20px;background:${rankBg};color:${rankColor};font-weight:600;white-space:nowrap">${isPrimary?'★ ':''} ${rankLabel}</span>
+      </div>
     </div>`;
   }).join('');
 
-  // Email row
-  const emailLinked = linked.has('email');
-  const emailBadge = emailLinked || isEmailUser
-    ? `<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(76,159,255,.1);color:var(--blu)">${isEmailUser && !linked.size ? '✓ Primary' : emailLinked ? '✓ Primary' : 'Linked'}</span>`
-    : `<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:var(--surf);border:1px solid var(--bdr2);color:var(--mut2)">OAuth user</span>`;
+  // Unlinked providers — show Link → buttons for providers not yet connected
+  const linkedProviders = new Set(linkedList.map(l => l.provider));
+  const unlinkedRows = Object.entries(PROVIDER_META)
+    .filter(([key]) => !linkedProviders.has(key))
+    .map(([key, meta]) => {
+      const iconEl = meta.icon;
+      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surf2);border:1px solid var(--bdr);border-radius:9px;opacity:.7">
+        <div style="width:30px;height:30px;border-radius:8px;background:var(--surf);border:1px solid var(--bdr2);display:flex;align-items:center;justify-content:center;flex-shrink:0">${iconEl}</div>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:600">${meta.name}</div>
+          <div style="font-size:11px;color:var(--mut2)">Not linked</div>
+        </div>
+        <button onclick="linkOAuthProvider('${key}')"
+          style="font-size:11px;padding:5px 12px;border-radius:20px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);cursor:pointer;transition:all .15s;white-space:nowrap"
+          onmouseover="this.style.borderColor='${meta.color}';this.style.color='${meta.color}'"
+          onmouseout="this.style.borderColor='';this.style.color=''">Link →</button>
+      </div>`;
+    }).join('');
 
-  const emailRow = `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surf2);border:1px solid var(--bdr);border-radius:9px">
-    <div style="width:28px;height:28px;border-radius:6px;background:rgba(76,159,255,.1);border:1px solid rgba(76,159,255,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px">✉️</div>
-    <span style="flex:1;font-size:13px;font-weight:500">${ACCT.user.email||'—'}</span>
-    ${emailBadge}
-  </div>`;
+  el.innerHTML = `
+    <div style="font-size:11px;color:var(--mut2);margin-bottom:6px;line-height:1.5">
+      All linked accounts share the same FightOS data. The <strong style="color:var(--grn)">★ Primary</strong> account is shown as your main identity.
+    </div>
+    ${linkedRows}
+    ${unlinkedRows}`;
+}
 
-  el.innerHTML = emailRow + rows;
+function setPrimaryProvider(provider){
+  const profile = loadProfile() || {};
+  profile.primaryProvider = provider;
+  saveProfile(profile);
+  debouncedSync();
+  renderLinkedProviders();
+  // Show brief confirmation
+  const el = document.getElementById('acct-linked-providers');
+  const name = PROVIDER_META[provider]?.name || provider;
+  const notice = document.createElement('div');
+  notice.style.cssText='font-size:12px;color:var(--grn);padding:6px 0;text-align:center';
+  notice.textContent=`✅ ${name} set as primary account`;
+  el.insertAdjacentElement('afterend', notice);
+  setTimeout(()=>notice.remove(), 2500);
 }
 
 async function linkOAuthProvider(provider){
@@ -3142,24 +3228,28 @@ async function linkOAuthProvider(provider){
 
   try{
     const token = await getValidToken();
-    // POST to get the redirect URL, then navigate to it
-    const res = await fetch(`${backendUrl}/api/account/oauth-link?provider=${provider}`, {
-      method: 'GET',
-      headers: { 'Authorization': `Bearer ${token}` },
-    });
-    const data = await res.json().catch(()=>({}));
+    if(!token){ alert('Session expired — please sign out and sign in again.'); return; }
+
+    // Send token via both Authorization header AND query param for maximum compatibility
+    const res = await fetch(
+      `${backendUrl}/api/account/oauth-link?provider=${provider}&token=${encodeURIComponent(token)}`,
+      { method: 'GET', headers: { 'Authorization': `Bearer ${token}` } }
+    );
+
+    let data;
+    try{ data = await res.json(); } catch(e){ data = {}; }
+
     if(!res.ok){
-      alert('Could not start linking: ' + (data.error || `HTTP ${res.status}`));
+      alert('Could not start linking: ' + (data.error || `Server error ${res.status}`));
       return;
     }
-    // If backend returns a redirect URL in JSON, navigate to it
     if(data.url){
       window.location.href = data.url;
+    } else {
+      alert('No OAuth URL returned from server.');
     }
   }catch(e){
-    // If the fetch itself failed (e.g. CORS redirect), try direct navigation with token in header
-    // via a form POST trick
-    alert('Could not start linking: '+e.message);
+    alert('Could not start linking: ' + e.message);
   }
 }
 
