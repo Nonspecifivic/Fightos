@@ -3088,31 +3088,48 @@ function renderLinkedProviders(){
   const el = document.getElementById('acct-linked-providers');
   if(!el || !ACCT.user) return;
 
-  // Detect which providers are already linked from the user's identities
+  // Get all linked identity providers
   const identities = ACCT.user.identities || [];
   const linked = new Set(identities.map(id => id.provider));
 
-  // Determine the signup method — if they signed up with email, show linking buttons
-  const isEmailUser = linked.has('email') || !linked.size;
-  const backendUrl  = ACCT.backendUrl;
+  // Also check the provider stored on the session (how they signed in this session)
+  const sessionProvider = ACCT.user.provider || ACCT.user.app_metadata?.provider || '';
+  if(sessionProvider && sessionProvider !== 'email') linked.add(sessionProvider);
+
+  const isEmailUser = linked.has('email') || (!linked.size);
 
   const rows = Object.entries(PROVIDER_META).map(([key, meta]) => {
     const isLinked = linked.has(key);
+    // Determine button state
+    let badge;
+    if(isLinked){
+      // Check if this is their PRIMARY sign-in method (how they originally registered)
+      const isPrimary = sessionProvider === key ||
+        identities.some(id => id.provider === key && id.identity_data?.email === ACCT.user.email);
+      badge = isPrimary
+        ? `<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(0,230,118,.1);color:var(--grn)">✓ Primary</span>`
+        : `<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(0,230,118,.1);color:var(--grn)">✓ Connected</span>`;
+    } else {
+      badge = `<button onclick="linkOAuthProvider('${key}')" style="font-size:11px;padding:5px 12px;border-radius:20px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='${meta.color}';this.style.color='${meta.color}'" onmouseout="this.style.borderColor='';this.style.color=''">Link →</button>`;
+    }
+
     return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surf2);border:1px solid var(--bdr);border-radius:9px">
       <div style="width:28px;height:28px;border-radius:6px;background:${isLinked?meta.color+'18':'var(--surf)'};border:1px solid ${isLinked?meta.color+'40':'var(--bdr2)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">${meta.icon}</div>
       <span style="flex:1;font-size:13px;font-weight:500">${meta.name}</span>
-      ${isLinked
-        ? `<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(0,230,118,.1);color:var(--grn)">✓ Connected</span>`
-        : `<button onclick="linkOAuthProvider('${key}')" style="font-size:11px;padding:5px 12px;border-radius:20px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='${meta.color}';this.style.color='${meta.color}'" onmouseout="this.style.borderColor='';this.style.color=''">Link →</button>`
-      }
+      ${badge}
     </div>`;
   }).join('');
 
-  // Show email row at top
+  // Email row
+  const emailLinked = linked.has('email');
+  const emailBadge = emailLinked || isEmailUser
+    ? `<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(76,159,255,.1);color:var(--blu)">${isEmailUser && !linked.size ? '✓ Primary' : emailLinked ? '✓ Primary' : 'Linked'}</span>`
+    : `<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:var(--surf);border:1px solid var(--bdr2);color:var(--mut2)">OAuth user</span>`;
+
   const emailRow = `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surf2);border:1px solid var(--bdr);border-radius:9px">
     <div style="width:28px;height:28px;border-radius:6px;background:rgba(76,159,255,.1);border:1px solid rgba(76,159,255,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px">✉️</div>
     <span style="flex:1;font-size:13px;font-weight:500">${ACCT.user.email||'—'}</span>
-    <span style="font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(76,159,255,.1);color:var(--blu)">${linked.has('email')?'✓ Primary':'OAuth user'}</span>
+    ${emailBadge}
   </div>`;
 
   el.innerHTML = emailRow + rows;
