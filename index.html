@@ -2859,17 +2859,34 @@ Be specific with exercises, sets, reps and weights/RPE. Reference the athlete's 
     const fighterType = document.getElementById('str-fighter-type')?.value||'Fighter';
     const goal        = document.getElementById('str-goal')?.value||'Strength';
     const weeks       = document.getElementById('str-weeks')?.value||'4 weeks';
-    const days        = document.getElementById('str-days')?.value||'3';
+    const daysVal     = document.getElementById('str-days')?.value||'3';
+    const daysOpts    = Array.from({length:parseInt(daysVal)||3},(_,i)=>`<option value="Day ${i+1}">Day ${i+1}</option>`).join('');
+    const goalClean   = goal.replace(/['"]/g,'').slice(0,40);
     content.innerHTML = `
       <div style="background:linear-gradient(135deg,rgba(232,255,0,.08),rgba(232,255,0,.03));border:1px solid rgba(232,255,0,.2);border-radius:14px;padding:16px 18px;margin-bottom:16px">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--acc);margin-bottom:4px">YOUR STRENGTH PROGRAM</div>
         <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">
           <span style="padding:4px 10px;border-radius:20px;background:var(--surf);border:1px solid var(--bdr2);font-size:12px">🥋 ${fighterType}</span>
           <span style="padding:4px 10px;border-radius:20px;background:var(--surf);border:1px solid var(--bdr2);font-size:12px">🎯 ${goal}</span>
-          <span style="padding:4px 10px;border-radius:20px;background:var(--surf);border:1px solid var(--bdr2);font-size:12px">📅 ${days} days/wk · ${weeks}</span>
+          <span style="padding:4px 10px;border-radius:20px;background:var(--surf);border:1px solid var(--bdr2);font-size:12px">📅 ${daysVal} days/wk · ${weeks}</span>
         </div>
       </div>
-      ${renderCoachOutput(text)}`;
+      ${renderCoachOutput(text)}
+      <div style="background:var(--surf2);border:1px solid var(--bdr);border-radius:12px;padding:14px;margin-top:8px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:10px">Completed a session from this program?</div>
+        <div class="f2 fg" style="margin-bottom:8px">
+          <div><label class="lbl">Which day completed?</label>
+            <select id="str-log-day-sel">${daysOpts}</select>
+          </div>
+          <div><label class="lbl">Duration (mins)</label>
+            <input type="number" id="str-log-dur-ai" value="60" min="10" max="180">
+          </div>
+        </div>
+        <div class="fg"><label class="lbl">Notes / exercises completed (optional)</label>
+          <textarea id="str-log-notes-ai" style="min-height:44px" placeholder="e.g. Hit all sets, increased deadlift by 5kg..."></textarea>
+        </div>
+        <button class="btn btn-acc btn-full" onclick="logAIStrength('${goalClean}')" style="margin-top:4px">✅ Log this session</button>
+      </div>`;
     content.scrollIntoView({behavior:'smooth', block:'start'});
   }catch(e){
     showAIError(content, dots, e.message);
@@ -2936,6 +2953,7 @@ Be precise with timing and reps. Include coaching cues a self-coached athlete ca
     dots.style.display='none'; content.style.display='block';
     const focusArea = document.getElementById('mob-focus-area')?.value||'Full body';
     const duration  = document.getElementById('mob-duration')?.value||'15 minutes';
+    const durationMins = parseInt(duration)||15;
     const mobType   = document.getElementById('mob-type')?.value||'Active mobility';
     content.innerHTML = `
       <div style="background:linear-gradient(135deg,rgba(191,95,255,.08),rgba(191,95,255,.03));border:1px solid rgba(191,95,255,.2);border-radius:14px;padding:16px 18px;margin-bottom:16px">
@@ -2946,24 +2964,65 @@ Be precise with timing and reps. Include coaching cues a self-coached athlete ca
           <span style="padding:4px 10px;border-radius:20px;background:var(--surf);border:1px solid var(--bdr2);font-size:12px">🧘 ${mobType}</span>
         </div>
       </div>
-      ${renderCoachOutput(text)}`;
+      ${renderCoachOutput(text)}
+      <div style="background:var(--surf2);border:1px solid var(--bdr);border-radius:12px;padding:14px;margin-top:8px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:10px">Did you complete this routine?</div>
+        <div class="f2 fg" style="margin-bottom:8px">
+          <div><label class="lbl">Actual duration (mins)</label><input type="number" id="mob-log-dur" value="${durationMins}" min="1" max="120"></div>
+          <div><label class="lbl">How did it feel?</label><select id="mob-feel"><option value="">Select...</option><option>Loose</option><option>Okay</option><option>Tight</option></select></div>
+        </div>
+        <div class="fg"><label class="lbl">Notes (optional)</label><textarea id="mob-log-notes" style="min-height:44px" placeholder="Areas that felt tight, improvements noticed..."></textarea></div>
+        <button class="btn btn-acc btn-full" onclick="logAIMobility('${focusArea.replace(/'/g,'').slice(0,40)}',${durationMins})" style="margin-top:4px">✅ Log this session</button>
+      </div>`;
     content.scrollIntoView({behavior:'smooth', block:'start'});
   }catch(e){
     showAIError(content, dots, e.message);
   }
 }
-function saveMobilityLog(){
-  const routine=document.getElementById('mob-routine')?.value||'';
-  const dur    =document.getElementById('mob-dur')?.value||'';
-  const feel   =document.getElementById('mob-feel')?.value||'';
-  const notes  =document.getElementById('mob-notes')?.value||'';
-  const entry={id:Date.now(),date:todayStr(),routine,dur:parseInt(dur)||15,feel,notes};
-  const log=JSON.parse(localStorage.getItem('fos_mobility_log')||'[]');
+// ===== LOG AI PROGRAM SESSION HELPERS =====
+function logAIStrength(goalLabel){
+  const day   = document.getElementById('str-log-day-sel')?.value || 'Strength session';
+  const dur   = parseInt(document.getElementById('str-log-dur-ai')?.value) || 60;
+  const notes = document.getElementById('str-log-notes-ai')?.value || '';
+  const focus = goalLabel ? goalLabel+' — '+day : day;
+  const entry = {id:Date.now(), date:todayStr(), focus, dur, notes, week:day, source:'ai-program'};
+  const log   = JSON.parse(localStorage.getItem('fos_strength_log')||'[]');
   log.unshift(entry);
-  try{localStorage.setItem('fos_mobility_log',JSON.stringify(log.slice(0,50)));debouncedSync();}catch(e){}
-  ['mob-dur','mob-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  const btn=document.querySelector('#tab-mobility .btn-acc');
-  if(btn){const o=btn.textContent;btn.textContent='✅ LOGGED';setTimeout(()=>btn.textContent=o,1500);}
+  try{ localStorage.setItem('fos_strength_log', JSON.stringify(log.slice(0,50))); debouncedSync(); }catch(e){}
+  const btn = document.querySelector('#strength-program-content .btn-acc');
+  if(btn){ btn.textContent='✅ Session logged!'; btn.disabled=true; }
+  renderStrengthLog();
+  setTimeout(()=>{ document.getElementById('strength-log-list')?.scrollIntoView({behavior:'smooth',block:'nearest'}); }, 400);
+}
+
+function logAIMobility(routineLabel, defaultDur){
+  const dur   = parseInt(document.getElementById('mob-log-dur')?.value) || defaultDur || 15;
+  const feel  = document.getElementById('mob-feel')?.value || '';
+  const notes = document.getElementById('mob-log-notes')?.value || '';
+  const entry = {id:Date.now(), date:todayStr(), routine:routineLabel||'Mobility session', dur, feel, notes, source:'ai-routine'};
+  const log   = JSON.parse(localStorage.getItem('fos_mobility_log')||'[]');
+  log.unshift(entry);
+  try{ localStorage.setItem('fos_mobility_log', JSON.stringify(log.slice(0,50))); debouncedSync(); }catch(e){}
+  const btn = document.querySelector('#mobility-content .btn-acc');
+  if(btn){ btn.textContent='✅ Session logged!'; btn.disabled=true; }
+  renderMobilityLog();
+  setTimeout(()=>{ document.getElementById('mobility-log-list')?.scrollIntoView({behavior:'smooth',block:'nearest'}); }, 400);
+}
+
+function saveMobilityLog(){
+  const routine = document.getElementById('mob-log-name')?.value || document.getElementById('mob-routine')?.value || '';
+  const durRaw  = document.getElementById('mob-log-dur')?.value;
+  const dur     = durRaw ? parseInt(durRaw) : 15;
+  const notes   = document.getElementById('mob-log-notes')?.value || document.getElementById('mob-notes')?.value || '';
+  const feel    = document.getElementById('mob-feel')?.value || '';
+  const entry   = {id:Date.now(), date:todayStr(), routine:routine||'Mobility session', dur, feel, notes};
+  const log     = JSON.parse(localStorage.getItem('fos_mobility_log')||'[]');
+  log.unshift(entry);
+  try{ localStorage.setItem('fos_mobility_log', JSON.stringify(log.slice(0,50))); debouncedSync(); }catch(e){}
+  // Clear log form fields
+  ['mob-log-name','mob-log-dur','mob-log-notes','mob-notes'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  const btn = document.querySelector('#tab-mobility .btn-acc');
+  if(btn){ const o=btn.textContent; btn.textContent='✅ LOGGED'; setTimeout(()=>btn.textContent=o, 1500); }
   renderMobilityLog();
 }
 
