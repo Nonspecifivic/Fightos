@@ -3612,7 +3612,10 @@ function saveWaterEntries(entries){
       ml: total,
       entries
     }));
-    debouncedSync();
+    // Push water immediately — don't debounce, so cloud is updated before
+    // any visibilitychange pull can overwrite local data
+    if(isSignedIn()) syncToCloud().catch(()=>{});
+    else debouncedSync();
   }catch(e){}
 }
 
@@ -6954,8 +6957,23 @@ async function loadFromCloud(){
           }
         } else {
           // For non-arrays (profile, water_today, cycle), prefer cloud
-          localStorage.setItem(cfg.key, newVal);
-          changed=true;
+          // EXCEPTION: water_today — prefer whichever has more ml (local may be fresher)
+          if(type === 'water_today' && d[type]){
+            const localRaw = localStorage.getItem(cfg.key);
+            const localWater = localRaw ? (() => { try{ return JSON.parse(localRaw); }catch(e){ return null; } })() : null;
+            const cloudWater = d[type];
+            // Only overwrite local if cloud has more water logged today
+            // (avoids cloud overwriting a fresh local entry that hasn't synced yet)
+            const localML = (localWater?.date === todayStr()) ? (localWater?.ml || 0) : 0;
+            const cloudML = (cloudWater?.date === todayStr()) ? (cloudWater?.ml || 0) : 0;
+            if(cloudML > localML){
+              localStorage.setItem(cfg.key, JSON.stringify(d[type]));
+              changed = true;
+            }
+          } else {
+            localStorage.setItem(cfg.key, newVal);
+            changed = true;
+          }
         }
       }catch(e){}
     }
@@ -6997,12 +7015,20 @@ function debouncedSync(){
   _syncTimer=setTimeout(()=>{ if(isSignedIn()) syncToCloud(); }, 2000);
 }
 
-// Auto-pull from cloud when user returns to the tab/window (catches mobile→desktop flow)
+let _lastCloudPull = 0;
+
+// Auto-pull from cloud when user returns to the tab — throttled to avoid overwriting
+// data entered moments ago (e.g. when keyboard appears/disappears on mobile)
 document.addEventListener('visibilitychange', ()=>{
   if(document.visibilityState==='visible' && isSignedIn()){
-    // Only pull if last sync was more than 30 seconds ago
-    const lastSync=ACCT.lastSynced;
-    loadFromCloud().catch(()=>{});
+    const now = Date.now();
+    // Only pull if it has been more than 60 seconds since last pull
+    // This prevents the mobile keyboard show/hide cycle from triggering a cloud
+    // overwrite immediately after the user enters data
+    if(now - _lastCloudPull > 60000){
+      _lastCloudPull = now;
+      loadFromCloud().catch(()=>{});
+    }
   }
 });
 
