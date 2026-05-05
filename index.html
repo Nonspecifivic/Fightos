@@ -2505,22 +2505,36 @@ const TAB_NAMES = {
   techniques:'Techniques', analysis:'Match Analysis', profile:'Profile'
 };
 
+// ===== IN-APP NAVIGATION HISTORY =====
+// Intercepts back swipe / hardware back button so it navigates
+// between FightOS tabs instead of leaving the page.
+let _handlingPopState = false;
+
 function showTab(id){
   // Activate tab
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   const tab = document.getElementById('tab-'+id);
   if(tab) tab.classList.add('active');
 
-  // Sync sidebar active state
+  // Sync sidebar
   document.querySelectorAll('.sidebar-btn[data-tab]').forEach(b=>b.classList.remove('active'));
   const sbBtn = document.querySelector(`.sidebar-btn[data-tab="${id}"]`);
   if(sbBtn) sbBtn.classList.add('active');
 
-  // Update topbar title
+  // Topbar title
   const title = document.getElementById('topbar-title');
   if(title) title.textContent = TAB_NAMES[id] || id;
 
-  // Close sidebar on mobile after navigation
+  // Push browser history entry so back swipe stays in-app
+  // Skip if we're already handling a popstate (back swipe) to avoid loops
+  if(!_handlingPopState){
+    const cur = history.state;
+    if(!cur || cur.fosTab !== id){
+      history.pushState({ fosTab: id }, '', window.location.pathname + window.location.hash);
+    }
+  }
+
+  // Close sidebar on mobile
   if(window.innerWidth <= 680) closeSidebar();
 
   // Scroll to top
@@ -2540,6 +2554,31 @@ function showTab(id){
   if(id==='strength') renderStrengthLog();
   if(id==='mobility') renderMobilityLog();
 }
+
+// Handle browser back gesture / hardware back button
+window.addEventListener('popstate', function(e){
+  if(e.state && e.state.fosTab){
+    // Navigate to the tab stored in history
+    _handlingPopState = true;
+    showTab(e.state.fosTab);
+    _handlingPopState = false;
+  } else {
+    // No FightOS state — re-anchor to dashboard so next back still stays in-app
+    _handlingPopState = true;
+    showTab('dashboard');
+    history.replaceState({ fosTab: 'dashboard' }, '', window.location.pathname);
+    _handlingPopState = false;
+  }
+});
+
+// Seed the initial history entry on page load
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(function(){
+    if(!history.state || !history.state.fosTab){
+      history.replaceState({ fosTab: 'dashboard' }, '', window.location.pathname + window.location.hash);
+    }
+  }, 200);
+});
 
 function resetProfile(){
   if(!confirm('Reset your profile and start onboarding again?')) return;
