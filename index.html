@@ -1433,6 +1433,66 @@ html,body{
   <div class="card" id="training-log-card">
     <div class="card-header"><h3>Recent sessions</h3></div>
     <div id="training-log-list">
+
+<!-- ==================== SICK / INJURED DAY LOG ==================== -->
+<div class="card" style="border-left:3px solid var(--acc2)">
+  <div class="card-header">
+    <h3>🤒 Log sick or injured day</h3>
+    <span style="font-size:11px;color:var(--mut2)">Track missed training for AI context</span>
+  </div>
+  <div class="card-body">
+    <div class="f2 fg">
+      <div><label class="lbl">Date</label><input type="date" id="sid-date"></div>
+      <div><label class="lbl">Type</label>
+        <select id="sid-type">
+          <option value="sick">🤒 Illness / sick</option>
+          <option value="injured">🤕 Injury — couldn't train</option>
+          <option value="injured-light">⚠️ Injury — modified training only</option>
+          <option value="rest">😴 Enforced rest (doctor's orders)</option>
+          <option value="mental">🧠 Mental health day</option>
+        </select>
+      </div>
+    </div>
+    <div id="sid-injury-fields">
+      <div class="fg"><label class="lbl">Body part / area affected</label>
+        <div class="ob-chips" id="sid-bodypart-chips" style="gap:6px;flex-wrap:wrap">
+          <button class="ob-chip" onclick="toggleSidChip(this)">Head / concussion</button>
+          <button class="ob-chip" onclick="toggleSidChip(this)">Neck</button>
+          <button class="ob-chip" onclick="toggleSidChip(this)">Shoulder</button>
+          <button class="ob-chip" onclick="toggleSidChip(this)">Elbow</button>
+          <button class="ob-chip" onclick="toggleSidChip(this)">Wrist / hand</button>
+          <button class="ob-chip" onclick="toggleSidChip(this)">Ribs</button>
+          <button class="ob-chip" onclick="toggleSidChip(this)">Lower back</button>
+          <button class="ob-chip" onclick="toggleSidChip(this)">Hip</button>
+          <button class="ob-chip" onclick="toggleSidChip(this)">Knee</button>
+          <button class="ob-chip" onclick="toggleSidChip(this)">Ankle / foot</button>
+          <button class="ob-chip" onclick="toggleSidChip(this)">Full body / flu</button>
+          <button class="ob-chip" onclick="toggleSidChip(this)">Respiratory</button>
+        </div>
+      </div>
+    </div>
+    <div class="f2 fg">
+      <div><label class="lbl">Severity</label>
+        <select id="sid-severity">
+          <option value="mild">Mild — 1–3 days expected</option>
+          <option value="moderate">Moderate — 1–2 weeks</option>
+          <option value="severe">Severe — 2+ weeks</option>
+          <option value="unknown">Unknown / assessing</option>
+        </select>
+      </div>
+      <div><label class="lbl">Expected return date (optional)</label>
+        <input type="date" id="sid-return-date">
+      </div>
+    </div>
+    <div class="fg"><label class="lbl">Notes (symptoms, treatment, rehab plan…)</label>
+      <textarea id="sid-notes" placeholder="e.g. Twisted knee during drilling, icing and resting. Cleared to do upper body only."></textarea>
+    </div>
+    <button class="btn btn-full" onclick="saveSickInjuredDay()"
+      style="background:rgba(255,59,48,.1);color:var(--acc2);border:1px solid rgba(255,59,48,.25);font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;padding:12px">
+      LOG MISSED DAY
+    </button>
+  </div>
+</div>
       <div class="row" style="color:var(--mut2);font-size:13px">No sessions logged yet — use the form above to log your first session.</div>
     </div>
   </div>
@@ -3370,6 +3430,47 @@ function checkLinkResult(){
     }, 500);
   }
 }
+// ===== SICK / INJURED DAY LOG =====
+function toggleSidChip(el){ el.classList.toggle('sel'); }
+
+function saveSickInjuredDay(){
+  const date       = document.getElementById('sid-date')?.value || todayStr();
+  const type       = document.getElementById('sid-type')?.value || 'sick';
+  const severity   = document.getElementById('sid-severity')?.value || 'mild';
+  const returnDate = document.getElementById('sid-return-date')?.value || '';
+  const notes      = document.getElementById('sid-notes')?.value || '';
+  const bodyParts  = [...document.querySelectorAll('#sid-bodypart-chips .ob-chip.sel')]
+    .map(b=>b.textContent.trim()).join(', ');
+
+  const typeLabels = {sick:'🤒 Illness','injured':'🤕 Injury — no training','injured-light':'⚠️ Injury — modified',rest:'😴 Enforced rest',mental:'🧠 Mental health day'};
+  const entry = {id:Date.now(), date, type:typeLabels[type]||type, typeKey:type, bodyParts, severity, returnDate, notes, isMissedDay:true};
+
+  const log = getTrainingLog();
+  log.unshift(entry);
+  saveTrainingLog(log);
+
+  // Clear form
+  ['sid-notes','sid-return-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.querySelectorAll('#sid-bodypart-chips .ob-chip.sel').forEach(c=>c.classList.remove('sel'));
+  const dateEl=document.getElementById('sid-date'); if(dateEl) dateEl.value='';
+
+  const btns=document.querySelectorAll('#tab-training .btn-full');
+  const btn=btns[btns.length-1];
+  if(btn){const o=btn.textContent;btn.textContent='✅ LOGGED';setTimeout(()=>btn.textContent=o,1500);}
+
+  renderTrainingLog();
+
+  // Auto-add a recovery event to the calendar
+  try{
+    const calEvts=JSON.parse(localStorage.getItem('fos_cal_events')||'[]');
+    const calLabel=(type==='sick'||type==='rest'||type==='mental')?'🤒 Sick/rest day':'🤕 Injury — no training';
+    calEvts.push({id:Date.now()+1,date,name:calLabel,type:'recovery',notes:bodyParts||notes.slice(0,40)});
+    localStorage.setItem('fos_cal_events',JSON.stringify(calEvts));
+  }catch(e){}
+  debouncedSync();
+}
+
+// ===== RPE & MOOD SELECTORS =====
 function selRPE(el,val){
   document.querySelectorAll('.rpe-btn').forEach(b=>b.classList.remove('sel'));
   el.classList.add('sel'); selectedRPE=val;
@@ -3455,25 +3556,44 @@ function saveTraining(){
 }
 
 function renderTrainingLog(){
-  const log=getTrainingLog();
-  const list=document.getElementById('training-log-list');
+  const log = getTrainingLog();
+  const list = document.getElementById('training-log-list');
+  if(!list) return;
   if(!log.length){
     list.innerHTML='<div class="row" style="color:var(--mut2);font-size:13px">No sessions logged yet — log your first one above.</div>';
     return;
   }
-  list.innerHTML=log.slice(0,15).map(s=>{
-    const pillClass=s.rpe>=8?'pill-red':s.rpe>=6?'pill-acc':'pill-blu';
-    const cfBadge=s.cfWod?`<span style="font-size:10px;color:var(--ora);margin-left:4px">${s.cfWod}${s.cfScore?' · '+s.cfScore:''} ${s.cfRx||''}</span>`:'';
+  list.innerHTML = log.slice(0,20).map(s => {
+    // ── Sick / injured day ──
+    if(s.isMissedDay){
+      const sevColor = s.severity==='severe'?'var(--acc2)':s.severity==='moderate'?'var(--ora)':'var(--mut2)';
+      const sevLabel = {mild:'Mild',moderate:'Moderate',severe:'Severe',unknown:'Assessing'}[s.severity]||s.severity||'';
+      return `<div class="row" style="align-items:flex-start;border-left:3px solid var(--acc2);padding-left:10px;background:rgba(255,59,48,.03)" id="tr-row-${s.id}">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:13px;color:var(--acc2)">${s.type}</div>
+          <div style="font-size:11px;color:var(--mut2)">${fmtDate(s.date)}${s.bodyParts?' · '+s.bodyParts:''}</div>
+          ${s.severity?`<div style="font-size:11px;margin-top:2px"><span style="color:${sevColor}">${sevLabel}</span>${s.returnDate?' · Return: '+fmtDate(s.returnDate):''}</div>`:''}
+          ${s.notes?`<div style="font-size:11px;color:var(--mut2);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.notes}</div>`:''}
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px">
+          <button onclick="editActivityEntry('training',${s.id})" style="padding:3px 7px;border-radius:5px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-size:11px;cursor:pointer">✏️</button>
+          <button onclick="deleteTrainingSession(${s.id})" style="padding:3px 7px;border-radius:5px;border:1px solid rgba(255,59,48,.2);background:transparent;color:var(--acc2);font-size:11px;cursor:pointer">✕</button>
+        </div>
+      </div>`;
+    }
+    // ── Normal training session ──
+    const pillClass = s.rpe>=8?'pill-red':s.rpe>=6?'pill-acc':'pill-blu';
+    const cfBadge   = s.cfWod?`<span style="font-size:10px;color:var(--ora);margin-left:4px">${s.cfWod}${s.cfScore?' · '+s.cfScore:''} ${s.cfRx||''}</span>`:'';
     return `<div class="row" style="align-items:flex-start" id="tr-row-${s.id}">
       <div style="flex:1;min-width:0">
         <div style="font-weight:500;font-size:13px">${s.type} · ${s.dur} min ${cfBadge}</div>
-        <div style="font-size:11px;color:var(--mut2)">${fmtDate(s.date)}${s.coach?' · '+s.coach:''} · ${s.mood}</div>
+        <div style="font-size:11px;color:var(--mut2)">${fmtDate(s.date)}${s.coach?' · '+s.coach:''} ${s.mood?'· '+s.mood:''}</div>
         ${s.focus?`<div style="font-size:11px;color:var(--mut2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.focus}</div>`:''}
       </div>
       <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;margin-left:8px">
-        <span class="pill ${pillClass}">RPE ${s.rpe}</span>
-        <button onclick="editTrainingSession(${s.id})" style="padding:3px 7px;border-radius:5px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-size:11px;cursor:pointer" title="Edit">✏️</button>
-        <button onclick="deleteTrainingSession(${s.id})" style="padding:3px 7px;border-radius:5px;border:1px solid rgba(255,59,48,.2);background:transparent;color:var(--acc2);font-size:11px;cursor:pointer" title="Delete">✕</button>
+        ${s.rpe?`<span class="pill ${pillClass}">RPE ${s.rpe}</span>`:''}
+        <button onclick="editTrainingSession(${s.id})" style="padding:3px 7px;border-radius:5px;border:1px solid var(--bdr2);background:transparent;color:var(--mut2);font-size:11px;cursor:pointer">✏️</button>
+        <button onclick="deleteTrainingSession(${s.id})" style="padding:3px 7px;border-radius:5px;border:1px solid rgba(255,59,48,.2);background:transparent;color:var(--acc2);font-size:11px;cursor:pointer">✕</button>
       </div>
     </div>`;
   }).join('');
@@ -6146,7 +6266,20 @@ async function ensureGfitToken(){
     body: JSON.stringify({ refresh_token: gfitRefreshToken() }),
   });
   const data = await res.json();
-  if(data.error) throw new Error(data.error);
+  if(data.error){
+    // invalid_grant = refresh token expired/revoked — needs full reconnect
+    const needsReconnect = data.error === 'invalid_grant'
+      || data.error === 'token_expired'
+      || data.error === 'unauthorized_client'
+      || (data.error_description||'').includes('expired')
+      || (data.error_description||'').includes('revoked');
+    if(needsReconnect){
+      // Clear stale tokens so gfitConnected() returns false
+      ['gfit_access_token','gfit_refresh_token','gfit_expires_at'].forEach(k=>localStorage.removeItem(k));
+      throw new Error('__needs_reconnect__');
+    }
+    throw new Error(data.error);
+  }
   localStorage.setItem('gfit_access_token', data.access_token);
   localStorage.setItem('gfit_expires_at', String(Date.now() + (data.expires_in||3600) * 1000));
   return data.access_token;
@@ -6164,14 +6297,17 @@ async function syncGoogleFit(){
       headers: { 'Authorization': `Bearer ${token}` },
     });
 
-    // Surface the actual API error clearly
     if(!res.ok){
       const errBody = await res.json().catch(()=>({}));
       const errMsg  = errBody.error?.message || errBody.error || `HTTP ${res.status}`;
 
-      if(res.status === 401 || res.status === 403){
-        // Token invalid or missing scopes — prompt reconnect
-        if(label) label.textContent = 'Auth expired — reconnect needed';
+      // Detect token errors from the data endpoint too
+      const isAuthErr = res.status === 401 || res.status === 403
+        || errMsg === 'invalid_grant' || errMsg.includes('expired') || errMsg.includes('revoked');
+
+      if(isAuthErr){
+        ['gfit_access_token','gfit_refresh_token','gfit_expires_at'].forEach(k=>localStorage.removeItem(k));
+        if(label) label.textContent = '';
         showGfitReconnectPrompt();
         return;
       }
@@ -6179,8 +6315,6 @@ async function syncGoogleFit(){
     }
 
     const data = await res.json();
-
-    // Check if API returned data or all nulls
     const hasData = data.steps || data.heart_rate?.resting || data.sleep?.hours || data.calories?.active;
     if(!hasData && label){
       label.textContent = 'Connected — no data yet (check Google Fit app)';
@@ -6192,22 +6326,35 @@ async function syncGoogleFit(){
     renderGfitData(data);
 
   }catch(e){
+    // Auto-reconnect prompt for token expiry
+    if(e.message === '__needs_reconnect__'){
+      if(label) label.textContent = '';
+      showGfitReconnectPrompt();
+      return;
+    }
     if(label) label.textContent = 'Sync failed — ' + e.message;
     console.error('Google Fit sync error:', e);
   }
 }
 
 function showGfitReconnectPrompt(){
+  // Update the connected badge to show expired state
+  const badge = document.getElementById('gfit-connected-badge');
+  if(badge){ badge.textContent='Token expired'; badge.style.color='var(--ora)'; badge.style.borderColor='rgba(255,149,0,.3)'; }
+
   const rows = document.getElementById('gfit-data-rows');
   if(!rows) return;
   rows.innerHTML = `
-    <div style="background:rgba(255,149,0,.08);border:1px solid rgba(255,149,0,.25);border-radius:8px;padding:12px;margin-top:10px">
-      <div style="font-size:13px;font-weight:500;color:var(--ora);margin-bottom:6px">⚠️ Google Fit authorisation expired</div>
-      <div style="font-size:12px;color:var(--mut2);line-height:1.6;margin-bottom:10px">
-        Your Google Fit access token has expired or is missing the required fitness data scopes.
-        You need to reconnect to grant fresh permissions.
+    <div style="background:rgba(255,149,0,.08);border:1px solid rgba(255,149,0,.25);border-radius:10px;padding:14px;margin-top:10px">
+      <div style="font-size:13px;font-weight:600;color:var(--ora);margin-bottom:6px">🔄 Google Fit session expired — reconnect needed</div>
+      <div style="font-size:12px;color:var(--mut2);line-height:1.7;margin-bottom:12px">
+        Your Google Fit access has expired. This happens automatically after 7 days when the app is in Google's testing mode, or if you revoked access in your Google account.<br><br>
+        Tap below to reconnect — it only takes a few seconds.
       </div>
-      <button class="btn btn-acc" onclick="reconnectGoogleFit()" style="font-size:12px">Reconnect Google Fit →</button>
+      <button class="btn btn-acc" onclick="reconnectGoogleFit()" style="font-size:13px;padding:10px 20px">↻ Reconnect Google Fit</button>
+      <div style="font-size:10px;color:var(--mut2);margin-top:8px">
+        To avoid this repeating: publish your Google Cloud app (move from Testing → Production in OAuth consent screen). This gives tokens that last indefinitely.
+      </div>
     </div>`;
 }
 
