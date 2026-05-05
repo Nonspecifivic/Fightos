@@ -1433,8 +1433,11 @@ html,body{
   <div class="card" id="training-log-card">
     <div class="card-header"><h3>Recent sessions</h3></div>
     <div id="training-log-list">
+      <div class="row" style="color:var(--mut2);font-size:13px">No sessions logged yet — use the form above to log your first session.</div>
+    </div>
+  </div>
 
-<!-- ==================== SICK / INJURED DAY LOG ==================== -->
+<!-- SICK / INJURED DAY LOG -->
 <div class="card" style="border-left:3px solid var(--acc2)">
   <div class="card-header">
     <h3>🤒 Log sick or injured day</h3>
@@ -1453,22 +1456,20 @@ html,body{
         </select>
       </div>
     </div>
-    <div id="sid-injury-fields">
-      <div class="fg"><label class="lbl">Body part / area affected</label>
-        <div class="ob-chips" id="sid-bodypart-chips" style="gap:6px;flex-wrap:wrap">
-          <button class="ob-chip" onclick="toggleSidChip(this)">Head / concussion</button>
-          <button class="ob-chip" onclick="toggleSidChip(this)">Neck</button>
-          <button class="ob-chip" onclick="toggleSidChip(this)">Shoulder</button>
-          <button class="ob-chip" onclick="toggleSidChip(this)">Elbow</button>
-          <button class="ob-chip" onclick="toggleSidChip(this)">Wrist / hand</button>
-          <button class="ob-chip" onclick="toggleSidChip(this)">Ribs</button>
-          <button class="ob-chip" onclick="toggleSidChip(this)">Lower back</button>
-          <button class="ob-chip" onclick="toggleSidChip(this)">Hip</button>
-          <button class="ob-chip" onclick="toggleSidChip(this)">Knee</button>
-          <button class="ob-chip" onclick="toggleSidChip(this)">Ankle / foot</button>
-          <button class="ob-chip" onclick="toggleSidChip(this)">Full body / flu</button>
-          <button class="ob-chip" onclick="toggleSidChip(this)">Respiratory</button>
-        </div>
+    <div class="fg"><label class="lbl">Body part / area affected</label>
+      <div class="ob-chips" id="sid-bodypart-chips" style="gap:6px;flex-wrap:wrap">
+        <button class="ob-chip" onclick="toggleSidChip(this)">Head / concussion</button>
+        <button class="ob-chip" onclick="toggleSidChip(this)">Neck</button>
+        <button class="ob-chip" onclick="toggleSidChip(this)">Shoulder</button>
+        <button class="ob-chip" onclick="toggleSidChip(this)">Elbow</button>
+        <button class="ob-chip" onclick="toggleSidChip(this)">Wrist / hand</button>
+        <button class="ob-chip" onclick="toggleSidChip(this)">Ribs</button>
+        <button class="ob-chip" onclick="toggleSidChip(this)">Lower back</button>
+        <button class="ob-chip" onclick="toggleSidChip(this)">Hip</button>
+        <button class="ob-chip" onclick="toggleSidChip(this)">Knee</button>
+        <button class="ob-chip" onclick="toggleSidChip(this)">Ankle / foot</button>
+        <button class="ob-chip" onclick="toggleSidChip(this)">Full body / flu</button>
+        <button class="ob-chip" onclick="toggleSidChip(this)">Respiratory</button>
       </div>
     </div>
     <div class="f2 fg">
@@ -1493,10 +1494,8 @@ html,body{
     </button>
   </div>
 </div>
-      <div class="row" style="color:var(--mut2);font-size:13px">No sessions logged yet — use the form above to log your first session.</div>
-    </div>
-  </div>
-</div>
+
+</div><!-- /tab-training -->
 
 <!-- ==================== BODY & RECOVERY ==================== -->
 <div class="tab" id="tab-body">
