@@ -2526,12 +2526,13 @@ function showTab(id){
   if(title) title.textContent = TAB_NAMES[id] || id;
 
   // Push browser history entry so back swipe stays in-app
-  // Skip if we're already handling a popstate (back swipe) to avoid loops
   if(!_handlingPopState){
-    const cur = history.state;
-    if(!cur || cur.fosTab !== id){
-      history.pushState({ fosTab: id }, '', window.location.pathname + window.location.hash);
-    }
+    try{
+      const cur = history.state;
+      if(!cur || cur.fosTab !== id){
+        history.pushState({ fosTab: id }, '', window.location.pathname + window.location.hash);
+      }
+    }catch(e){ /* sandboxed iframe — back-swipe history not available */ }
   }
 
   // Close sidebar on mobile
@@ -2558,15 +2559,13 @@ function showTab(id){
 // Handle browser back gesture / hardware back button
 window.addEventListener('popstate', function(e){
   if(e.state && e.state.fosTab){
-    // Navigate to the tab stored in history
     _handlingPopState = true;
     showTab(e.state.fosTab);
     _handlingPopState = false;
   } else {
-    // No FightOS state — re-anchor to dashboard so next back still stays in-app
     _handlingPopState = true;
     showTab('dashboard');
-    history.replaceState({ fosTab: 'dashboard' }, '', window.location.pathname);
+    try{ history.replaceState({ fosTab: 'dashboard' }, '', window.location.pathname); }catch(e){}
     _handlingPopState = false;
   }
 });
@@ -2574,8 +2573,13 @@ window.addEventListener('popstate', function(e){
 // Seed the initial history entry on page load
 document.addEventListener('DOMContentLoaded', function(){
   setTimeout(function(){
-    if(!history.state || !history.state.fosTab){
-      history.replaceState({ fosTab: 'dashboard' }, '', window.location.pathname + window.location.hash);
+    try{
+      if(!history.state || !history.state.fosTab){
+        history.replaceState({ fosTab: 'dashboard' }, '', window.location.pathname + window.location.hash);
+      }
+    }catch(e){
+      // Silently ignore — happens in sandboxed iframes (e.g. preview environments)
+      // Back-swipe history works fine on the live site
     }
   }, 200);
 });
