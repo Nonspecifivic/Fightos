@@ -1466,11 +1466,18 @@ html,body{
         <button class="ob-chip" onclick="toggleSidChip(this)">Shoulder</button>
         <button class="ob-chip" onclick="toggleSidChip(this)">Elbow</button>
         <button class="ob-chip" onclick="toggleSidChip(this)">Wrist / hand</button>
+        <button class="ob-chip" onclick="toggleSidChip(this)">Tricep</button>
+        <button class="ob-chip" onclick="toggleSidChip(this)">Forearm</button>
+        <button class="ob-chip" onclick="toggleSidChip(this)">Fingers</button>
         <button class="ob-chip" onclick="toggleSidChip(this)">Ribs</button>
         <button class="ob-chip" onclick="toggleSidChip(this)">Lower back</button>
         <button class="ob-chip" onclick="toggleSidChip(this)">Hip</button>
+        <button class="ob-chip" onclick="toggleSidChip(this)">Quad</button>
+        <button class="ob-chip" onclick="toggleSidChip(this)">Hamstring</button>
         <button class="ob-chip" onclick="toggleSidChip(this)">Knee</button>
+        <button class="ob-chip" onclick="toggleSidChip(this)">Calf</button>
         <button class="ob-chip" onclick="toggleSidChip(this)">Ankle / foot</button>
+        <button class="ob-chip" onclick="toggleSidChip(this)">Toes</button>
         <button class="ob-chip" onclick="toggleSidChip(this)">Full body / flu</button>
         <button class="ob-chip" onclick="toggleSidChip(this)">Respiratory</button>
       </div>
@@ -2467,7 +2474,23 @@ let calYear = _now.getFullYear(), calMonth = _now.getMonth();
 let calEvents = [];
 let nextEvtId = Date.now();  // unique IDs
 let uploadedFiles = [];
-const bodyParts = ['Neck','Left shoulder','Right shoulder','Left bicep','Right bicep','Chest','Upper back','Lower back','Left hip','Right hip','Left knee','Right knee','Left ankle','Right ankle','Ribs','Abs'];
+const bodyParts = [
+  'Neck',
+  'Left shoulder','Right shoulder',
+  'Left bicep','Right bicep',
+  'Left tricep','Right tricep',
+  'Left forearm','Right forearm',
+  'Chest','Upper back','Lower back',
+  'Ribs','Abs',
+  'Left hip','Right hip',
+  'Left quad','Right quad',
+  'Left hamstring','Right hamstring',
+  'Left knee','Right knee',
+  'Left calf','Right calf',
+  'Left ankle','Right ankle',
+  'Left toes','Right toes',
+  'Left fingers','Right fingers',
+];
 const techniques = [
   {icon:'🥋',name:'Rear Naked Choke',type:'BJJ',steps:['Secure back control with both hooks in.','Slide choking arm under chin across throat.','Lock a figure-four behind their head.','Squeeze elbows together — not backward.','Keep hips glued to prevent escape.'],tip:'If they tuck chin, use palm-to-palm grip and work to expose neck first.'},
   {icon:'🤼',name:'Double-Leg Takedown',type:'Wrestling',steps:['Penetration step — drop level sharply.','Head outside their hip, not into chest.','Wrap both arms around back of thighs.','Drive forward and lift into your body.','Finish to side or into top position.'],tip:'Level-change speed is everything — commit hard and drive through.'},
