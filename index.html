@@ -3293,6 +3293,8 @@ function saveActivityEdit(type, idOrIdx){
     entries[i] = {...entries[i], date, soreness:parseInt(g('ae-soreness'))??entries[i].soreness, sleepHours:parseFloat(g('ae-sleep'))||entries[i].sleepHours, injuries:g('ae-injuries')};
   } else if(type==='weight'){
     entries[i] = {...entries[i], date, val:parseFloat(g('ae-val'))||entries[i].val};
+    // Re-sort by date after edit so order stays correct
+    entries.sort((a,b)=>{ try{ return parseDate(a.date)-parseDate(b.date); }catch(e){ return 0; } });
   } else if(type==='food'){
     entries[i] = {...entries[i], date, name:g('ae-name')||entries[i].name, cal:parseInt(g('ae-cal'))||0, pro:parseInt(g('ae-pro'))||0, carb:parseInt(g('ae-carb'))||0, fat:parseInt(g('ae-fat'))||0};
   }
@@ -3967,7 +3969,18 @@ function renderWaterLog(){
 
 // ===== WEIGHT =====
 function renderWeightChart(){
-  const wLog=JSON.parse(localStorage.getItem('fos_weight_log')||'[]');
+  const raw=JSON.parse(localStorage.getItem('fos_weight_log')||'[]');
+
+  // Always sort by date ascending — insertion order doesn't matter
+  const wLog = [...raw].sort((a,b)=>{
+    try{ return parseDate(a.date) - parseDate(b.date); }catch(e){ return 0; }
+  });
+
+  // Also persist the sorted order so future reads are correct
+  if(raw.length && JSON.stringify(raw.map(e=>e.date)) !== JSON.stringify(wLog.map(e=>e.date))){
+    try{ localStorage.setItem('fos_weight_log', JSON.stringify(wLog)); }catch(e){}
+  }
+
   const chart=document.getElementById('wt-chart');
   const labels=document.getElementById('wt-labels');
   const hist=document.getElementById('wt-history');
@@ -3978,7 +3991,7 @@ function renderWeightChart(){
     return;
   }
 
-  const last7=wLog.slice(-7);
+  const last7=wLog.slice(-7); // last 7 entries chronologically
   const vals=last7.map(w=>parseFloat(w.val));
   const profile=loadProfile()||{};
   const unit=profile.weightUnit||'kg';
@@ -4070,9 +4083,13 @@ function logWeight(){
   const val=parseFloat(document.getElementById('wt-input').value);
   if(!val) return;
   const wLog=JSON.parse(localStorage.getItem('fos_weight_log')||'[]');
-  wLog.push({id:Date.now(), date:todayStr(), val});
-  try{ localStorage.setItem('fos_weight_log',JSON.stringify(wLog)); }catch(e){}
-  // Update profile weight
+  // Remove any existing entry for today (avoid duplicates for same date)
+  const today=todayStr();
+  const filtered=wLog.filter(w=>w.date!==today);
+  filtered.push({id:Date.now(), date:today, val});
+  // Keep sorted by date ascending
+  filtered.sort((a,b)=>{ try{ return parseDate(a.date)-parseDate(b.date); }catch(e){ return 0; } });
+  try{ localStorage.setItem('fos_weight_log',JSON.stringify(filtered)); }catch(e){}
   const profile=loadProfile();
   if(profile){ profile.weight=val; saveProfile(profile); }
   renderWeightChart();
