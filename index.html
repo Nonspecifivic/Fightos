@@ -1670,6 +1670,14 @@ html,body{
       <div id="csv-content" style="display:none;padding:13px"></div>
     </div>
   </div>
+
+  <!-- Weekly nutrition history -->
+  <div class="card">
+    <div class="card-header"><h3>📊 This week's nutrition</h3><span style="font-size:11px;color:var(--mut2)">Daily totals</span></div>
+    <div id="nutrition-week-history">
+      <div class="row" style="color:var(--mut2);font-size:13px">Log food entries to see your weekly history.</div>
+    </div>
+  </div>
 </div>
 
 <!-- ==================== HYDRATION ==================== -->
@@ -1721,6 +1729,14 @@ html,body{
     </div>
     <div id="water-log">
       <div class="row" style="color:var(--mut2);font-size:13px">Tap above to start logging your hydration.</div>
+    </div>
+  </div>
+
+  <!-- Weekly water history -->
+  <div class="card">
+    <div class="card-header"><h3>📊 This week's hydration</h3><span style="font-size:11px;color:var(--mut2)">Daily totals</span></div>
+    <div id="water-week-history">
+      <div class="row" style="color:var(--mut2);font-size:13px">History builds automatically each day.</div>
     </div>
   </div>
 
@@ -2574,8 +2590,8 @@ function showTab(id){
   if(id==='weight') renderWeightChart();
   if(id==='dashboard'){ resetDailyIfNeeded(); renderDashboard(); }
   if(id==='analysis'){ renderMatchRecord(); renderMatchHistory(); }
-  if(id==='nutrition'){ resetDailyIfNeeded(); renderNutritionStats(); renderFoodLog(); }
-  if(id==='hydration'){ resetDailyIfNeeded(); renderHydrationTab(); }
+  if(id==='nutrition'){ resetDailyIfNeeded(); renderNutritionStats(); renderFoodLog(); renderNutritionWeekHistory(); }
+  if(id==='hydration'){ resetDailyIfNeeded(); renderHydrationTab(); renderWaterWeekHistory(); }
   if(id==='profile') renderProfileTab();
   if(id==='womens') renderWomensTab();
   if(id==='strength') renderStrengthLog();
@@ -2810,7 +2826,121 @@ function loadLastCoachBrief(){
   }catch(e){}
 }
 
-// ===== HYDRATION TAB REFRESH =====
+// ===== WEEKLY NUTRITION HISTORY =====
+function renderNutritionWeekHistory(){
+  const el = document.getElementById('nutrition-week-history');
+  if(!el) return;
+  const profile = loadProfile()||{};
+  const calTarget = computeCalTarget(profile);
+  const macros = computeMacros(profile);
+
+  const foodLog = JSON.parse(localStorage.getItem('fos_food_log')||'[]');
+  const today = todayStr();
+
+  // Build last 7 days (today + 6 previous)
+  const days = [];
+  for(let i=0; i<7; i++){
+    const d = new Date(); d.setDate(d.getDate()-i); d.setHours(0,0,0,0);
+    days.push(localDateStr(d));
+  }
+
+  // Aggregate food log by date
+  const byDate = {};
+  for(const entry of foodLog){
+    if(!byDate[entry.date]) byDate[entry.date] = {cal:0,pro:0,carb:0,fat:0,count:0};
+    byDate[entry.date].cal  += entry.cal||0;
+    byDate[entry.date].pro  += entry.pro||0;
+    byDate[entry.date].carb += entry.carb||0;
+    byDate[entry.date].fat  += entry.fat||0;
+    byDate[entry.date].count++;
+  }
+
+  const hasSomeData = days.some(d=>byDate[d]);
+  if(!hasSomeData){
+    el.innerHTML='<div class="row" style="color:var(--mut2);font-size:13px">Log food entries to see your weekly history.</div>';
+    return;
+  }
+
+  el.innerHTML = days.map(date=>{
+    const d = byDate[date];
+    const isToday = date===today;
+    const label = isToday ? 'Today' : fmtDateShort(date);
+    if(!d) return `<div class="row" style="align-items:center">
+      <span style="font-size:12px;color:var(--mut2);width:70px;flex-shrink:0">${label}</span>
+      <span style="font-size:12px;color:var(--bdr2);flex:1">Not logged</span>
+    </div>`;
+    const pct = calTarget ? Math.min(100, Math.round(d.cal/calTarget*100)) : 0;
+    const barColor = pct>110?'var(--acc2)':pct>=85?'var(--grn)':'var(--blu)';
+    return `<div style="padding:8px 0;border-bottom:1px solid var(--bdr)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:12px;font-weight:${isToday?'700':'400'};color:${isToday?'var(--acc)':'var(--txt)'};width:70px;flex-shrink:0">${label}</span>
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:${barColor}">${fmtNum(d.cal)}</span>
+        <span style="font-size:11px;color:var(--mut2)">kcal${calTarget?' / '+fmtNum(calTarget):''}</span>
+        <div style="flex:1;height:4px;background:var(--bdr2);border-radius:2px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${barColor};border-radius:2px;transition:width .3s"></div>
+        </div>
+        <span style="font-size:10px;color:var(--mut2)">${pct}%</span>
+      </div>
+      <div style="display:flex;gap:12px;padding-left:78px;font-size:11px;color:var(--mut2)">
+        <span style="color:var(--pur)">P ${d.pro}g</span>
+        <span style="color:var(--acc)">C ${d.carb}g</span>
+        <span style="color:var(--ora)">F ${d.fat}g</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== WEEKLY WATER HISTORY =====
+function renderWaterWeekHistory(){
+  const el = document.getElementById('water-week-history');
+  if(!el) return;
+  const profile = loadProfile()||{};
+  const goalML = (profile.waterTarget||3.5)*1000;
+  const today = todayStr();
+
+  // Build last 7 days
+  const days = [];
+  for(let i=0; i<7; i++){
+    const d = new Date(); d.setDate(d.getDate()-i); d.setHours(0,0,0,0);
+    days.push(localDateStr(d));
+  }
+
+  // Today's live data + historical archive
+  const todayML = loadWaterToday();
+  const hist = JSON.parse(localStorage.getItem('fos_water_history')||'[]');
+  const histByDate = {};
+  for(const h of hist) histByDate[h.date] = h.ml;
+  if(todayML > 0) histByDate[today] = todayML;
+
+  const hasSomeData = days.some(d=>histByDate[d]);
+  if(!hasSomeData){
+    el.innerHTML='<div class="row" style="color:var(--mut2);font-size:13px">History builds automatically at the end of each day.</div>';
+    return;
+  }
+
+  el.innerHTML = days.map(date=>{
+    const ml = histByDate[date]||0;
+    const isToday = date===today;
+    const label = isToday ? 'Today' : fmtDateShort(date);
+    if(!ml) return `<div class="row" style="align-items:center">
+      <span style="font-size:12px;color:var(--mut2);width:70px;flex-shrink:0">${label}</span>
+      <span style="font-size:12px;color:var(--bdr2);flex:1">Not logged</span>
+    </div>`;
+    const pct = Math.min(100, Math.round(ml/goalML*100));
+    const barColor = pct>=100?'var(--grn)':pct>=70?'var(--blu)':'var(--ora)';
+    return `<div style="padding:8px 0;border-bottom:1px solid var(--bdr)">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:12px;font-weight:${isToday?'700':'400'};color:${isToday?'var(--blu)':'var(--txt)'};width:70px;flex-shrink:0">${label}</span>
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:${barColor}">${(ml/1000).toFixed(1)}L</span>
+        <span style="font-size:11px;color:var(--mut2)">of ${profile.waterTarget||3.5}L</span>
+        <div style="flex:1;height:4px;background:var(--bdr2);border-radius:2px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${barColor};border-radius:2px;transition:width .3s"></div>
+        </div>
+        <span style="font-size:10px;color:${barColor};font-weight:600">${pct}%</span>
+      </div>
+    </div>`;
+  }).join('');
+}
 function renderHydrationTab(){
   renderWaterDisplay();
   renderWaterLog();
@@ -2855,6 +2985,14 @@ function resetDailyIfNeeded(){
     try{
       const stored = JSON.parse(waterRaw);
       if(stored.date !== today){
+        // Archive yesterday's total before resetting
+        if(stored.ml > 0){
+          const hist = JSON.parse(localStorage.getItem('fos_water_history')||'[]');
+          const existing = hist.findIndex(h=>h.date===stored.date);
+          if(existing >= 0) hist[existing] = {date:stored.date, ml:stored.ml};
+          else hist.unshift({date:stored.date, ml:stored.ml});
+          localStorage.setItem('fos_water_history', JSON.stringify(hist.slice(0,90)));
+        }
         waterML = 0;
         localStorage.setItem('fos_water_today', JSON.stringify({date: today, ml: 0, entries:[]}));
       }
@@ -3185,7 +3323,7 @@ function deleteActivityEntry(type, idOrIdx){
     mobility: renderMobilityLog,
     body:     ()=>{ renderDashboard(); },
     weight:   ()=>{ renderWeightChart(); renderDashboard(); },
-    food:     ()=>{ renderFoodLog(); renderNutritionStats(); renderDashboard(); },
+    food:     ()=>{ renderFoodLog(); renderNutritionStats(); renderNutritionWeekHistory(); renderDashboard(); },
   };
   if(renders[type]) renders[type]();
 }
@@ -3309,7 +3447,7 @@ function saveActivityEdit(type, idOrIdx){
     mobility: renderMobilityLog,
     body:     ()=>{ renderDashboard(); },
     weight:   ()=>{ renderWeightChart(); renderDashboard(); },
-    food:     ()=>{ renderFoodLog(); renderNutritionStats(); renderDashboard(); },
+    food:     ()=>{ renderFoodLog(); renderNutritionStats(); renderNutritionWeekHistory(); renderDashboard(); },
   };
   if(renders[type]) renders[type]();
 }
@@ -3830,6 +3968,8 @@ function saveWaterEntries(entries){
     // any visibilitychange pull can overwrite local data
     if(isSignedIn()) syncToCloud().catch(()=>{});
     else debouncedSync();
+    // Refresh weekly history if visible
+    try{ renderWaterWeekHistory(); }catch(e){}
   }catch(e){}
 }
 
