@@ -2947,7 +2947,8 @@ function renderHydrationTab(){
 }
 
 function renderBodyLog(){
-  const log=JSON.parse(localStorage.getItem('fos_body_log')||'[]');
+  const raw=JSON.parse(localStorage.getItem('fos_body_log')||'[]');
+  const log=sortByDateDesc(raw);
   const el=document.getElementById('body-log-list');
   if(!el) return;
   if(!log.length){ el.innerHTML='<div class="row" style="color:var(--mut2);font-size:13px">No check-ins yet.</div>'; return; }
@@ -3013,14 +3014,15 @@ function saveStrengthLog(){
   const entry = {id:Date.now(),date:todayStr(),focus,dur:parseInt(dur)||60,notes,week};
   const log = JSON.parse(localStorage.getItem('fos_strength_log')||'[]');
   log.unshift(entry);
-  try{localStorage.setItem('fos_strength_log',JSON.stringify(log.slice(0,50)));debouncedSync();}catch(e){}
+  try{localStorage.setItem('fos_strength_log',JSON.stringify(sortByDateDesc(log).slice(0,50)));debouncedSync();}catch(e){}
   ['str-dur','str-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   const btn=document.querySelector('#tab-strength .btn-hero');
   if(btn){const o=btn.textContent;btn.textContent='✅ LOGGED';setTimeout(()=>btn.textContent=o,1500);}
   renderStrengthLog();
 }
 function renderStrengthLog(){
-  const log=JSON.parse(localStorage.getItem('fos_strength_log')||'[]');
+  const raw=JSON.parse(localStorage.getItem('fos_strength_log')||'[]');
+  const log=sortByDateDesc(raw);
   const el=document.getElementById('strength-log-list');
   if(!el) return;
   if(!log.length){
@@ -3042,7 +3044,8 @@ function renderStrengthLog(){
 }
 
 function renderMobilityLog(){
-  const log=JSON.parse(localStorage.getItem('fos_mobility_log')||'[]');
+  const raw=JSON.parse(localStorage.getItem('fos_mobility_log')||'[]');
+  const log=sortByDateDesc(raw);
   const el=document.getElementById('mobility-log-list');
   if(!el) return;
   if(!log.length){
@@ -3254,7 +3257,7 @@ function logAIStrength(goalLabel){
   const entry = {id:Date.now(), date:todayStr(), focus, dur, notes, week:day, source:'ai-program'};
   const log   = JSON.parse(localStorage.getItem('fos_strength_log')||'[]');
   log.unshift(entry);
-  try{ localStorage.setItem('fos_strength_log', JSON.stringify(log.slice(0,50))); debouncedSync(); }catch(e){}
+  try{ localStorage.setItem('fos_strength_log', JSON.stringify(sortByDateDesc(log).slice(0,50))); debouncedSync(); }catch(e){}
   const btn = document.querySelector('#strength-program-content .btn-acc');
   if(btn){ btn.textContent='✅ Session logged!'; btn.disabled=true; }
   renderStrengthLog();
@@ -3268,7 +3271,7 @@ function logAIMobility(routineLabel, defaultDur){
   const entry = {id:Date.now(), date:todayStr(), routine:routineLabel||'Mobility session', dur, feel, notes, source:'ai-routine'};
   const log   = JSON.parse(localStorage.getItem('fos_mobility_log')||'[]');
   log.unshift(entry);
-  try{ localStorage.setItem('fos_mobility_log', JSON.stringify(log.slice(0,50))); debouncedSync(); }catch(e){}
+  try{ localStorage.setItem('fos_mobility_log', JSON.stringify(sortByDateDesc(log).slice(0,50))); debouncedSync(); }catch(e){}
   const btn = document.querySelector('#mobility-content .btn-acc');
   if(btn){ btn.textContent='✅ Session logged!'; btn.disabled=true; }
   renderMobilityLog();
@@ -3284,7 +3287,7 @@ function saveMobilityLog(){
   const entry   = {id:Date.now(), date:todayStr(), routine:routine||'Mobility session', dur, feel, notes};
   const log     = JSON.parse(localStorage.getItem('fos_mobility_log')||'[]');
   log.unshift(entry);
-  try{ localStorage.setItem('fos_mobility_log', JSON.stringify(log.slice(0,50))); debouncedSync(); }catch(e){}
+  try{ localStorage.setItem('fos_mobility_log', JSON.stringify(sortByDateDesc(log).slice(0,50))); debouncedSync(); }catch(e){}
   // Clear log form fields
   ['mob-log-name','mob-log-dur','mob-log-notes','mob-notes'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   const btn = document.querySelector('#tab-mobility .btn-acc');
@@ -3437,7 +3440,8 @@ function saveActivityEdit(type, idOrIdx){
     entries[i] = {...entries[i], date, name:g('ae-name')||entries[i].name, cal:parseInt(g('ae-cal'))||0, pro:parseInt(g('ae-pro'))||0, carb:parseInt(g('ae-carb'))||0, fat:parseInt(g('ae-fat'))||0};
   }
 
-  saveLogEntries(type, entries);
+  // Re-sort by date so edits to dates don't disorder the log
+  saveLogEntries(type, sortByDateDesc(entries));
   document.getElementById('activity-edit-modal')?.remove();
 
   // Re-render
@@ -3771,7 +3775,7 @@ function toggleTrainingLogView(){
 }
 
 function renderTrainingLog(){
-  const log = getTrainingLog();
+  const log = sortByDateDesc(getTrainingLog());
   const list = document.getElementById('training-log-list');
   if(!list) return;
 
@@ -3931,7 +3935,8 @@ function saveBodyCheckIn(){
   // Save to localStorage
   const bodyLog = JSON.parse(localStorage.getItem('fos_body_log')||'[]');
   bodyLog.unshift(entry);
-  try{ localStorage.setItem('fos_body_log', JSON.stringify(bodyLog.slice(0,30))); debouncedSync(); }catch(e){}
+  const sortedBody = sortByDateDesc(bodyLog);
+  try{ localStorage.setItem('fos_body_log', JSON.stringify(sortedBody.slice(0,30))); debouncedSync(); }catch(e){}
   renderBodyLog();
   renderDashboard();
 }
@@ -4240,6 +4245,19 @@ function logWeight(){
 
 // ===== CALENDAR — interactive, shows training sessions =====
 function parseDate(s){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
+
+// Sort any log array newest-first by .date field, in-place safe (returns new array)
+function sortByDateDesc(arr){
+  return [...arr].sort((a,b)=>{
+    try{ return parseDate(b.date)-parseDate(a.date); }catch(e){ return 0; }
+  });
+}
+// Sort oldest-first (for chart/trend data)
+function sortByDateAsc(arr){
+  return [...arr].sort((a,b)=>{
+    try{ return parseDate(a.date)-parseDate(b.date); }catch(e){ return 0; }
+  });
+}
 function daysBetween(a,b){return Math.round((b-a)/86400000);}
 const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 
@@ -4849,7 +4867,8 @@ function saveWomensLog(){
 }
 
 function renderWHHistory(){
-  const logs = JSON.parse(localStorage.getItem('fos_womens_log')||'[]');
+  const raw  = JSON.parse(localStorage.getItem('fos_womens_log')||'[]');
+  const logs = sortByDateDesc(raw);
   const el   = document.getElementById('wh-history-list');
   if(!el) return;
   if(!logs.length){ el.innerHTML='<div class="row" style="color:var(--mut2);font-size:13px">No logs yet.</div>'; return; }
@@ -5864,7 +5883,8 @@ function importMacroFactorToLog(){
 function renderFoodLog(){
   const foodLog = JSON.parse(localStorage.getItem('fos_food_log')||'[]');
   const today   = todayStr();
-  const todayFood = foodLog.filter(f=>f.date===today);
+  // Sort by id descending (most recently added first) within today
+  const todayFood = foodLog.filter(f=>f.date===today).sort((a,b)=>(b.id||0)-(a.id||0));
   const logEl   = document.getElementById('food-log');
   if(!logEl) return;
 
