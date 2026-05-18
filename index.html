@@ -1557,9 +1557,14 @@ html,body{
             <option>Very poor</option>
           </select>
         </div>
-        <div><label class="lbl">Sleep duration (hh:mm)</label>
-          <input type="time" id="sleep-h" placeholder="07:30" style="font-size:14px">
-          <div style="font-size:10px;color:var(--mut2);margin-top:3px">Enter as hours:minutes e.g. 07:30</div>
+        <div><label class="lbl">Sleep duration</label>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input type="number" id="sleep-h-hrs" min="0" max="20" step="1" placeholder="7" style="width:64px;text-align:center">
+            <span style="font-size:13px;color:var(--mut2)">hr</span>
+            <input type="number" id="sleep-h-min" min="0" max="59" step="1" placeholder="30" style="width:64px;text-align:center">
+            <span style="font-size:13px;color:var(--mut2)">min</span>
+          </div>
+          <div style="font-size:10px;color:var(--mut2);margin-top:3px">e.g. 7 hr 31 min</div>
         </div>
       </div>
       <button class="btn btn-acc btn-full" onclick="saveBodyCheckIn()">SAVE CHECK-IN</button>
@@ -3390,7 +3395,14 @@ function editActivityEntry(type, idOrIdx){
     extraFields = `
       <div class="f2 fg">
         <div><label class="lbl">Soreness (0–10)</label><input type="number" id="ae-soreness" min="0" max="10" value="${entry.soreness||''}"></div>
-        <div><label class="lbl">Sleep duration (hh:mm)</label><input type="time" id="ae-sleep" value="${entry.sleepHHMM||( entry.sleepHours ? Math.floor(entry.sleepHours).toString().padStart(2,'0')+':'+String(Math.round((entry.sleepHours%1)*60)).padStart(2,'0') : '')}"></div>
+        <div><label class="lbl">Sleep duration</label>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input type="number" id="ae-sleep-hrs" min="0" max="20" step="1" value="${Math.floor(entry.sleepHours||0)||''}" placeholder="7" style="width:56px;text-align:center">
+            <span style="font-size:12px;color:var(--mut2)">hr</span>
+            <input type="number" id="ae-sleep-min" min="0" max="59" step="1" value="${Math.round(((entry.sleepHours||0)%1)*60)||''}" placeholder="0" style="width:56px;text-align:center">
+            <span style="font-size:12px;color:var(--mut2)">min</span>
+          </div>
+        </div>
       </div>
       <div class="fg"><label class="lbl">Notes / injuries</label><textarea id="ae-injuries" style="min-height:55px">${entry.injuries||''}</textarea></div>`;
   } else if(type==='weight'){
@@ -3445,15 +3457,13 @@ function saveActivityEdit(type, idOrIdx){
   } else if(type==='mobility'){
     entries[i] = {...entries[i], date, routine:g('ae-routine'), dur:parseInt(g('ae-dur'))||entries[i].dur, notes:g('ae-notes')};
   } else if(type==='body'){
-    const sleepRaw = g('ae-sleep')||'';
+    const editHrs = parseInt(g('ae-sleep-hrs'))||0;
+    const editMin = parseInt(g('ae-sleep-min'))||0;
     let sleepHours = entries[i].sleepHours;
     let sleepHHMM  = entries[i].sleepHHMM;
-    if(sleepRaw.includes(':')){
-      const [hh,mm] = sleepRaw.split(':').map(Number);
-      sleepHours = Math.round((hh + mm/60)*10)/10;
-      sleepHHMM  = sleepRaw;
-    } else if(sleepRaw){
-      sleepHours = parseFloat(sleepRaw)||sleepHours;
+    if(editHrs > 0 || editMin > 0){
+      sleepHours = Math.round((editHrs + editMin/60) * 10) / 10;
+      sleepHHMM  = `${editHrs}h ${editMin}m`;
     }
     entries[i] = {...entries[i], date, soreness:parseInt(g('ae-soreness'))??entries[i].soreness, sleepHours, sleepHHMM, injuries:g('ae-injuries')};
   } else if(type==='weight'){
@@ -3981,16 +3991,26 @@ function updateSorenessColor(v){
 function saveBodyCheckIn(){
   const sor = parseInt(document.getElementById('soreness-slider').value)||0;
   const sleep = document.getElementById('sleep-q').value;
-  const shRaw = document.getElementById('sleep-h').value; // "HH:MM" from time input
-  // Convert hh:mm to decimal hours for storage (e.g. "07:30" → 7.5)
+  const shRaw = document.getElementById('sleep-h').value; // legacy fallback
+  const shHrs = parseInt(document.getElementById('sleep-h-hrs')?.value)||0;
+  const shMin = parseInt(document.getElementById('sleep-h-min')?.value)||0;
+  // Derive decimal hours and hh:mm display string
   let sleepHours = null;
-  let sleepHHMM  = shRaw; // keep original hh:mm for display
-  if(shRaw && shRaw.includes(':')){
+  let sleepHHMM  = '';
+  if(shHrs > 0 || shMin > 0){
+    sleepHours = Math.round((shHrs + shMin/60) * 10) / 10;
+    sleepHHMM  = `${shHrs}h ${shMin}m`;
+  } else if(shRaw && shRaw.includes(':')){
+    // migrate old time-input data
     const [hh, mm] = shRaw.split(':').map(Number);
     sleepHours = Math.round((hh + mm/60) * 10) / 10;
+    sleepHHMM  = `${hh}h ${mm}m`;
   } else if(shRaw){
     sleepHours = parseFloat(shRaw)||null;
-    if(sleepHours) sleepHHMM = Math.floor(sleepHours).toString().padStart(2,'0') + ':' + String(Math.round((sleepHours%1)*60)).padStart(2,'0');
+    if(sleepHours){
+      const h = Math.floor(sleepHours), m = Math.round((sleepHours%1)*60);
+      sleepHHMM = `${h}h ${m}m`;
+    }
   }
   const injuries = document.getElementById('injury-notes')?.value||'';
   const entry = { id:Date.now(), date:todayStr(), soreness:sor, sleepQuality:sleep, sleepHours, sleepHHMM, injuries };
@@ -3999,6 +4019,10 @@ function saveBodyCheckIn(){
   bodyLog.unshift(entry);
   const sortedBody = sortByDateDesc(bodyLog);
   try{ localStorage.setItem('fos_body_log', JSON.stringify(sortedBody.slice(0,30))); debouncedSync(); }catch(e){}
+  // Clear form fields
+  const injEl=document.getElementById('injury-notes'); if(injEl) injEl.value='';
+  const hrsEl=document.getElementById('sleep-h-hrs'); if(hrsEl) hrsEl.value='';
+  const minEl=document.getElementById('sleep-h-min'); if(minEl) minEl.value='';
   renderBodyLog();
   renderDashboard();
 }
