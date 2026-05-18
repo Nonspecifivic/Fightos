@@ -1564,7 +1564,7 @@ html,body{
             <input type="number" id="sleep-h-min" min="0" max="59" step="1" placeholder="30" style="width:64px;text-align:center">
             <span style="font-size:13px;color:var(--mut2)">min</span>
           </div>
-          <div style="font-size:10px;color:var(--mut2);margin-top:3px">e.g. 7 hr 31 min</div>
+          <div style="font-size:10px;color:var(--mut2);margin-top:3px">e.g., 7hr 30 min</div>
         </div>
       </div>
       <button class="btn btn-acc btn-full" onclick="saveBodyCheckIn()">SAVE CHECK-IN</button>
@@ -3991,38 +3991,26 @@ function updateSorenessColor(v){
 function saveBodyCheckIn(){
   const sor = parseInt(document.getElementById('soreness-slider').value)||0;
   const sleep = document.getElementById('sleep-q').value;
-  const shRaw = document.getElementById('sleep-h').value; // legacy fallback
   const shHrs = parseInt(document.getElementById('sleep-h-hrs')?.value)||0;
   const shMin = parseInt(document.getElementById('sleep-h-min')?.value)||0;
-  // Derive decimal hours and hh:mm display string
   let sleepHours = null;
   let sleepHHMM  = '';
   if(shHrs > 0 || shMin > 0){
     sleepHours = Math.round((shHrs + shMin/60) * 10) / 10;
     sleepHHMM  = `${shHrs}h ${shMin}m`;
-  } else if(shRaw && shRaw.includes(':')){
-    // migrate old time-input data
-    const [hh, mm] = shRaw.split(':').map(Number);
-    sleepHours = Math.round((hh + mm/60) * 10) / 10;
-    sleepHHMM  = `${hh}h ${mm}m`;
-  } else if(shRaw){
-    sleepHours = parseFloat(shRaw)||null;
-    if(sleepHours){
-      const h = Math.floor(sleepHours), m = Math.round((sleepHours%1)*60);
-      sleepHHMM = `${h}h ${m}m`;
-    }
   }
   const injuries = document.getElementById('injury-notes')?.value||'';
   const entry = { id:Date.now(), date:todayStr(), soreness:sor, sleepQuality:sleep, sleepHours, sleepHHMM, injuries };
-  // Save to localStorage
   const bodyLog = JSON.parse(localStorage.getItem('fos_body_log')||'[]');
   bodyLog.unshift(entry);
   const sortedBody = sortByDateDesc(bodyLog);
   try{ localStorage.setItem('fos_body_log', JSON.stringify(sortedBody.slice(0,30))); debouncedSync(); }catch(e){}
-  // Clear form fields
   const injEl=document.getElementById('injury-notes'); if(injEl) injEl.value='';
   const hrsEl=document.getElementById('sleep-h-hrs'); if(hrsEl) hrsEl.value='';
   const minEl=document.getElementById('sleep-h-min'); if(minEl) minEl.value='';
+  // Flash confirmation
+  const btn=document.querySelector('#tab-body .btn-acc');
+  if(btn){ const o=btn.textContent; btn.textContent='✅ SAVED'; setTimeout(()=>btn.textContent=o,1500); }
   renderBodyLog();
   renderDashboard();
 }
