@@ -2593,18 +2593,23 @@ function showTab(id){
   const content = document.querySelector('.content');
   if(content) content.scrollTop = 0;
 
+  // Always check for day rollover on any tab navigation
+  resetDailyIfNeeded();
+
   // Per-tab renders
   if(id==='techniques') renderTechGrid();
   if(id==='calendar'){ renderCal(); renderCompCountdown(); }
-  if(id==='weight') renderWeightChart();
-  if(id==='dashboard'){ resetDailyIfNeeded(); renderDashboard(); }
+  if(id==='weight'){ renderWeightChart(); refreshWeightDateInput(); }
+  if(id==='dashboard') renderDashboard();
   if(id==='analysis'){ renderMatchRecord(); renderMatchHistory(); }
-  if(id==='nutrition'){ resetDailyIfNeeded(); renderNutritionStats(); renderFoodLog(); renderNutritionWeekHistory(); }
-  if(id==='hydration'){ resetDailyIfNeeded(); renderHydrationTab(); renderWaterWeekHistory(); }
+  if(id==='nutrition'){ renderNutritionStats(); renderFoodLog(); renderNutritionWeekHistory(); }
+  if(id==='hydration'){ renderHydrationTab(); renderWaterWeekHistory(); }
   if(id==='profile') renderProfileTab();
   if(id==='womens') renderWomensTab();
   if(id==='strength') renderStrengthLog();
   if(id==='mobility') renderMobilityLog();
+  if(id==='training'){ refreshTrainingDateInputs(); }
+  if(id==='body') refreshBodyDateInputs();
 }
 
 // Handle browser back gesture / hardware back button
@@ -2981,21 +2986,21 @@ function renderBodyLog(){
 // ===== DAILY RESET — clears day-scoped logs at midnight =====
 // Called on every tab open and on boot — ensures no stale data carries over
 function resetDailyIfNeeded(){
-  const today = todayStr();
+  const today = todayStr(); // always computed live from system clock
   const lastReset = localStorage.getItem('fos_last_reset_date');
-  if(lastReset === today) return; // already reset today
 
-  // Reset water (stored with date — loadWaterToday() handles this, but reset UI var too)
+  // If we've already reset today, nothing to do
+  if(lastReset === today) return;
+
+  // New day detected — archive yesterday's water and reset daily counters
   waterML = 0;
 
-  // Clear today's food display (food log entries have .date so they filter correctly,
-  // but we want to make sure the in-memory waterML is 0)
   const waterRaw = localStorage.getItem('fos_water_today');
   if(waterRaw){
     try{
       const stored = JSON.parse(waterRaw);
       if(stored.date !== today){
-        // Archive yesterday's total before resetting
+        // Archive yesterday's total
         if(stored.ml > 0){
           const hist = JSON.parse(localStorage.getItem('fos_water_history')||'[]');
           const existing = hist.findIndex(h=>h.date===stored.date);
@@ -3661,7 +3666,35 @@ function checkLinkResult(){
     }, 500);
   }
 }
-// ===== SICK / INJURED DAY LOG =====
+// ===== DATE INPUT REFRESH HELPERS =====
+// Called every time a tab is opened — ensures date inputs always show today's date
+// so logging after midnight always uses the current day without a page reload.
+
+function refreshWeightDateInput(){
+  // Weight tab has no explicit date input — it logs to todayStr() on submit, which is live
+  // But refresh the chart title / period display if present
+  const today = todayStr();
+  const inp = document.getElementById('wt-date-input');
+  if(inp) inp.value = today;
+}
+
+function refreshTrainingDateInputs(){
+  const today = todayStr();
+  ['tr-date','sid-date'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el && !el.value) el.value = today; // only set if empty (don't overwrite user choice)
+  });
+}
+
+function refreshBodyDateInputs(){
+  // Body check-in always uses todayStr() on save — no date input to refresh
+  // But reset the soreness slider label if a new day has started
+  const sl = document.getElementById('soreness-slider');
+  if(sl && sl.value === '0'){
+    const lbl = document.getElementById('soreness-val');
+    if(lbl) lbl.textContent = '0';
+  }
+}
 function toggleSidChip(el){ el.classList.toggle('sel'); }
 
 function saveSickInjuredDay(){
@@ -7461,18 +7494,30 @@ function debouncedSync(){
 }
 
 let _lastCloudPull = 0;
+let _lastKnownDate = todayStr(); // track date to detect overnight rollovers
 
 // Auto-pull from cloud when user returns to the tab — throttled to avoid overwriting
 // data entered moments ago (e.g. when keyboard appears/disappears on mobile)
 document.addEventListener('visibilitychange', ()=>{
-  if(document.visibilityState==='visible' && isSignedIn()){
-    const now = Date.now();
-    // Only pull if it has been more than 60 seconds since last pull
-    // This prevents the mobile keyboard show/hide cycle from triggering a cloud
-    // overwrite immediately after the user enters data
-    if(now - _lastCloudPull > 60000){
-      _lastCloudPull = now;
-      loadFromCloud().catch(()=>{});
+  if(document.visibilityState==='visible'){
+    const currentDate = todayStr();
+
+    // Detect overnight date rollover — re-render active tab with fresh date
+    if(currentDate !== _lastKnownDate){
+      _lastKnownDate = currentDate;
+      resetDailyIfNeeded();
+      // Re-render current active tab so date-dependent UI updates
+      const activeTab = document.querySelector('.tab.active');
+      const tabId = activeTab?.id?.replace('tab-','');
+      if(tabId) try{ showTab(tabId); }catch(e){}
+    }
+
+    if(isSignedIn()){
+      const now = Date.now();
+      if(now - _lastCloudPull > 60000){
+        _lastCloudPull = now;
+        loadFromCloud().catch(()=>{});
+      }
     }
   }
 });
