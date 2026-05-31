@@ -7161,7 +7161,7 @@ function renderSavedBriefs(){
 // ===== ACCOUNT & CLOUD SYNC =====
 const ACCT={user:null,accessToken:null,refreshToken:null,expiresAt:0,backendUrl:'',authTab:'signin',syncing:false,lastSynced:null};
 
-function loadAccountSession(){ try{ const s=JSON.parse(localStorage.getItem('fos_account')||'null'); if(s){ ACCT.user=s.user;ACCT.accessToken=s.accessToken;ACCT.refreshToken=s.refreshToken;ACCT.expiresAt=s.expiresAt;ACCT.backendUrl=s.backendUrl||''; } }catch(e){} }
+function loadAccountSession(){ try{ const s=JSON.parse(localStorage.getItem('fos_account')||'null'); if(s){ ACCT.user=s.user;ACCT.accessToken=s.accessToken;ACCT.refreshToken=s.refreshToken;ACCT.expiresAt=s.expiresAt;ACCT.backendUrl=s.backendUrl||DEFAULT_BACKEND_URL||''; } else { ACCT.backendUrl=DEFAULT_BACKEND_URL||''; } }catch(e){ ACCT.backendUrl=DEFAULT_BACKEND_URL||''; } }
 function saveAccountSession(){ try{ localStorage.setItem('fos_account',JSON.stringify({user:ACCT.user,accessToken:ACCT.accessToken,refreshToken:ACCT.refreshToken,expiresAt:ACCT.expiresAt,backendUrl:ACCT.backendUrl})); }catch(e){} }
 function clearAccountSession(){ ACCT.user=null;ACCT.accessToken=null;ACCT.refreshToken=null;ACCT.expiresAt=0; try{ localStorage.removeItem('fos_account'); }catch(e){} }
 function isSignedIn(){ return !!(ACCT.user&&ACCT.accessToken); }
@@ -7209,9 +7209,9 @@ function showSignedInPanel(){
 // ── Social login — uses Supabase implicit flow directly ──
 // Supabase handles the OAuth and redirects back to this page with tokens in the fragment
 function socialLogin(provider){
-  const backendUrl = ACCT.backendUrl || gfitBackendUrl();
+  const backendUrl = ACCT.backendUrl || gfitBackendUrl() || DEFAULT_BACKEND_URL;
   if(!backendUrl){
-    document.getElementById('acct-error').textContent='Enter your Vercel backend URL in the Trackers tab first.';
+    document.getElementById('acct-error').textContent='Backend URL not configured. Contact the app admin.';
     document.getElementById('acct-error').style.display='block';
     return;
   }
@@ -7696,7 +7696,7 @@ function obSocialLogin(provider){
   document.getElementById('ob-account-screen').querySelector('div:first-child').style.opacity='0.4';
   document.getElementById('ob-social-loading').style.display='block';
   document.getElementById('ob-social-loading-msg').textContent=`Redirecting to ${provider==='azure'?'Microsoft':provider.charAt(0).toUpperCase()+provider.slice(1)}…`;
-  setTimeout(()=>{ window.location.href=`${ACCT.backendUrl||localStorage.getItem('gfit_backend_url')}/api/account/oauth-start?provider=${provider}`; }, 500);
+  setTimeout(()=>{ window.location.href=`${ACCT.backendUrl||gfitBackendUrl()||DEFAULT_BACKEND_URL}/api/account/oauth-start?provider=${provider}`; }, 500);
 }
 
 async function obSubmitEmail(){
