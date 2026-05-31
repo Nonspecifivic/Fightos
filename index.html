@@ -2033,12 +2033,25 @@ html,body{
         <p style="font-size:13px;color:var(--mut2);line-height:1.6;margin-bottom:12px">
           Connects to the <strong>Google Fit REST API</strong> to pull resting heart rate, sleep, steps, active calories and weight. Requires the Google Fit app to be installed and collecting data on your device.
         </p>
-        <div id="gfit-setup-steps" style="background:var(--surf2);border:1px solid var(--bdr);border-radius:8px;padding:11px;margin-bottom:12px;font-size:12px;line-height:1.8">
+        <div id="gfit-setup-steps" style="background:var(--surf2);border:1px solid var(--bdr);border-radius:8px;padding:11px;margin-bottom:12px;font-size:12px;line-height:1.9">
           <strong>Before connecting:</strong><br>
           1. Install <strong>Google Fit</strong> on your phone (Android) or connect it to Apple Health (iPhone) — <a href="https://fit.google.com" target="_blank" style="color:var(--acc)">fit.google.com</a><br>
           <span id="gfit-step-backend">2. Deploy the <strong>fightos-backend</strong> folder to Vercel (see README)<br>
           3. Enter your backend URL below and click Connect</span>
           <span id="gfit-step-simple" style="display:none">2. Tap <strong>Connect Google Fit</strong> below</span>
+        </div>
+
+        <!-- Fitbit-specific instructions -->
+        <div style="background:rgba(0,210,255,.06);border:1px solid rgba(0,210,255,.2);border-radius:8px;padding:11px;margin-bottom:12px;font-size:12px;line-height:1.8">
+          <div style="font-weight:600;margin-bottom:5px">📱 Using Fitbit? Read this first</div>
+          <strong>Android:</strong> Fitbit syncs to Google Fit via <strong>Health Connect</strong>. Make sure:<br>
+          &nbsp;&nbsp;1. Install <strong>Health Connect</strong> app (free on Play Store)<br>
+          &nbsp;&nbsp;2. Open Fitbit app → Profile → <strong>Health Connect</strong> → enable all data types<br>
+          &nbsp;&nbsp;3. Wait ~10–30 mins for first sync to complete<br><br>
+          <strong>iPhone/iOS:</strong> Fitbit does <strong>not</strong> sync to Google Fit on iOS. Instead:<br>
+          &nbsp;&nbsp;• Fitbit syncs to <strong>Apple Health</strong> (Fitbit app → Today → Health app integration)<br>
+          &nbsp;&nbsp;• Google Fit is essentially deprecated on iOS and won't receive Fitbit data<br>
+          &nbsp;&nbsp;• To use the Tracker, you would need to use an Android device, or switch to a wearable that syncs to Google Fit natively (Wear OS, Garmin with Health Connect)
         </div>
         <div class="fg" id="gfit-backend-url-section">
           <label class="lbl">Your Vercel backend URL</label>
@@ -6713,16 +6726,104 @@ async function showGfitDebug(){
   const content = document.getElementById('gfit-debug-content');
   if(panel.style.display==='block'){ panel.style.display='none'; return; }
   panel.style.display='block';
-  content.textContent = 'Fetching raw API response…';
+  content.innerHTML = '<div style="color:var(--mut2)">🔍 Running connection check…</div>';
+
+  const steps = [];
+  let data = null;
+
+  // Step 1: token valid?
   try{
-    const token      = await ensureGfitToken();
+    const token = await ensureGfitToken();
+    steps.push({ok:true, label:'OAuth token', detail:'Valid — not expired'});
+
+    // Step 2: backend reachable?
     const backendUrl = gfitBackendUrl();
-    const res  = await fetch(`${backendUrl}/api/fit/data?type=all`, { headers:{ 'Authorization':`Bearer ${token}` } });
-    const data = await res.json();
-    content.textContent = JSON.stringify(data, null, 2);
+    steps.push({ok:true, label:'Backend URL', detail:backendUrl});
+
+    // Step 3: fetch data
+    const res = await fetch(`${backendUrl}/api/fit/data?type=all`, {
+      headers:{ 'Authorization':`Bearer ${token}` }
+    });
+
+    if(!res.ok){
+      const err = await res.json().catch(()=>({}));
+      steps.push({ok:false, label:'API response', detail:`HTTP ${res.status} — ${err.error||res.statusText}`});
+    } else {
+      data = await res.json();
+      steps.push({ok:true, label:'API response', detail:'HTTP 200 — data received'});
+
+      // Step 4: data points
+      const diag = data._diagnostics || {};
+      const hr    = data.heart_rate?.resting;
+      const steps_ = data.steps;
+      const sleep = data.sleep?.hours;
+      const cal   = data.calories?.active;
+      const wt    = data.weight?.kg;
+
+      steps.push({
+        ok: diag.hr_points_found > 0,
+        label: 'Heart rate points',
+        detail: typeof diag.hr_points_found === 'number'
+          ? `${diag.hr_points_found} points found → resting HR: ${hr||'none'} bpm`
+          : `Error: ${diag.hr_points_found}`
+      });
+      steps.push({
+        ok: diag.steps_points_found > 0,
+        label: 'Steps points',
+        detail: typeof diag.steps_points_found === 'number'
+          ? `${diag.steps_points_found} points found → ${steps_||0} steps`
+          : `Error: ${diag.steps_points_found}`
+      });
+      steps.push({
+        ok: diag.sleep_sessions > 0,
+        label: 'Sleep sessions',
+        detail: typeof diag.sleep_sessions === 'number'
+          ? `${diag.sleep_sessions} sessions found → ${sleep||'none'} hours`
+          : `Error: ${diag.sleep_sessions}`
+      });
+      steps.push({
+        ok: diag.weight_points > 0,
+        label: 'Weight points',
+        detail: typeof diag.weight_points === 'number'
+          ? `${diag.weight_points} points found → ${wt||'none'} kg`
+          : `Error: ${diag.weight_points}`
+      });
+    }
   }catch(e){
-    content.textContent = 'Error: ' + e.message;
+    const isReconnect = e.message === '__needs_reconnect__';
+    steps.push({ok:false, label:'Token check', detail: isReconnect ? 'Token expired — tap Reconnect' : e.message});
   }
+
+  // Render results
+  const rows = steps.map(s=>`
+    <div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid var(--bdr);font-size:12px">
+      <span style="flex-shrink:0;font-size:14px">${s.ok?'✅':'❌'}</span>
+      <div>
+        <div style="font-weight:600;color:var(--txt)">${s.label}</div>
+        <div style="color:var(--mut2)">${s.detail}</div>
+      </div>
+    </div>`).join('');
+
+  // Diagnosis
+  let diagnosis = '';
+  const allZero = data && !data.heart_rate?.resting && !data.steps && !data.sleep?.hours && !data.calories?.active;
+  if(allZero){
+    diagnosis = `<div style="margin-top:10px;background:rgba(255,149,0,.08);border:1px solid rgba(255,149,0,.25);border-radius:8px;padding:10px;font-size:12px;line-height:1.8">
+      <strong style="color:var(--ora)">⚠️ Connected but no data — likely cause:</strong><br><br>
+      <strong>If using Fitbit on Android:</strong><br>
+      1. Install <strong>Health Connect</strong> from Play Store<br>
+      2. Open <strong>Fitbit app</strong> → Profile → Health Connect → enable Heart Rate, Sleep, Steps<br>
+      3. Open <strong>Google Fit app</strong> → verify data appears in the Journal<br>
+      4. Wait 15–30 mins for sync, then tap ↻ Refresh here<br><br>
+      <strong>If using Fitbit on iPhone:</strong><br>
+      Fitbit does <em>not</em> sync to Google Fit on iOS. Fitbit only syncs to Apple Health on iOS — the Google Fit connection will always be empty. Consider switching to an Android device, or logging data manually in FightOS.<br><br>
+      <strong>To verify sync is working:</strong> Open <a href="https://fit.google.com" target="_blank" style="color:var(--acc)">fit.google.com</a> in a browser and check if your data appears there. If it doesn't appear on that site, it won't appear here either.
+    </div>`;
+  }
+
+  content.innerHTML = rows + diagnosis +
+    `<div style="margin-top:10px"><button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.textContent.includes('Show')?'Hide raw JSON':'Show raw JSON'" style="font-size:11px;color:var(--mut2);background:transparent;border:1px solid var(--bdr2);border-radius:5px;padding:3px 8px;cursor:pointer">Show raw JSON</button>
+    <pre style="display:none;font-size:10px;font-family:monospace;color:var(--mut2);white-space:pre-wrap;word-break:break-all;margin-top:6px;max-height:200px;overflow-y:auto">${data?JSON.stringify(data,null,2):'No data'}</pre></div>`;
 }
 
 function renderGfitData(d){
