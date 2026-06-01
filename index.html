@@ -6831,40 +6831,58 @@ function renderGfitData(d){
   const rows = document.getElementById('gfit-data-rows');
   if(!grid||!rows) return;
 
-  const hr    = d.heart_rate?.resting;
-  const sleep = d.sleep?.hours;
-  const steps = d.steps;
-  const cal   = d.calories?.active;
-  const wt    = d.weight?.kg;
+  const restingHR = d.heart_rate?.resting;
+  const currentHR = d.heart_rate?.current;
+  const sleep     = d.sleep?.hours;
+  const steps     = d.steps;
+  const cal       = d.calories?.active;
+  const wt        = d.weight?.kg;
+  const syncedAt  = d.synced_at ? new Date(d.synced_at).toLocaleTimeString(userLocale,{hour:'2-digit',minute:'2-digit'}) : '';
 
-  const hasAnyData = hr || sleep || steps || cal || wt;
+  const hasAnyData = restingHR || currentHR || sleep || steps || cal || wt;
+
+  // Show current HR if available, otherwise resting
+  const hrDisplay = currentHR || restingHR;
+  const hrLabel   = currentHR ? 'Current HR' : 'Resting HR';
+  const hrColor   = hrDisplay && hrDisplay < 60 ? 'grn' : hrDisplay && hrDisplay < 90 ? 'acc' : 'red';
 
   grid.innerHTML = `
-    <div class="stat"><div class="stat-l">Resting HR</div>
-      <div class="stat-v ${hr&&hr<60?'grn':hr&&hr<75?'acc':'red'}">${hr||'—'}<span style="font-size:11px">bpm</span></div></div>
-    <div class="stat"><div class="stat-l">Sleep</div>
-      <div class="stat-v ${sleep&&sleep>=7?'grn':sleep&&sleep>=6?'acc':'red'}">${sleep||'—'}<span style="font-size:11px">h</span></div></div>
-    <div class="stat"><div class="stat-l">Steps</div>
-      <div class="stat-v blu">${steps?fmtNum(steps):'—'}</div></div>
-    <div class="stat"><div class="stat-l">Active cal</div>
-      <div class="stat-v ora">${cal?fmtNum(cal):'—'}<span style="font-size:11px">kcal</span></div></div>
+    <div class="stat">
+      <div class="stat-l">${hrLabel}</div>
+      <div class="stat-v ${hrColor}">${hrDisplay||'—'}<span style="font-size:11px">bpm</span></div>
+      ${restingHR && currentHR ? `<div style="font-size:10px;color:var(--mut2)">Resting: ${restingHR}</div>` : ''}
+    </div>
+    <div class="stat">
+      <div class="stat-l">Sleep</div>
+      <div class="stat-v ${sleep&&sleep>=7?'grn':sleep&&sleep>=6?'acc':'red'}">${sleep||'—'}<span style="font-size:11px">h</span></div>
+    </div>
+    <div class="stat">
+      <div class="stat-l">Steps today</div>
+      <div class="stat-v blu">${steps?fmtNum(steps):'—'}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-l">Active cal</div>
+      <div class="stat-v ora">${cal?fmtNum(cal):'—'}<span style="font-size:11px">kcal</span></div>
+    </div>
     ${wt?`<div class="stat"><div class="stat-l">Weight</div><div class="stat-v acc">${wt}<span style="font-size:11px">kg</span></div></div>`:''}`;
+
+  // Sync time badge
+  const label = document.getElementById('gfit-sync-label');
+  if(label && syncedAt) label.textContent = `Live · updated ${syncedAt}`;
 
   if(!hasAnyData){
     rows.innerHTML=`<div class="tip" style="margin-top:10px">
-      <strong>No data found in Google Fit.</strong> The Google Fit REST API only reads data from the <strong>Google Fit app</strong> or connected devices that write to it (Fitbit, Garmin, etc.).<br><br>
-      <strong>To populate data:</strong><br>
-      1. Install <strong>Google Fit</strong> on your Android phone or use <a href="https://fit.google.com" target="_blank" style="color:var(--acc)">fit.google.com</a><br>
-      2. Open it and allow it to read from your phone's sensors<br>
-      3. Use it for a day — steps and HR should appear within minutes<br>
-      4. Come back and click <strong>↻ Refresh</strong> here<br><br>
-      <em>On iPhone: Google Fit syncs from Apple Health. Open Google Fit → Profile → Manage connected apps → Connect Apple Health.</em>
+      <strong>No data found.</strong> The API queried Google Health from midnight today.<br><br>
+      <strong>Pixel Watch 2:</strong> Data should appear within 5–10 minutes of your watch syncing.
+      Make sure <strong>Google Fit</strong> is open and syncing on your phone. Tap ↻ Refresh after a moment.<br><br>
+      Tap <strong>🔍 Debug</strong> to see exactly what data Google Health returned.
     </div>`;
   } else {
     let insight='';
-    if(hr&&hr>75) insight+='⚠️ Resting HR elevated — consider a lighter session today. ';
+    if(hrDisplay&&hrDisplay>90) insight+='⚠️ HR elevated — consider a lighter session today. ';
     if(sleep&&sleep<6) insight+='😴 Under 6h sleep — prioritise recovery. ';
-    if(sleep&&sleep>=8&&hr&&hr<60) insight+='✅ Sleep & HR looking good — ready to train hard. ';
+    if(sleep&&sleep>=8&&restingHR&&restingHR<60) insight+='✅ Sleep & HR looking good — ready to train hard. ';
+    if(steps>10000) insight+='👟 Over 10k steps today. ';
     rows.innerHTML=insight?`<div class="suc" style="margin-top:10px;font-size:13px">${insight}</div>`:'';
   }
 
