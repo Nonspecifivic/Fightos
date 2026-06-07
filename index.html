@@ -2691,76 +2691,186 @@ function setDashFocus(el, focus){
 function refreshDashCoach(){ getDashCoachBrief(); }
 
 function buildAthleteContext(){
-  const profile   = loadProfile() || {};
-  const training  = getTrainingLog();
-  const bodyLog   = JSON.parse(localStorage.getItem('fos_body_log')||'[]');
-  const foodLog   = JSON.parse(localStorage.getItem('fos_food_log')||'[]');
-  const weightLog = JSON.parse(localStorage.getItem('fos_weight_log')||'[]');
-  const waterML   = loadWaterToday();
-  const calEvents = JSON.parse(localStorage.getItem('fos_cal_events')||'[]');
-  const gf        = window.gfitLiveData;
-  const today     = todayStr();
-  const now       = new Date(); now.setHours(0,0,0,0);
+  const profile    = loadProfile() || {};
+  const training   = getTrainingLog();
+  const bodyLog    = JSON.parse(localStorage.getItem('fos_body_log')||'[]');
+  const foodLog    = JSON.parse(localStorage.getItem('fos_food_log')||'[]');
+  const weightLog  = JSON.parse(localStorage.getItem('fos_weight_log')||'[]');
+  const waterML    = loadWaterToday();
+  const waterHist  = JSON.parse(localStorage.getItem('fos_water_history')||'[]');
+  const calEvents  = JSON.parse(localStorage.getItem('fos_cal_events')||'[]');
+  const strLog     = JSON.parse(localStorage.getItem('fos_strength_log')||'[]');
+  const mobLog     = JSON.parse(localStorage.getItem('fos_mobility_log')||'[]');
+  const matchHist  = JSON.parse(localStorage.getItem('fos_match_history')||'[]');
+  const techniques = JSON.parse(localStorage.getItem('fos_techniques')||'[]');
+  const womensLog  = JSON.parse(localStorage.getItem('fos_womens_log')||'[]');
+  const gf         = window.gfitLiveData;
+  const today      = todayStr();
+  const now        = new Date(); now.setHours(0,0,0,0);
 
-  const recent7   = training.slice(0,7);
-  const wsStart   = new Date(now); wsStart.setDate(wsStart.getDate()-((now.getDay()+6)%7));
-  const thisWeek  = training.filter(s=>{ try{ const d=parseDate(s.date); return d>=wsStart&&d<=now; }catch(e){return false;} });
-  const avgRPE    = recent7.length ? (recent7.reduce((s,t)=>s+(t.rpe||5),0)/recent7.length).toFixed(1) : null;
-  const lastSess  = training[0];
-  const daysSince = lastSess ? Math.round((now-parseDate(lastSess.date))/86400000) : null;
-  const hardCount = recent7.filter(s=>s.rpe>=8).length;
+  // ── Training summary ──
+  const recent7    = sortByDateDesc(training).slice(0,7);
+  const missedDays = training.filter(s=>s.isMissedDay);
+  const recentMissed = sortByDateDesc(missedDays).slice(0,3);
+  const wsStart    = new Date(now); wsStart.setDate(wsStart.getDate()-((now.getDay()+6)%7));
+  const thisWeek   = training.filter(s=>{ try{ const d=parseDate(s.date); return d>=wsStart&&d<=now&&!s.isMissedDay; }catch(e){return false;} });
+  const avgRPE     = recent7.filter(s=>!s.isMissedDay).length
+    ? (recent7.filter(s=>!s.isMissedDay).reduce((s,t)=>s+(t.rpe||5),0)/recent7.filter(s=>!s.isMissedDay).length).toFixed(1)
+    : null;
+  const lastSess   = sortByDateDesc(training.filter(s=>!s.isMissedDay))[0];
+  const daysSince  = lastSess ? Math.round((now-parseDate(lastSess.date))/86400000) : null;
+  const hardCount  = recent7.filter(s=>!s.isMissedDay&&s.rpe>=8).length;
 
-  const lastBody  = bodyLog[0];
-  const todayBody = bodyLog.find(b=>b.date===today);
-  const soreness  = todayBody?.soreness ?? lastBody?.soreness ?? null;
-  const sleepH    = todayBody?.sleepHours ?? lastBody?.sleepHours ?? null;
-  const sleepQ    = todayBody?.sleepQuality ?? lastBody?.sleepQuality ?? null;
+  // ── Body & recovery ──
+  const lastBody   = sortByDateDesc(bodyLog)[0];
+  const todayBody  = bodyLog.find(b=>b.date===today);
+  const soreness   = todayBody?.soreness ?? lastBody?.soreness ?? null;
+  const sleepH     = todayBody?.sleepHours ?? lastBody?.sleepHours ?? null;
+  const sleepHHMM  = todayBody?.sleepHHMM ?? lastBody?.sleepHHMM ?? null;
+  const sleepQ     = todayBody?.sleepQuality ?? lastBody?.sleepQuality ?? null;
+  const injNotes   = todayBody?.injuries || lastBody?.injuries || profile.injuries || 'none';
 
+  // Avg soreness & sleep last 7 days
+  const body7 = sortByDateDesc(bodyLog).slice(0,7);
+  const avgSoreness = body7.length ? (body7.reduce((s,b)=>s+(b.soreness||0),0)/body7.length).toFixed(1) : null;
+  const avgSleep    = body7.filter(b=>b.sleepHours).length
+    ? (body7.filter(b=>b.sleepHours).reduce((s,b)=>s+b.sleepHours,0)/body7.filter(b=>b.sleepHours).length).toFixed(1)
+    : null;
+
+  // ── Nutrition ──
   const todayFood = foodLog.filter(f=>f.date===today);
   const tCal = todayFood.reduce((s,f)=>s+(f.cal||0),0);
   const tPro = todayFood.reduce((s,f)=>s+(f.pro||0),0);
-  const yday  = new Date(now); yday.setDate(yday.getDate()-1);
-  const ydStr = `${yday.getFullYear()}-${String(yday.getMonth()+1).padStart(2,'0')}-${String(yday.getDate()).padStart(2,'0')}`;
-  const yCal  = foodLog.filter(f=>f.date===ydStr).reduce((s,f)=>s+(f.cal||0),0);
+  const tCarb= todayFood.reduce((s,f)=>s+(f.carb||0),0);
+  const tFat = todayFood.reduce((s,f)=>s+(f.fat||0),0);
+  const yday = new Date(now); yday.setDate(yday.getDate()-1);
+  const ydStr= `${yday.getFullYear()}-${String(yday.getMonth()+1).padStart(2,'0')}-${String(yday.getDate()).padStart(2,'0')}`;
+  const ydFood = foodLog.filter(f=>f.date===ydStr);
+  const yCal = ydFood.reduce((s,f)=>s+(f.cal||0),0);
+  const yPro = ydFood.reduce((s,f)=>s+(f.pro||0),0);
 
-  const latestWt = weightLog.length ? weightLog[weightLog.length-1] : null;
-  const wclassKg = (profile.wclass||'').match(/≤(\d+)/);
-  const targetKg = getTargetKg(profile);
+  // Compute fresh targets
+  const calTarget  = computeCalTarget(profile);
+  const macros     = computeMacros(profile);
+  const tdeeResult = computeTDEE(profile);
+
+  // ── Hydration ──
+  const goalML     = (profile.waterTarget||3.5)*1000;
+  const waterPct   = Math.round(waterML/goalML*100);
+  const avgWater   = waterHist.length
+    ? (waterHist.slice(0,7).reduce((s,h)=>s+h.ml,0)/Math.min(7,waterHist.length)/1000).toFixed(1)
+    : null;
+
+  // ── Weight ──
+  const wLogSorted = sortByDateAsc(weightLog);
+  const latestWt   = wLogSorted.length ? wLogSorted[wLogSorted.length-1] : null;
+  const targetKg   = getTargetKg(profile);
   const targetDisp = getTargetKgDisplay(profile);
-  const toCut    = (targetKg && latestWt) ? Math.max(0, latestWt.val - targetKg).toFixed(1) : null;
+  const toCut      = (targetKg && latestWt) ? Math.max(0, latestWt.val - targetKg).toFixed(1) : null;
+  // Weight trend (first vs last of last 7 entries)
+  const wLast7     = wLogSorted.slice(-7);
+  const wTrend     = wLast7.length >= 2
+    ? (wLast7[wLast7.length-1].val - wLast7[0].val).toFixed(2)
+    : null;
 
-  const nextComp = calEvents.filter(e=>{ try{ return e.type==='competition'&&parseDate(e.date)>=now; }catch(x){return false;} }).sort((a,b)=>parseDate(a.date)-parseDate(b.date))[0];
+  // ── Competition & calendar ──
+  const upcoming7  = calEvents.filter(e=>{ try{ const d=parseDate(e.date); const ws=new Date(now); ws.setDate(ws.getDate()+7); return d>=now&&d<=ws; }catch(x){return false;} });
+  const nextComp   = calEvents.filter(e=>{ try{ return e.type==='competition'&&parseDate(e.date)>=now; }catch(x){return false;} }).sort((a,b)=>parseDate(a.date)-parseDate(b.date))[0];
   const daysToComp = nextComp ? Math.round((parseDate(nextComp.date)-now)/86400000) : null;
+  const recentComps= calEvents.filter(e=>{ try{ return e.type==='competition'&&parseDate(e.date)<now; }catch(x){return false;} }).sort((a,b)=>parseDate(b.date)-parseDate(a.date)).slice(0,3);
 
+  // ── Strength & mobility ──
+  const recentStr  = sortByDateDesc(strLog).slice(0,5);
+  const recentMob  = sortByDateDesc(mobLog).slice(0,5);
+
+  // ── Match history ──
+  const wins   = matchHist.filter(m=>m.result==='Win').length;
+  const losses = matchHist.filter(m=>m.result==='Loss').length;
+  const draws  = matchHist.filter(m=>m.result==='Draw').length;
+  const recentMatches = sortByDateDesc(matchHist).slice(0,3);
+
+  // ── Women's health ──
   let cycleCtx = '';
   try{
     const cd = JSON.parse(localStorage.getItem('fos_cycle')||'null');
     if(cd?.lastDate && profile.sex==='Female'){
       const ci = getCurrentPhase(cd.lastDate, cd.cycleLen||28, cd.periodLen||5);
-      if(ci) cycleCtx = `\nCycle: ${ci.phase} phase, Day ${ci.dayInCycle}/${ci.cycleLen}`;
+      if(ci) cycleCtx = `\nCycle phase: ${ci.phase} (Day ${ci.dayInCycle}/${ci.cycleLen}) — ${
+        ci.phase==='Menstrual'?'lower intensity recommended, iron focus':
+        ci.phase==='Follicular'?'rising energy, good for high-intensity work':
+        ci.phase==='Ovulatory'?'peak performance window':
+        'higher fatigue, prioritise recovery and sleep'}`;
+    }
+    // Recent womens health log
+    if(womensLog.length && profile.sex==='Female'){
+      const lastW = sortByDateDesc(womensLog)[0];
+      if(lastW) cycleCtx += `\nRecent symptoms: ${lastW.symptoms||'none'} | Energy: ${lastW.energy||'—'} | Mood: ${lastW.mood||'—'}`;
     }
   }catch(e){}
 
-  const upcoming = calEvents.filter(e=>{ try{ const d=parseDate(e.date); const ws=new Date(now); ws.setDate(ws.getDate()+7); return d>=now&&d<=ws; }catch(x){return false;} }).slice(0,4).map(e=>`${e.name} (${fmtDate(e.date)})`).join(', ');
+  // ── Google Health / Fit live data ──
+  let trackerCtx = '';
+  if(gf){
+    const restingHR = gf.heart_rate?.resting;
+    const currentHR = gf.heart_rate?.current;
+    const gfSleep   = gf.sleep?.hours;
+    const stages    = gf.sleep?.stages;
+    trackerCtx = `\nTracker (${ghealthConnected()?'Google Health API':'Google Fit'}): HR ${currentHR?currentHR+'bpm current / ':''} ${restingHR?restingHR+'bpm resting':'—'} | Steps: ${gf.steps?fmtNum(gf.steps):'—'} | Wearable sleep: ${gfSleep?gfSleep+'h':'—'}${stages?` (Deep ${stages.deep||0}m, REM ${stages.rem||0}m, Light ${stages.light||0}m)`:''}`;
+  }
 
-  return `ATHLETE: ${profile.firstName||'Fighter'}${profile.lastName?' '+profile.lastName:''} | ${profile.sport||'MMA'} | ${profile.exp||'—'} | Age ${profile.age||'—'}
-Weight: ${latestWt?latestWt.val:profile.weight||'—'}${profile.weightUnit||'kg'} → Goal: ${targetDisp}${toCut>0?' · '+toCut+'kg to cut':' ✅ on weight'}
-Goals: ${profile.goal||'—'} | Sessions target: ${profile.sessionsPerWeek||5}/wk | Injuries: ${profile.injuries||'none'}
-Cal target: ${profile.calTarget||'—'} kcal | Protein: ${profile.proteinTarget||'—'}g${cycleCtx}
+  // ── Missed training days ──
+  let missedCtx = '';
+  if(recentMissed.length){
+    missedCtx = `\nMissed training (recent): ${recentMissed.map(m=>`${fmtDate(m.date)}: ${m.type}${m.bodyParts?' ('+m.bodyParts+')':''}${m.severity?' – '+m.severity:''}`).join('; ')}`;
+  }
 
-TODAY (${today}):
-Sleep: ${sleepH?sleepH+'h'+(sleepQ?' '+sleepQ:''):'not logged'} | Soreness: ${soreness!==null?soreness+'/10':'not logged'}
-Water: ${(waterML/1000).toFixed(1)}L/${profile.waterTarget||3.5}L | Nutrition: ${tCal?tCal+' kcal, '+tPro+'g protein':'not logged yet'}
-${gf?`HR: ${gf.heart_rate?.resting||'—'}bpm resting | Steps: ${gf.steps?fmtNum(gf.steps):'—'} | Tracker sleep: ${gf.sleep?.hours||'—'}h`:''}
+  // ── Techniques being worked on ──
+  let techCtx = '';
+  const activeTech = techniques.filter(t=>t.status==='drilling'||t.status==='learning').slice(0,5);
+  if(activeTech.length) techCtx = `\nTechniques currently drilling: ${activeTech.map(t=>t.name).join(', ')}`;
 
-YESTERDAY: ${yCal?yCal+' kcal':'not logged'}
+  // ── Build the full context string ──
+  return `═══ FIGHTOS ATHLETE PROFILE ═══
+Fighter: ${profile.firstName||'—'}${profile.lastName?' '+profile.lastName:''} | Sport: ${profile.sport||'MMA'} | Level: ${profile.exp||'—'} | Age: ${profile.age||'—'} | ${profile.sex||'—'}
+Weight: ${latestWt?latestWt.val:profile.weight||'—'}${profile.weightUnit||'kg'} → Goal: ${targetDisp}${toCut>0?' ('+toCut+'kg to cut)':(toCut==='0.0'?' ✅ on weight':'')}${wTrend!==null?' | 7-day trend: '+(wTrend>0?'+':'')+wTrend+'kg':''}
+Goals: ${profile.goal||'—'} | Injuries/limitations: ${injNotes}
+Strengths: ${(profile.strengths||[]).join(', ')||'—'} | Weaknesses: ${(profile.weaknesses||[]).join(', ')||'—'}
+Job activity: ${profile.jobActivity||'moderate'} | Sessions/wk target: ${profile.sessionsPerWeek||5} | Session duration: ${profile.sessionDuration||1.5}h
+${cycleCtx}
 
-TRAINING (last 7 sessions):
-This week: ${thisWeek.length} sessions | Days since last: ${daysSince!==null?daysSince:'unknown'} | Hard sessions (RPE≥8): ${hardCount}/7 | Avg RPE: ${avgRPE||'—'}
-${recent7.slice(0,5).map(s=>`• ${fmtDate(s.date)}: ${s.type} RPE ${s.rpe} ${s.dur}min${s.focus?' – '+s.focus.slice(0,35):''}`).join('\n')||'No sessions logged'}
+═══ NUTRITION TARGETS (computed) ═══
+BMR: ${tdeeResult.bmr} kcal | TDEE: ${tdeeResult.tdee} kcal (${tdeeResult.label}) | Cal target: ${calTarget} kcal
+Protein: ${macros.protein}g (${macros.protPerKg}g/kg) | Carbs: ${macros.carbs}g | Fat: ${macros.fat}g | Water: ${profile.waterTarget||3.5}L
+Diet preference: ${profile.diet||'none'} | Cutting adaptation: ${tdeeResult.isCutting&&tdeeResult.toCut>2?'yes (−5% TDEE)':'no'}
 
-COMPETITION: ${nextComp?`${nextComp.name} in ${daysToComp} days (${fmtDate(nextComp.date)})`:'none scheduled'}
-UPCOMING: ${upcoming||'nothing this week'}`;
+═══ TODAY (${today}) ═══
+Sleep: ${sleepHHMM||sleepH?(sleepHHMM||sleepH+'h')+(sleepQ?' – '+sleepQ:''):'not logged'} | Soreness: ${soreness!==null?soreness+'/10':'not logged'}
+Nutrition: ${tCal?`${tCal} kcal / ${calTarget} kcal (${Math.round(tCal/calTarget*100)}%) | P:${tPro}g C:${tCarb}g F:${tFat}g`:'not logged yet'}
+Water: ${(waterML/1000).toFixed(1)}L / ${profile.waterTarget||3.5}L (${waterPct}%)
+${trackerCtx}
+
+═══ YESTERDAY (${ydStr}) ═══
+Nutrition: ${yCal?`${yCal} kcal | Protein: ${yPro}g`:'not logged'}
+
+═══ WEEKLY AVERAGES (last 7 days) ═══
+Avg sleep: ${avgSleep?avgSleep+'h':'—'} | Avg soreness: ${avgSoreness?avgSoreness+'/10':'—'} | Avg water: ${avgWater?avgWater+'L/day':'—'}
+
+═══ TRAINING LOG ══════
+This week: ${thisWeek.length} sessions | Days since last session: ${daysSince!==null?daysSince:'unknown'} | Hard sessions (RPE≥8): ${hardCount}/last 7 | Avg RPE: ${avgRPE||'—'}
+${recent7.filter(s=>!s.isMissedDay).slice(0,6).map(s=>`• ${fmtDate(s.date)}: ${s.type}${s.dur?' '+s.dur+'min':''} RPE:${s.rpe||'—'}${s.focus?' – '+s.focus.slice(0,40):''}`).join('\n')||'No sessions logged'}
+${missedCtx}
+
+STRENGTH (recent): ${recentStr.length?recentStr.map(s=>`${fmtDate(s.date)}: ${s.focus||'session'} ${s.dur?s.dur+'min':''}`).join(' | '):'none logged'}
+MOBILITY (recent): ${recentMob.length?recentMob.map(s=>`${fmtDate(s.date)}: ${s.routine||'session'} ${s.dur?s.dur+'min':''}`).join(' | '):'none logged'}
+${techCtx}
+
+═══ MATCH RECORD ═══
+${wins}W / ${losses}L / ${draws}D${recentMatches.length?' | Recent: '+recentMatches.map(m=>`${m.result} vs ${m.opponent||'?'} (${m.method||'—'})`).join(', '):''}
+
+═══ COMPETITION & CALENDAR ═══
+Next comp: ${nextComp?`${nextComp.name} — ${daysToComp} days away (${fmtDate(nextComp.date)})${nextComp.notes?' | '+nextComp.notes:''}`:'none scheduled'}
+${recentComps.length?'Recent comps: '+recentComps.map(e=>e.name+' ('+fmtDate(e.date)+')').join(', '):''}
+Upcoming this week: ${upcoming7.length?upcoming7.map(e=>`${e.name} (${fmtDate(e.date)})`).join(', '):'nothing scheduled'}`;
 }
 
 async function getDashCoachBrief(){
@@ -3121,15 +3231,14 @@ async function generateStrengthProgram(){
 
   const prompt = `You are an elite strength & conditioning coach specialising in combat sports. Build a complete, detailed strength program.
 
-ATHLETE: ${profile.firstName||'Fighter'} | ${fighterType} | ${exp}
-Weight: ${wt}${profile.weightUnit||'kg'} | Injuries/limitations: ${inj}
-Goal weight: ${getTargetKgDisplay(profile)} | Goal: ${profile.goal||'—'}
+FULL ATHLETE DATA:
+${buildAthleteContext()}
 
 PROGRAM PARAMETERS:
-Training days per week: ${days}
-Program length: ${weeks}
-Goal: ${goal}
-Equipment: ${equip}
+Fighter type: ${fighterType} | Training days/week: ${days} | Program length: ${weeks}
+Specific goal: ${goal} | Equipment: ${equip}
+
+Design this program around the athlete's actual current state — factor in their soreness, sleep, recent training load, competition timeline, and any injuries or missed training days shown above.
 
 Respond using these exact section headers in CAPS on their own lines:
 
@@ -3215,15 +3324,13 @@ async function generateMobilityRoutine(){
 
   const prompt = `You are an elite mobility and movement coach specialising in combat sports athletes. Generate a complete, actionable mobility routine.
 
-ATHLETE: ${profile.firstName||'Fighter'} | ${sport} | ${profile.exp||'Intermediate'}
-Injuries/limitations: ${inj}
-${bodyNote}
+FULL ATHLETE DATA:
+${buildAthleteContext()}
 
 ROUTINE PARAMETERS:
-Focus area: ${focusArea}
-Duration: ${duration}
-Current soreness: ${soreness}
-Routine type: ${mobType}
+Focus area: ${focusArea} | Duration: ${duration} | Current soreness (user-selected): ${soreness} | Routine type: ${mobType}
+
+Design this routine around the athlete's actual recovery state, sleep quality, recent training load, injuries, and competition timeline shown above.
 
 Respond using these exact section headers in CAPS on their own lines:
 
@@ -5164,16 +5271,16 @@ async function generateMealPlan(){
   const content=document.getElementById('meal-plan-content');
   out.style.display='block';loading.style.display='flex';content.style.display='none';
   const wclassKg=getTargetKg(profile);
-  const prompt=`You are an elite sports nutritionist for combat athletes. Create a detailed one-day meal plan:
+  const prompt=`You are an elite sports nutritionist for combat athletes. Create a detailed one-day meal plan.
 
-Fighter: ${profile.firstName||'—'} ${profile.lastName||''}, Age ${profile.age||'—'}, ${profile.sex||'—'}
-Sport: ${profile.sport||'MMA'} | Weight: ${profile.weight||80}${profile.weightUnit||'kg'}${wclassKg?' → cutting to '+wclassKg+'kg':''}
-BMR: ${profile.bmr||'—'} kcal | TDEE: ${profile.tdee||'—'} kcal | Cal target: ${profile.calTarget||cals} kcal
-Protein: ${profile.proteinTarget||'—'}g | Carbs: ${profile.carbTarget||'—'}g | Fat: ${profile.fatTarget||'—'}g
-Goal: ${goal}
-Dietary preference: ${diet}
-Training day type: ${dayType}
-Injuries: ${profile.injuries||'none'}
+FULL ATHLETE DATA:
+${buildAthleteContext()}
+
+MEAL PLAN PARAMETERS:
+Calorie target override: ${overrideCals||'use computed target'} | Dietary preference: ${diet} | Day type: ${dayType}
+Goal for this plan: ${goal}
+
+Base the meal timing, macro distribution and food choices on the athlete's sport, training schedule, current weight cut status, and what they logged yesterday and today.
 
 Format with clear sections: Breakfast, Pre-training, Post-training, Lunch/Dinner, Snack, Evening.
 Each meal: food items + amounts, calories, protein/carbs/fat.
@@ -5227,47 +5334,18 @@ async function getCoachAnalysis(){
 
   const prompt = `You are an elite AI fight coach. Give a direct, data-driven coaching brief.
 
-== ATHLETE PROFILE ==
-Name: ${profile.firstName||'Fighter'} ${profile.lastName||''}
-Age: ${profile.age||'—'} | Sex: ${profile.sex||'—'} | Country: ${profile.country||'—'}
-Sport: ${profile.sport||'MMA'} | Level: ${profile.exp||'—'} | Competition level: ${profile.clvl||'—'}
-Weight: ${profile.weight||'—'}${profile.weightUnit||'kg'} → Goal: ${getTargetKgDisplay(profile)}
-BMR: ${profile.bmr||'—'} kcal | TDEE: ${profile.tdee||'—'} kcal | Cal target: ${profile.calTarget||'—'} kcal
-Goal: ${profile.goal||'—'} | Diet: ${profile.diet||'—'} | Sleep target: ${profile.sleepHours||7}h
-Strengths: ${(profile.strengths||[]).join(', ')||'—'}
-Weaknesses: ${(profile.weak||[]).join(', ')||'—'}
-Injuries: ${profile.injuries||'none'}
-Training sessions/week: ${profile.sessionsPerWeek||5}
+FULL ATHLETE DATA:
+${buildAthleteContext()}
 
-== LIVE DATA ==
-${liveDataSection}
-
-== TRAINING LOG (last 7 sessions) ==
-${recentSessions.length
-  ? recentSessions.map(s=>`• ${fmtDate(s.date)} — ${s.type} · RPE ${s.rpe} · ${s.dur}min ${s.mood||''}`).join('\n')
-  : 'No sessions logged yet'}
-Average RPE: ${avgRPE}
-
-== BODY CHECK-IN ==
-Soreness: ${lastBody?lastBody.soreness+'/10':'not logged'}
-Sleep: ${lastBody?(lastBody.sleepHours||'?')+'h — '+(lastBody.sleepQuality||''):'not logged'}
-Injury notes: ${lastBody?.injuryNotes||profile.injuries||'none'}
-
-== COMPETITION ==
-${nextComp?`Next: ${nextComp.name} on ${fmtDate(nextComp.date)} — ${daysToComp} days away`:'No competitions scheduled'}
-${nextComp && profile.weight && getTargetKg(profile)
-  ? `Weight: ${profile.weight}kg → Goal: ${getTargetKgDisplay(profile)}`
-  : ''}
-
-${extra?`== ATHLETE NOTE ==\n${extra}\n`:''}
-== COACHING FOCUS: ${focus} ==
+${extra?`ATHLETE NOTE:\n${extra}\n`:''}
+COACHING FOCUS: ${focus}
 
 Respond with these exact section headers:
 READINESS ASSESSMENT — one sharp sentence verdict using the data
 KEY FINDINGS — 3 specific data-driven observations with actual numbers
 TODAY'S RECOMMENDATION — exact training prescription or recovery protocol
 PRIORITY ACTIONS — 3 numbered actions ranked by urgency this week
-COMPETITION STATUS — is ${profile.firstName||'this fighter'} on track? Cut status, what must happen next
+COMPETITION STATUS — is ${(loadProfile()||{}).firstName||'this fighter'} on track? Cut status, what must happen next
 
 Tone: direct, coach-to-athlete. Use their first name. Reference actual numbers. No generic advice.`;
 
@@ -6121,21 +6199,20 @@ async function getCompBrief(){
   const gf=window.gfitLiveData;
   const prompt=`You are an elite fight coach giving a competition preparation brief ${days} days out.
 
-FIGHTER: ${profile.firstName||'—'} | ${profile.sport||'MMA'} | ${profile.exp||'—'} | ${profile.clvl||'Amateur'}
-COMPETITION: ${comp.name}${comp.loc?' at '+comp.loc:''} — ${fmtDate(comp.date)} (${days} days)
-WEIGHT: ${profile.weight||'—'}${profile.weightUnit||'kg'} → Class: ${targetKg?targetKg+'kg':'—'} | Cut needed: ${toCut.toFixed(1)}kg
-GOAL: ${profile.goal||'—'} | Weaknesses: ${(profile.weaknesses||[]).join(', ')||'—'} | Injuries: ${profile.injuries||'none'}
-${gf?`LIVE DATA: Resting HR ${gf.heart_rate?.resting||'—'}bpm | Sleep ${gf.sleep?.hours||'—'}h`:''}
+COMPETITION: ${comp.name}${comp.loc?' at '+comp.loc:''} — ${fmtDate(comp.date)} (${days} days away)
 
-Write a fight preparation brief:
+FULL ATHLETE DATA:
+${buildAthleteContext()}
+
+Write a fight preparation brief covering:
 PHASE ASSESSMENT — where they are in camp and what this phase demands
-WEEKLY PRIORITIES — specific training focus week by week for all ${Math.ceil(days/7)} weeks
+WEEKLY PRIORITIES — specific training focus week by week for all ${Math.ceil(days/7)} weeks remaining
 WEIGHT MANAGEMENT — cut strategy with day-by-day plan for final week
 PEAK WEEK PROTOCOL — taper, sleep, nutrition and mental prep
 FIGHT DAY CHECKLIST — warm-up, nutrition timing, mental state
-RED FLAGS — what to avoid in the remaining ${days} days
+RED FLAGS — what to avoid in the remaining ${days} days based on current training load and recovery data
 
-Be direct and specific. Every day counts.`;
+Be direct and specific. Reference actual numbers from the athlete data. Every day counts.`;
   try{
     const text=await anthropicCall(prompt,1000);
     dots.style.display='none'; content.innerHTML=renderCoachOutput(text);
