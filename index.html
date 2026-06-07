@@ -2808,14 +2808,25 @@ function buildAthleteContext(){
     }
   }catch(e){}
 
-  // ── Google Health / Fit live data ──
+  // ── Google Health / Fit live data — prefer Google Health API ──
   let trackerCtx = '';
   if(gf){
+    const usingHealthAPI = ghealthConnected();
     const restingHR = gf.heart_rate?.resting;
     const currentHR = gf.heart_rate?.current;
     const gfSleep   = gf.sleep?.hours;
     const stages    = gf.sleep?.stages;
-    trackerCtx = `\nTracker (${ghealthConnected()?'Google Health API':'Google Fit'}): HR ${currentHR?currentHR+'bpm current / ':''} ${restingHR?restingHR+'bpm resting':'—'} | Steps: ${gf.steps?fmtNum(gf.steps):'—'} | Wearable sleep: ${gfSleep?gfSleep+'h':'—'}${stages?` (Deep ${stages.deep||0}m, REM ${stages.rem||0}m, Light ${stages.light||0}m)`:''}`;
+    const source    = usingHealthAPI ? 'Google Health API (Pixel Watch 2 — primary source)' : 'Google Fit (legacy — will deprecate 2026)';
+    trackerCtx = `\nWEARABLE DATA (${source}):
+  HR: ${currentHR?currentHR+'bpm (current) / ':''}${restingHR?restingHR+'bpm resting':'no HR data'}
+  Steps today: ${gf.steps?fmtNum(gf.steps):'—'} | Active calories: ${gf.calories?.active?fmtNum(gf.calories.active)+' kcal':'—'}
+  Wearable sleep: ${gfSleep?gfSleep+'h':'—'}${stages?` (Deep:${stages.deep||0}m REM:${stages.rem||0}m Light:${stages.light||0}m Awake:${stages.awake||0}m)`:''}`
+    // Flag if wearable sleep differs significantly from manually logged sleep
+    + (sleepH && gfSleep && Math.abs(sleepH - gfSleep) > 0.75
+      ? `\n  ⚠️ Note: wearable sleep (${gfSleep}h) differs from manually logged sleep (${sleepH}h) by more than 45 min — use wearable data as primary`
+      : '');
+  } else {
+    trackerCtx = '\nWEARABLE DATA: not connected — relying on manual logs only';
   }
 
   // ── Missed training days ──
@@ -2926,7 +2937,7 @@ ${hasComp}
 No generic advice. Every sentence must reference something specific from their data.`;
 
   try{
-    const text = await anthropicCall(prompt, 1000);
+    const text = await anthropicCall(prompt, 1000, null, systemPromptFor('coach'));
     loading.style.display='none'; content.style.display='block';
     content.innerHTML = renderCoachOutput(text);
     const fresh = document.getElementById('dash-brief-freshness');
@@ -3264,7 +3275,7 @@ Sleep, nutrition timing and recovery protocols to support this program.
 Be specific with exercises, sets, reps and weights/RPE. Reference the athlete's sport and limitations.`;
 
   try{
-    const text = await anthropicCall(prompt, 1500);
+    const text = await anthropicCall(prompt, 1500, null, systemPromptFor('strength'));
     dots.style.display='none'; content.style.display='block';
     const fighterType = document.getElementById('str-fighter-type')?.value||'Fighter';
     const goal        = document.getElementById('str-goal')?.value||'Strength';
@@ -3357,7 +3368,7 @@ How often to do this routine and when in the training week (pre-training, post-t
 Be precise with timing and reps. Include coaching cues a self-coached athlete can use alone.`;
 
   try{
-    const text = await anthropicCall(prompt, 1200);
+    const text = await anthropicCall(prompt, 1200, null, systemPromptFor('mobility'));
     dots.style.display='none'; content.style.display='block';
     const focusArea = document.getElementById('mob-focus-area')?.value||'Full body';
     const duration  = document.getElementById('mob-duration')?.value||'15 minutes';
@@ -3825,6 +3836,36 @@ function refreshBodyDateInputs(){
     if(lbl) lbl.textContent = '0';
   }
 }
+// ===== SHARED AI SYSTEM IDENTITY =====
+// Prepended to every AI prompt so all analyses share the same persona,
+// rules and data interpretation — ensuring consistency across all AI features.
+const FIGHTOS_SYSTEM_IDENTITY = `You are FightOS AI Coach — an elite, data-driven combat sports performance system combining fight coaching, S&C, sports nutrition and sports science into one consistent voice.
+
+CORE RULES (apply to every response):
+1. Always use the athlete's first name when addressing them directly
+2. Every recommendation must reference actual numbers from the athlete data — never give generic advice
+3. Be direct and specific — confident coach voice, not a chatbot
+4. Maintain numerical consistency — if you calculate 2,200 kcal, that number stays the same everywhere
+5. Prioritise data: Google Health API wearable data > manual FightOS logs > profile targets
+6. Flag data conflicts rather than silently ignoring them (e.g. logged sleep vs wearable sleep differs)
+7. Always factor in the full picture: training load + recovery + nutrition + hydration + comp timeline + cycle phase
+8. When missed training days or injuries are logged, reflect that in load and recovery recommendations
+9. Tone: direct, brief, evidence-based. No bullet-point overload. Short sentences.
+10. Units: match whatever the athlete's profile specifies (kg/lbs)`;
+
+function systemPromptFor(role){
+  const extras = {
+    coach:     'FOCUS: Overall performance coaching and daily readiness assessment.',
+    strength:  'FOCUS: Strength & conditioning programming for combat sports.',
+    mobility:  'FOCUS: Mobility, movement quality and injury prevention.',
+    nutrition: 'FOCUS: Sports nutrition, fuelling strategy and body composition.',
+    womens:    'FOCUS: Female athlete physiology, cycle-phase optimisation and hormonal performance.',
+    comp:      'FOCUS: Competition preparation, weight cutting and fight camp periodisation.',
+    match:     'FOCUS: Match performance analysis and technical development priorities.',
+  };
+  return FIGHTOS_SYSTEM_IDENTITY + '\n\n' + (extras[role]||'');
+}
+
 function toggleSidChip(el){ el.classList.toggle('sel'); }
 
 function saveSickInjuredDay(){
@@ -5151,7 +5192,7 @@ What to expect next and how to prepare training and nutrition to transition well
 Be specific, evidence-based and direct. Use ${profile.firstName||'their'} name. Reference actual cycle day and phase characteristics.`;
 
   try{
-    const text = await anthropicCall(prompt, 1200);
+    const text = await anthropicCall(prompt, 1200, null, systemPromptFor('womens'));
     dots.style.display='none'; content.style.display='block';
     content.innerHTML = renderCoachOutput(text);
   }catch(e){ showAIError(content, dots, e.message); }
@@ -5287,7 +5328,7 @@ Each meal: food items + amounts, calories, protein/carbs/fat.
 End with daily totals and 2-3 practical tips for this specific fighter.`;
 
   try{
-    const text=await anthropicCall(prompt,1000);
+    const text=await anthropicCall(prompt,1000,null,systemPromptFor('nutrition'));
     loading.style.display='none';content.style.display='block';
     content.innerHTML=renderMarkdown(text||'Could not generate plan.');
   }catch(e){showAIError(content,loading,e.message);}
@@ -5350,7 +5391,7 @@ COMPETITION STATUS — is ${(loadProfile()||{}).firstName||'this fighter'} on tr
 Tone: direct, coach-to-athlete. Use their first name. Reference actual numbers. No generic advice.`;
 
   try{
-    const text = await anthropicCall(prompt, 1000);
+    const text = await anthropicCall(prompt, 1000, null, systemPromptFor('coach'));
     loading.style.display='none'; content.style.display='block';
     content.innerHTML = renderCoachOutput(text||'Could not generate analysis.');
     saveCoachBrief(text);
@@ -6214,7 +6255,7 @@ RED FLAGS — what to avoid in the remaining ${days} days based on current train
 
 Be direct and specific. Reference actual numbers from the athlete data. Every day counts.`;
   try{
-    const text=await anthropicCall(prompt,1000);
+    const text=await anthropicCall(prompt,1000,null,systemPromptFor('comp'));
     dots.style.display='none'; content.innerHTML=renderCoachOutput(text);
   }catch(e){ showAIError(content,dots,e.message); }
 }
@@ -6560,15 +6601,18 @@ function updateKeyStatus(){
 // ===== ANTHROPIC API CALL =====
 // Route 1: User has their own key → direct call (key never leaves browser)
 // Route 2: No user key → proxy via fightos-backend (key stored in Vercel env var, never in code)
-async function anthropicCall(prompt, maxTokens=1000, imageContent=null){
+async function anthropicCall(prompt, maxTokens=1000, imageContent=null, systemPrompt=null){
   const userKey = localStorage.getItem('fos_api_key');
   const backendUrl = gfitBackendUrl();
+
+  // Prepend system identity if provided
+  const fullPrompt = systemPrompt ? systemPrompt + '\n\n' + prompt : prompt;
 
   if(userKey && userKey.startsWith('sk-ant-')){
     // Direct call with user's own key
     let userContent = imageContent && imageContent.length
-      ? [...imageContent, {type:'text',text:prompt}]
-      : prompt;
+      ? [...imageContent, {type:'text',text:fullPrompt}]
+      : fullPrompt;
     const resp = await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{
@@ -6593,7 +6637,7 @@ async function anthropicCall(prompt, maxTokens=1000, imageContent=null){
 
   // Proxy via backend (no user key needed — key is in Vercel environment)
   if(!backendUrl){ openKeyModal(); throw new Error('no_key'); }
-  const body = { prompt, maxTokens };
+  const body = { prompt: fullPrompt, maxTokens };
   if(imageContent && imageContent.length) body.imageContent = imageContent;
   const resp = await fetch(`${backendUrl}/api/ai/chat`,{
     method:'POST',
@@ -6772,7 +6816,8 @@ async function syncGoogleFit(){
   try{
     const token      = await ensureGfitToken();
     const backendUrl = gfitBackendUrl();
-    // Route to correct data endpoint based on which tokens are active
+    // Always prefer Google Health API endpoint when those tokens are active
+    // Google Fit is legacy fallback only (deprecated end of 2026)
     const dataEndpoint = ghealthConnected()
       ? `${backendUrl}/api/health/data`
       : `${backendUrl}/api/fit/data?type=all`;
