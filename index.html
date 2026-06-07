@@ -6567,36 +6567,57 @@ function isDefaultBackendUrl(){
   return !localStorage.getItem('gfit_backend_url') && !!DEFAULT_BACKEND_URL;
 }
 
+// ===== GOOGLE HEALTH API TOKEN MANAGEMENT =====
+// Supports both new Google Health API tokens (ghealth_*) and legacy Google Fit tokens (gfit_*)
+// New connections use Google Health API; existing connections continue to work until 2026.
+
+// New Google Health API tokens
+function ghealthAccessToken() { return localStorage.getItem('ghealth_access_token')||''; }
+function ghealthRefreshToken(){ return localStorage.getItem('ghealth_refresh_token')||''; }
+function ghealthExpiresAt()   { return parseInt(localStorage.getItem('ghealth_expires_at')||'0'); }
+function ghealthConnected()   { return !!(ghealthAccessToken() && ghealthRefreshToken()); }
+
+// Legacy Google Fit tokens (keep working until end of 2026)
 function gfitAccessToken(){ return localStorage.getItem('gfit_access_token')||''; }
 function gfitRefreshToken(){ return localStorage.getItem('gfit_refresh_token')||''; }
-function gfitExpiresAt(){ return parseInt(localStorage.getItem('gfit_expires_at')||'0'); }
-function gfitConnected(){ return !!(gfitAccessToken() && gfitRefreshToken()); }
+function gfitExpiresAt()  { return parseInt(localStorage.getItem('gfit_expires_at')||'0'); }
+function gfitConnected()  { return ghealthConnected() || !!(gfitAccessToken() && gfitRefreshToken()); }
 
-// Called when user clicks "Connect Google Fit"
+// Connect using new Google Health API (preferred)
 function connectGoogleFit(){
-  const backendUrl = document.getElementById('gfit-backend-url').value.trim();
-  if(!backendUrl){ alert('Please enter your Vercel backend URL first.'); return; }
-  if(!backendUrl.startsWith('https://')){
-    alert('Backend URL must start with https://'); return;
-  }
-  localStorage.setItem('gfit_backend_url', backendUrl);
-  // Redirect to our backend which will redirect to Google
-  window.location.href = `${backendUrl}/api/auth/google`;
+  const backendUrl = gfitBackendUrl();
+  if(!backendUrl){ alert('Backend URL not configured.'); return; }
+  // Use new Google Health API endpoint
+  window.location.href = `${backendUrl}/api/health/google`;
 }
 
-// Called on page load — checks for OAuth tokens in URL fragment
+// Handle OAuth callback — supports both old gfit_ and new ghealth_ URL params
 function handleGfitCallback(){
   const hash = window.location.hash;
   if(!hash) return;
   const params = new URLSearchParams(hash.slice(1));
 
-  if(params.has('gfit_error')){
-    const msg = decodeURIComponent(params.get('gfit_error'));
-    alert('Google Fit connection failed: ' + msg);
+  // ── New Google Health API callback ──
+  if(params.has('ghealth_access_token')){
+    const accessToken  = params.get('ghealth_access_token');
+    const refreshToken = params.get('ghealth_refresh_token');
+    const expiresIn    = parseInt(params.get('ghealth_expires_in')||'3600');
+    localStorage.setItem('ghealth_access_token', accessToken);
+    localStorage.setItem('ghealth_refresh_token', refreshToken);
+    localStorage.setItem('ghealth_expires_at', String(Date.now() + expiresIn * 1000));
+    window.history.replaceState(null,'',window.location.pathname);
+    renderGfitConnectedState();
+    syncGoogleFit();
+    return;
+  }
+  if(params.has('ghealth_error')){
+    const msg = decodeURIComponent(params.get('ghealth_error'));
+    alert('Google Health connection failed: ' + msg + '\n\nNote: Google Health API scopes require Google review for production use. For testing, use your own Google account.');
     window.history.replaceState(null,'',window.location.pathname);
     return;
   }
 
+  // ── Legacy Google Fit callback (still supported) ──
   if(params.has('gfit_access_token')){
     const accessToken  = params.get('gfit_access_token');
     const refreshToken = params.get('gfit_refresh_token');
@@ -6604,18 +6625,48 @@ function handleGfitCallback(){
     localStorage.setItem('gfit_access_token',  accessToken);
     localStorage.setItem('gfit_refresh_token',  refreshToken);
     localStorage.setItem('gfit_expires_at', String(Date.now() + expiresIn * 1000));
-    // Clean URL
     window.history.replaceState(null,'',window.location.pathname);
     renderGfitConnectedState();
     syncGoogleFit();
+    return;
+  }
+  if(params.has('gfit_error')){
+    const msg = decodeURIComponent(params.get('gfit_error'));
+    alert('Google Fit connection failed: ' + msg);
+    window.history.replaceState(null,'',window.location.pathname);
   }
 }
 
-// Refresh access token if expired
+// Ensure a valid access token — tries Google Health API first, falls back to Fit
 async function ensureGfitToken(){
-  if(Date.now() < gfitExpiresAt() - 60000) return gfitAccessToken(); // still valid
   const backendUrl = gfitBackendUrl();
   if(!backendUrl) throw new Error('No backend URL configured');
+
+  // ── Google Health API path ──
+  if(ghealthConnected()){
+    if(Date.now() < ghealthExpiresAt() - 60000) return ghealthAccessToken();
+    const res = await fetch(`${backendUrl}/api/health/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: ghealthRefreshToken() }),
+    });
+    const data = await res.json();
+    if(data.error){
+      const needsReconnect = data.error === 'invalid_grant' || data.error === 'token_expired'
+        || (data.error_description||'').includes('expired') || (data.error_description||'').includes('revoked');
+      if(needsReconnect){
+        ['ghealth_access_token','ghealth_refresh_token','ghealth_expires_at'].forEach(k=>localStorage.removeItem(k));
+        throw new Error('__needs_reconnect__');
+      }
+      throw new Error(data.error);
+    }
+    localStorage.setItem('ghealth_access_token', data.access_token);
+    localStorage.setItem('ghealth_expires_at', String(Date.now() + (data.expires_in||3600) * 1000));
+    return data.access_token;
+  }
+
+  // ── Legacy Google Fit path ──
+  if(Date.now() < gfitExpiresAt() - 60000) return gfitAccessToken();
   const res = await fetch(`${backendUrl}/api/auth/refresh`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -6623,14 +6674,9 @@ async function ensureGfitToken(){
   });
   const data = await res.json();
   if(data.error){
-    // invalid_grant = refresh token expired/revoked — needs full reconnect
-    const needsReconnect = data.error === 'invalid_grant'
-      || data.error === 'token_expired'
-      || data.error === 'unauthorized_client'
-      || (data.error_description||'').includes('expired')
-      || (data.error_description||'').includes('revoked');
+    const needsReconnect = data.error === 'invalid_grant' || data.error === 'token_expired'
+      || (data.error_description||'').includes('expired') || (data.error_description||'').includes('revoked');
     if(needsReconnect){
-      // Clear stale tokens so gfitConnected() returns false
       ['gfit_access_token','gfit_refresh_token','gfit_expires_at'].forEach(k=>localStorage.removeItem(k));
       throw new Error('__needs_reconnect__');
     }
@@ -6649,20 +6695,23 @@ async function syncGoogleFit(){
   try{
     const token      = await ensureGfitToken();
     const backendUrl = gfitBackendUrl();
-    const res = await fetch(`${backendUrl}/api/fit/data?type=all`, {
+    // Route to correct data endpoint based on which tokens are active
+    const dataEndpoint = ghealthConnected()
+      ? `${backendUrl}/api/health/data`
+      : `${backendUrl}/api/fit/data?type=all`;
+
+    const res = await fetch(dataEndpoint, {
       headers: { 'Authorization': `Bearer ${token}` },
     });
 
     if(!res.ok){
       const errBody = await res.json().catch(()=>({}));
       const errMsg  = errBody.error?.message || errBody.error || `HTTP ${res.status}`;
-
-      // Detect token errors from the data endpoint too
       const isAuthErr = res.status === 401 || res.status === 403
         || errMsg === 'invalid_grant' || errMsg.includes('expired') || errMsg.includes('revoked');
-
       if(isAuthErr){
-        ['gfit_access_token','gfit_refresh_token','gfit_expires_at'].forEach(k=>localStorage.removeItem(k));
+        ['ghealth_access_token','ghealth_refresh_token','ghealth_expires_at',
+         'gfit_access_token','gfit_refresh_token','gfit_expires_at'].forEach(k=>localStorage.removeItem(k));
         if(label) label.textContent = '';
         showGfitReconnectPrompt();
         return;
@@ -6671,25 +6720,24 @@ async function syncGoogleFit(){
     }
 
     const data = await res.json();
-    const hasData = data.steps || data.heart_rate?.resting || data.sleep?.hours || data.calories?.active;
-    if(!hasData && label){
-      label.textContent = 'Connected — no data yet (check Google Fit app)';
-    } else if(label){
-      label.textContent = 'Synced · ' + new Date().toLocaleTimeString(userLocale,{hour:'2-digit',minute:'2-digit'});
-    }
+    const hasData = data.steps || data.heart_rate?.resting || data.heart_rate?.current
+      || data.sleep?.hours || data.calories?.active || data.weight?.kg;
+
+    if(label) label.textContent = hasData
+      ? (ghealthConnected() ? '🟢 Google Health · ' : '🔵 Google Fit · ') + 'Updated ' + new Date().toLocaleTimeString(userLocale,{hour:'2-digit',minute:'2-digit'})
+      : 'Connected — no data yet';
 
     localStorage.setItem('gfit_latest', JSON.stringify(data));
     renderGfitData(data);
 
   }catch(e){
-    // Auto-reconnect prompt for token expiry
     if(e.message === '__needs_reconnect__'){
       if(label) label.textContent = '';
       showGfitReconnectPrompt();
       return;
     }
     if(label) label.textContent = 'Sync failed — ' + e.message;
-    console.error('Google Fit sync error:', e);
+    console.error('Health sync error:', e);
   }
 }
 
@@ -6715,10 +6763,11 @@ function showGfitReconnectPrompt(){
 }
 
 async function reconnectGoogleFit(){
-  ['gfit_access_token','gfit_refresh_token','gfit_expires_at','gfit_latest'].forEach(k=>localStorage.removeItem(k));
-  const backendUrl = gfitBackendUrl();
-  if(!backendUrl){ alert('Enter your backend URL first.'); return; }
-  window.location.href = `${backendUrl}/api/auth/google`;
+  ['ghealth_access_token','ghealth_refresh_token','ghealth_expires_at',
+   'gfit_access_token','gfit_refresh_token','gfit_expires_at','gfit_latest']
+    .forEach(k=>localStorage.removeItem(k));
+  window.gfitLiveData = null;
+  connectGoogleFit(); // routes to /api/health/google
 }
 
 async function showGfitDebug(){
@@ -6910,8 +6959,9 @@ function renderGfitDisconnectedState(){
 }
 
 function disconnectGoogleFit(){
-  if(!confirm('Disconnect Google Fit? Your synced data will be cleared.')) return;
-  ['gfit_access_token','gfit_refresh_token','gfit_expires_at','gfit_latest','gfit_backend_url']
+  if(!confirm('Disconnect Google Health / Fit? Your synced data will be cleared.')) return;
+  ['ghealth_access_token','ghealth_refresh_token','ghealth_expires_at',
+   'gfit_access_token','gfit_refresh_token','gfit_expires_at','gfit_latest']
     .forEach(k => localStorage.removeItem(k));
   window.gfitLiveData = null;
   renderGfitDisconnectedState();
