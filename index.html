@@ -6709,7 +6709,7 @@ function connectGoogleFit(){
   const backendUrl = gfitBackendUrl();
   if(!backendUrl){ alert('Backend URL not configured.'); return; }
   // Use new Google Health API endpoint
-  window.location.href = `${backendUrl}/api/health/google`;
+  window.location.href = `${backendUrl}/api/health?action=auth`;
 }
 
 // Handle OAuth callback — supports both old gfit_ and new ghealth_ URL params
@@ -6766,7 +6766,7 @@ async function ensureGfitToken(){
   // ── Google Health API path ──
   if(ghealthConnected()){
     if(Date.now() < ghealthExpiresAt() - 60000) return ghealthAccessToken();
-    const res = await fetch(`${backendUrl}/api/health/refresh`, {
+    const res = await fetch(`${backendUrl}/api/health?action=refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh_token: ghealthRefreshToken() }),
@@ -6788,7 +6788,7 @@ async function ensureGfitToken(){
 
   // ── Legacy Google Fit path ──
   if(Date.now() < gfitExpiresAt() - 60000) return gfitAccessToken();
-  const res = await fetch(`${backendUrl}/api/auth/refresh`, {
+  const res = await fetch(`${backendUrl}/api/health?action=refresh`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refresh_token: gfitRefreshToken() }),
@@ -6819,7 +6819,7 @@ async function syncGoogleFit(){
     // Always prefer Google Health API endpoint when those tokens are active
     // Google Fit is legacy fallback only (deprecated end of 2026)
     const dataEndpoint = ghealthConnected()
-      ? `${backendUrl}/api/health/data`
+      ? `${backendUrl}/api/health?action=data`
       : `${backendUrl}/api/fit/data?type=all`;
 
     const res = await fetch(dataEndpoint, {
@@ -6966,7 +6966,14 @@ async function showGfitDebug(){
   }
 
   // Render results
-  const rows = steps.map(s=>`
+  const apiLabel = ghealthConnected()
+    ? '🟢 Google Health API (Pixel Watch 2 — preferred)'
+    : '🔵 Google Fit REST API (legacy — no direct Pixel Watch 2 HR/sleep)';
+
+  const rows = [
+    {ok: true, label: 'Active API', detail: apiLabel},
+    ...steps
+  ].map(s=>`
     <div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid var(--bdr);font-size:12px">
       <span style="flex-shrink:0;font-size:14px">${s.ok?'✅':'❌'}</span>
       <div>
@@ -6977,18 +6984,30 @@ async function showGfitDebug(){
 
   // Diagnosis
   let diagnosis = '';
-  const allZero = data && !data.heart_rate?.resting && !data.steps && !data.sleep?.hours && !data.calories?.active;
-  if(allZero){
+  const hrMissing = data && !data.heart_rate?.resting && !data.heart_rate?.current;
+  const sleepMissing = data && !data.sleep?.hours;
+  const hasSteps = data?.steps > 0;
+
+  if(hrMissing && sleepMissing && hasSteps && !ghealthConnected()){
+    // Steps working but HR/sleep empty = Fit API connected but not getting Pixel Watch data
     diagnosis = `<div style="margin-top:10px;background:rgba(255,149,0,.08);border:1px solid rgba(255,149,0,.25);border-radius:8px;padding:10px;font-size:12px;line-height:1.8">
-      <strong style="color:var(--ora)">⚠️ Connected but no data — likely cause:</strong><br><br>
-      <strong>If using Fitbit on Android:</strong><br>
-      1. Install <strong>Health Connect</strong> from Play Store<br>
-      2. Open <strong>Fitbit app</strong> → Profile → Health Connect → enable Heart Rate, Sleep, Steps<br>
-      3. Open <strong>Google Fit app</strong> → verify data appears in the Journal<br>
-      4. Wait 15–30 mins for sync, then tap ↻ Refresh here<br><br>
-      <strong>If using Fitbit on iPhone:</strong><br>
-      Fitbit does <em>not</em> sync to Google Fit on iOS. Fitbit only syncs to Apple Health on iOS — the Google Fit connection will always be empty. Consider switching to an Android device, or logging data manually in FightOS.<br><br>
-      <strong>To verify sync is working:</strong> Open <a href="https://fit.google.com" target="_blank" style="color:var(--acc)">fit.google.com</a> in a browser and check if your data appears there. If it doesn't appear on that site, it won't appear here either.
+      <strong style="color:var(--ora)">⚠️ Steps ✅ but HR & Sleep empty</strong><br><br>
+      You're connected via <strong>Google Fit REST API (legacy)</strong>. Steps work via this API but Pixel Watch 2 writes HR and sleep natively to <strong>Google Health API</strong> — a separate system.<br><br>
+      <strong>Fix — reconnect to Google Health API:</strong><br>
+      1. First add <code>googlehealth.*</code> scopes in Google Cloud Console → Auth Platform → Data access<br>
+      2. Tap <strong>Disconnect</strong> above, then <strong>Connect Google Fit</strong> again<br>
+      3. The new connect flow uses Google Health API and will request the correct Pixel Watch permissions<br><br>
+      <strong>Check raw JSON below</strong> → look at <code>_diagnostics.wear_os_hr_sources</code> to see if the Pixel Watch HR source exists in Google Fit at all.
+    </div>`;
+  } else if(hrMissing && sleepMissing && !hasSteps){
+    diagnosis = `<div style="margin-top:10px;background:rgba(255,149,0,.08);border:1px solid rgba(255,149,0,.25);border-radius:8px;padding:10px;font-size:12px;line-height:1.8">
+      <strong style="color:var(--ora)">⚠️ No data at all</strong><br><br>
+      Google Fit is not receiving any data from your Pixel Watch 2. Open the <strong>Google Fit app</strong> on your phone → pull down to refresh. Also check the watch is paired and syncing. Then tap ↻ Refresh here.
+    </div>`;
+  } else if(hrMissing && ghealthConnected()){
+    diagnosis = `<div style="margin-top:10px;background:rgba(76,159,255,.06);border:1px solid rgba(76,159,255,.2);border-radius:8px;padding:10px;font-size:12px;line-height:1.8">
+      <strong style="color:var(--blu)">ℹ️ Google Health API connected — HR not yet available</strong><br><br>
+      Open <strong>Google Health app</strong> on your phone and confirm your Pixel Watch 2 last synced recently. HR data should appear within 10–15 minutes of wearing the watch. Tap ↻ Refresh.
     </div>`;
   }
 
