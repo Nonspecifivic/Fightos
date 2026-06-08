@@ -278,6 +278,8 @@ html,body{
 @media(min-width:681px){.hamburger{display:none;}}
 
 .topbar-title{font-family:"Bebas Neue",sans-serif;font-size:18px;letter-spacing:2px;color:var(--txt);}
+.topbar-title:hover{color:var(--acc);transition:color .15s;}
+.sidebar-logo:hover .sidebar-logo-text{opacity:.8;transition:opacity .15s;}
 .topbar-right{display:flex;align-items:center;gap:7px;}
 .topbar-btn{
   height:34px;border-radius:20px;border:1px solid var(--bdr2);
@@ -956,9 +958,9 @@ html,body{
 
 <!-- SIDEBAR — visible on desktop always, slides in on mobile -->
 <aside class="app-sidebar" id="app-sidebar">
-  <div class="sidebar-logo">
+  <div class="sidebar-logo" onclick="window.location.reload()" style="cursor:pointer" title="Reload FightOS">
     <div class="sidebar-logo-text">FIGHT<span>OS</span></div>
-    <button class="sidebar-close" onclick="closeSidebar()" aria-label="Close menu">✕</button>
+    <button class="sidebar-close" onclick="event.stopPropagation();closeSidebar()" aria-label="Close menu">✕</button>
   </div>
 
   <div class="sidebar-section">Main</div>
@@ -998,7 +1000,8 @@ html,body{
     <button class="hamburger" id="hamburger-btn" onclick="toggleSidebar()" aria-label="Toggle menu">
       <span></span><span></span><span></span>
     </button>
-    <span class="topbar-title" id="topbar-title">Dashboard</span>
+    <span class="topbar-title" id="topbar-title" onclick="window.location.reload()"
+      style="cursor:pointer" title="Tap to refresh FightOS">Dashboard</span>
   </div>
   <div class="topbar-right">
     <button id="account-btn" class="topbar-btn" onclick="openAccountModal()">👤 <span id="account-label">Account</span></button>
