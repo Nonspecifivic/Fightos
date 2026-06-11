@@ -2022,54 +2022,39 @@ html,body{
 
 <!-- ==================== TRACKERS ==================== -->
 <div class="tab" id="tab-trackers">
-  <div class="tip">Connect Google Fit to automatically import HRV, heart rate, sleep, steps and calories directly into your AI coach briefs and dashboard.</div>
+  <div class="tip">Connect Google Health to automatically import heart rate, sleep, steps and calories from your Pixel Watch 2 directly into your AI coach briefs and dashboard.</div>
 
   <!-- ── GOOGLE FIT CONNECT CARD ── -->
   <div class="card" id="gfit-connect-card">
     <div class="card-header">
-      <h3>🏃 Google Fit / Health</h3>
+      <h3>💚 Google Health Connect</h3>
       <span id="gfit-status-badge" class="pill pill-ora">Not connected</span>
     </div>
     <div class="card-body" id="gfit-card-body">
       <!-- Disconnected state -->
       <div id="gfit-disconnected">
         <p style="font-size:13px;color:var(--mut2);line-height:1.6;margin-bottom:12px">
-          Connects to the <strong>Google Fit REST API</strong> to pull resting heart rate, sleep, steps, active calories and weight. Requires the Google Fit app to be installed and collecting data on your device.
+          Connects to the <strong>Google Health API</strong> to pull heart rate, sleep, steps, active calories and weight directly from your <strong>Pixel Watch 2</strong> and Google Health app.
         </p>
-        <div id="gfit-setup-steps" style="background:var(--surf2);border:1px solid var(--bdr);border-radius:8px;padding:11px;margin-bottom:12px;font-size:12px;line-height:1.9">
+        <div style="background:var(--surf2);border:1px solid var(--bdr);border-radius:8px;padding:11px;margin-bottom:12px;font-size:12px;line-height:1.9">
           <strong>Before connecting:</strong><br>
-          1. Install <strong>Google Fit</strong> on your phone (Android) or connect it to Apple Health (iPhone) — <a href="https://fit.google.com" target="_blank" style="color:var(--acc)">fit.google.com</a><br>
+          1. Make sure <strong>Google Health</strong> is installed on your Android phone and your Pixel Watch 2 is synced<br>
           <span id="gfit-step-backend">2. Deploy the <strong>fightos-backend</strong> folder to Vercel (see README)<br>
           3. Enter your backend URL below and click Connect</span>
-          <span id="gfit-step-simple" style="display:none">2. Tap <strong>Connect Google Fit</strong> below</span>
-        </div>
-
-        <!-- Fitbit-specific instructions -->
-        <div style="background:rgba(0,210,255,.06);border:1px solid rgba(0,210,255,.2);border-radius:8px;padding:11px;margin-bottom:12px;font-size:12px;line-height:1.8">
-          <div style="font-weight:600;margin-bottom:5px">📱 Using Fitbit? Read this first</div>
-          <strong>Android:</strong> Fitbit syncs to Google Fit via <strong>Health Connect</strong>. Make sure:<br>
-          &nbsp;&nbsp;1. Install <strong>Health Connect</strong> app (free on Play Store)<br>
-          &nbsp;&nbsp;2. Open Fitbit app → Profile → <strong>Health Connect</strong> → enable all data types<br>
-          &nbsp;&nbsp;3. Wait ~10–30 mins for first sync to complete<br><br>
-          <strong>iPhone/iOS:</strong> Fitbit does <strong>not</strong> sync to Google Fit on iOS. Instead:<br>
-          &nbsp;&nbsp;• Fitbit syncs to <strong>Apple Health</strong> (Fitbit app → Today → Health app integration)<br>
-          &nbsp;&nbsp;• Google Fit is essentially deprecated on iOS and won't receive Fitbit data<br>
-          &nbsp;&nbsp;• To use the Tracker, you would need to use an Android device, or switch to a wearable that syncs to Google Fit natively (Wear OS, Garmin with Health Connect)
+          <span id="gfit-step-simple" style="display:none">2. Tap <strong>Connect Google Health</strong> below</span>
         </div>
         <div class="fg" id="gfit-backend-url-section">
           <label class="lbl">Your Vercel backend URL</label>
-          <!-- Shown when no default is set -->
           <div id="gfit-url-input-wrap">
-            <input type="url" id="gfit-backend-url" placeholder="https://fightos-backend-abc123.vercel.app"
+            <input type="url" id="gfit-backend-url" placeholder="https://fightos-backend.vercel.app"
               value="" style="font-family:monospace;font-size:12px">
             <div style="font-size:10px;color:var(--mut2);margin-top:3px">Paste the URL from your Vercel dashboard after deploying</div>
           </div>
-          <!-- Shown when admin default is active -->
           <div id="gfit-url-default-notice" style="display:none;background:rgba(0,230,118,.07);border:1px solid rgba(0,230,118,.2);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--grn)">
             ✅ Backend URL pre-configured. No setup needed.
           </div>
         </div>
-        <button class="btn btn-acc btn-full btn-hero" onclick="connectGoogleFit()">CONNECT GOOGLE FIT</button>
+        <button class="btn btn-acc btn-full btn-hero" onclick="connectGoogleFit()">CONNECT GOOGLE HEALTH</button>
       </div>
 
       <!-- Connected state -->
@@ -2091,9 +2076,9 @@ html,body{
           <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--bdr)">
             <div style="font-size:12px;font-weight:500;margin-bottom:6px">If all values show 0 or null:</div>
             <div style="font-size:12px;color:var(--mut2);line-height:1.7">
-              1. Your Google Fit OAuth token may be missing fitness scopes — tap <strong>Force reconnect</strong> below<br>
-              2. Make sure Fitbit → Health Connect → Google Fit sync is complete<br>
-              3. Open Google Fit app and check Journal for HR readings
+              1. Tap <strong>Force reconnect</strong> to request fresh Google Health permissions<br>
+              2. Open <strong>Google Health app</strong> on your phone and check your Pixel Watch 2 last synced recently<br>
+              3. HR data appears within 10–15 minutes of wearing the watch
             </div>
             <button class="btn btn-acc btn-full" onclick="reconnectGoogleFit()" style="font-size:12px;margin-top:10px">🔄 Force reconnect with fresh permissions</button>
           </div>
@@ -2819,7 +2804,7 @@ function buildAthleteContext(){
     const currentHR = gf.heart_rate?.current;
     const gfSleep   = gf.sleep?.hours;
     const stages    = gf.sleep?.stages;
-    const source    = usingHealthAPI ? 'Google Health API (Pixel Watch 2 — primary source)' : 'Google Fit (legacy — will deprecate 2026)';
+    const source    = 'Google Health API (Pixel Watch 2)';
     trackerCtx = `\nWEARABLE DATA (${source}):
   HR: ${currentHR?currentHR+'bpm (current) / ':''}${restingHR?restingHR+'bpm resting':'no HR data'}
   Steps today: ${gf.steps?fmtNum(gf.steps):'—'} | Active calories: ${gf.calories?.active?fmtNum(gf.calories.active)+' kcal':'—'}
@@ -6702,10 +6687,7 @@ function ghealthExpiresAt()   { return parseInt(localStorage.getItem('ghealth_ex
 function ghealthConnected()   { return !!(ghealthAccessToken() && ghealthRefreshToken()); }
 
 // Legacy Google Fit tokens (keep working until end of 2026)
-function gfitAccessToken(){ return localStorage.getItem('gfit_access_token')||''; }
-function gfitRefreshToken(){ return localStorage.getItem('gfit_refresh_token')||''; }
-function gfitExpiresAt()  { return parseInt(localStorage.getItem('gfit_expires_at')||'0'); }
-function gfitConnected()  { return ghealthConnected() || !!(gfitAccessToken() && gfitRefreshToken()); }
+// Legacy Google Fit tokens — no longer used. Google Health API only.
 
 // Connect using new Google Health API (preferred)
 function connectGoogleFit(){
@@ -6741,73 +6723,32 @@ function handleGfitCallback(){
     return;
   }
 
-  // ── Legacy Google Fit callback (still supported) ──
-  if(params.has('gfit_access_token')){
-    const accessToken  = params.get('gfit_access_token');
-    const refreshToken = params.get('gfit_refresh_token');
-    const expiresIn    = parseInt(params.get('gfit_expires_in')||'3600');
-    localStorage.setItem('gfit_access_token',  accessToken);
-    localStorage.setItem('gfit_refresh_token',  refreshToken);
-    localStorage.setItem('gfit_expires_at', String(Date.now() + expiresIn * 1000));
-    window.history.replaceState(null,'',window.location.pathname);
-    renderGfitConnectedState();
-    syncGoogleFit();
-    return;
-  }
-  if(params.has('gfit_error')){
-    const msg = decodeURIComponent(params.get('gfit_error'));
-    alert('Google Fit connection failed: ' + msg);
-    window.history.replaceState(null,'',window.location.pathname);
-  }
+  // Legacy Google Fit tokens no longer supported — Google Health API only
 }
 
-// Ensure a valid access token — tries Google Health API first, falls back to Fit
+// Ensure a valid Google Health API access token
 async function ensureGfitToken(){
   const backendUrl = gfitBackendUrl();
   if(!backendUrl) throw new Error('No backend URL configured');
-
-  // ── Google Health API path ──
-  if(ghealthConnected()){
-    if(Date.now() < ghealthExpiresAt() - 60000) return ghealthAccessToken();
-    const res = await fetch(`${backendUrl}/api/health?action=refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: ghealthRefreshToken() }),
-    });
-    const data = await res.json();
-    if(data.error){
-      const needsReconnect = data.error === 'invalid_grant' || data.error === 'token_expired'
-        || (data.error_description||'').includes('expired') || (data.error_description||'').includes('revoked');
-      if(needsReconnect){
-        ['ghealth_access_token','ghealth_refresh_token','ghealth_expires_at'].forEach(k=>localStorage.removeItem(k));
-        throw new Error('__needs_reconnect__');
-      }
-      throw new Error(data.error);
-    }
-    localStorage.setItem('ghealth_access_token', data.access_token);
-    localStorage.setItem('ghealth_expires_at', String(Date.now() + (data.expires_in||3600) * 1000));
-    return data.access_token;
-  }
-
-  // ── Legacy Google Fit path ──
-  if(Date.now() < gfitExpiresAt() - 60000) return gfitAccessToken();
+  if(!ghealthConnected()) throw new Error('__needs_reconnect__');
+  if(Date.now() < ghealthExpiresAt() - 60000) return ghealthAccessToken();
   const res = await fetch(`${backendUrl}/api/health?action=refresh`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refresh_token: gfitRefreshToken() }),
+    body: JSON.stringify({ refresh_token: ghealthRefreshToken() }),
   });
   const data = await res.json();
   if(data.error){
     const needsReconnect = data.error === 'invalid_grant' || data.error === 'token_expired'
       || (data.error_description||'').includes('expired') || (data.error_description||'').includes('revoked');
     if(needsReconnect){
-      ['gfit_access_token','gfit_refresh_token','gfit_expires_at'].forEach(k=>localStorage.removeItem(k));
+      ['ghealth_access_token','ghealth_refresh_token','ghealth_expires_at'].forEach(k=>localStorage.removeItem(k));
       throw new Error('__needs_reconnect__');
     }
     throw new Error(data.error);
   }
-  localStorage.setItem('gfit_access_token', data.access_token);
-  localStorage.setItem('gfit_expires_at', String(Date.now() + (data.expires_in||3600) * 1000));
+  localStorage.setItem('ghealth_access_token', data.access_token);
+  localStorage.setItem('ghealth_expires_at', String(Date.now() + (data.expires_in||3600) * 1000));
   return data.access_token;
 }
 
@@ -6821,9 +6762,7 @@ async function syncGoogleFit(){
     const backendUrl = gfitBackendUrl();
     // Always prefer Google Health API endpoint when those tokens are active
     // Google Fit is legacy fallback only (deprecated end of 2026)
-    const dataEndpoint = ghealthConnected()
-      ? `${backendUrl}/api/health?action=data`
-      : `${backendUrl}/api/fit/data?type=all`;
+    const dataEndpoint = `${backendUrl}/api/health?action=data`;
 
     const res = await fetch(dataEndpoint, {
       headers: { 'Authorization': `Bearer ${token}` },
@@ -6835,8 +6774,7 @@ async function syncGoogleFit(){
       const isAuthErr = res.status === 401 || res.status === 403
         || errMsg === 'invalid_grant' || errMsg.includes('expired') || errMsg.includes('revoked');
       if(isAuthErr){
-        ['ghealth_access_token','ghealth_refresh_token','ghealth_expires_at',
-         'gfit_access_token','gfit_refresh_token','gfit_expires_at'].forEach(k=>localStorage.removeItem(k));
+        ['ghealth_access_token','ghealth_refresh_token','ghealth_expires_at'].forEach(k=>localStorage.removeItem(k));
         if(label) label.textContent = '';
         showGfitReconnectPrompt();
         return;
@@ -6849,7 +6787,7 @@ async function syncGoogleFit(){
       || data.sleep?.hours || data.calories?.active || data.weight?.kg;
 
     if(label) label.textContent = hasData
-      ? (ghealthConnected() ? '🟢 Google Health · ' : '🔵 Google Fit · ') + 'Updated ' + new Date().toLocaleTimeString(userLocale,{hour:'2-digit',minute:'2-digit'})
+      ? '🟢 Google Health · Updated ' + new Date().toLocaleTimeString(userLocale,{hour:'2-digit',minute:'2-digit'})
       : 'Connected — no data yet';
 
     localStorage.setItem('gfit_latest', JSON.stringify(data));
@@ -6875,12 +6813,12 @@ function showGfitReconnectPrompt(){
   if(!rows) return;
   rows.innerHTML = `
     <div style="background:rgba(255,149,0,.08);border:1px solid rgba(255,149,0,.25);border-radius:10px;padding:14px;margin-top:10px">
-      <div style="font-size:13px;font-weight:600;color:var(--ora);margin-bottom:6px">🔄 Google Fit session expired — reconnect needed</div>
+      <div style="font-size:13px;font-weight:600;color:var(--ora);margin-bottom:6px">🔄 Google Health session expired — reconnect needed</div>
       <div style="font-size:12px;color:var(--mut2);line-height:1.7;margin-bottom:12px">
-        Your Google Fit access has expired. This happens automatically after 7 days when the app is in Google's testing mode, or if you revoked access in your Google account.<br><br>
+        Your Google Health access has expired. This happens automatically after 7 days when the app is in Google's testing mode, or if you revoked access in your Google account.<br><br>
         Tap below to reconnect — it only takes a few seconds.
       </div>
-      <button class="btn btn-acc" onclick="reconnectGoogleFit()" style="font-size:13px;padding:10px 20px">↻ Reconnect Google Fit</button>
+      <button class="btn btn-acc" onclick="reconnectGoogleFit()" style="font-size:13px;padding:10px 20px">↻ Reconnect Google Health</button>
       <div style="font-size:10px;color:var(--mut2);margin-top:8px">
         To avoid this repeating: publish your Google Cloud app (move from Testing → Production in OAuth consent screen). This gives tokens that last indefinitely.
       </div>
@@ -6888,8 +6826,7 @@ function showGfitReconnectPrompt(){
 }
 
 async function reconnectGoogleFit(){
-  ['ghealth_access_token','ghealth_refresh_token','ghealth_expires_at',
-   'gfit_access_token','gfit_refresh_token','gfit_expires_at','gfit_latest']
+  ['ghealth_access_token','ghealth_refresh_token','ghealth_expires_at','gfit_latest']
     .forEach(k=>localStorage.removeItem(k));
   window.gfitLiveData = null;
   connectGoogleFit(); // routes to /api/health/google
@@ -6915,7 +6852,7 @@ async function showGfitDebug(){
     steps.push({ok:true, label:'Backend URL', detail:backendUrl});
 
     // Step 3: fetch data
-    const res = await fetch(`${backendUrl}/api/fit/data?type=all`, {
+    const res = await fetch(`${backendUrl}/api/health?action=data`, {
       headers:{ 'Authorization':`Bearer ${token}` }
     });
 
@@ -6971,7 +6908,7 @@ async function showGfitDebug(){
   // Render results
   const apiLabel = ghealthConnected()
     ? '🟢 Google Health API (Pixel Watch 2 — preferred)'
-    : '🔵 Google Fit REST API (legacy — no direct Pixel Watch 2 HR/sleep)';
+    : '🟢 Google Health API';
 
   const rows = [
     {ok: true, label: 'Active API', detail: apiLabel},
@@ -6995,17 +6932,16 @@ async function showGfitDebug(){
     // Steps working but HR/sleep empty = Fit API connected but not getting Pixel Watch data
     diagnosis = `<div style="margin-top:10px;background:rgba(255,149,0,.08);border:1px solid rgba(255,149,0,.25);border-radius:8px;padding:10px;font-size:12px;line-height:1.8">
       <strong style="color:var(--ora)">⚠️ Steps ✅ but HR & Sleep empty</strong><br><br>
-      You're connected via <strong>Google Fit REST API (legacy)</strong>. Steps work via this API but Pixel Watch 2 writes HR and sleep natively to <strong>Google Health API</strong> — a separate system.<br><br>
-      <strong>Fix — reconnect to Google Health API:</strong><br>
-      1. First add <code>googlehealth.*</code> scopes in Google Cloud Console → Auth Platform → Data access<br>
-      2. Tap <strong>Disconnect</strong> above, then <strong>Connect Google Fit</strong> again<br>
-      3. The new connect flow uses Google Health API and will request the correct Pixel Watch permissions<br><br>
-      <strong>Check raw JSON below</strong> → look at <code>_diagnostics.wear_os_hr_sources</code> to see if the Pixel Watch HR source exists in Google Fit at all.
+      HR and sleep from your Pixel Watch 2 are not yet appearing.<br><br>
+      <strong>Steps to fix:</strong><br>
+      1. Open <strong>Google Health app</strong> on your phone and check your Pixel Watch 2 last synced<br>
+      2. Tap <strong>Disconnect</strong> above, then <strong>Connect Google Health</strong> again to refresh permissions<br>
+      3. Ensure <code>googlehealth.*</code> scopes are added in Google Cloud Console → Auth Platform → Data access
     </div>`;
   } else if(hrMissing && sleepMissing && !hasSteps){
     diagnosis = `<div style="margin-top:10px;background:rgba(255,149,0,.08);border:1px solid rgba(255,149,0,.25);border-radius:8px;padding:10px;font-size:12px;line-height:1.8">
       <strong style="color:var(--ora)">⚠️ No data at all</strong><br><br>
-      Google Fit is not receiving any data from your Pixel Watch 2. Open the <strong>Google Fit app</strong> on your phone → pull down to refresh. Also check the watch is paired and syncing. Then tap ↻ Refresh here.
+      Google Health is not receiving any data from your Pixel Watch 2. Open the <strong>Google Health app</strong> on your phone and check your watch is paired and syncing. Then tap ↻ Refresh here.
     </div>`;
   } else if(hrMissing && ghealthConnected()){
     diagnosis = `<div style="margin-top:10px;background:rgba(76,159,255,.06);border:1px solid rgba(76,159,255,.2);border-radius:8px;padding:10px;font-size:12px;line-height:1.8">
@@ -7067,7 +7003,7 @@ function renderGfitData(d){
     rows.innerHTML=`<div class="tip" style="margin-top:10px">
       <strong>No data found.</strong> The API queried Google Health from midnight today.<br><br>
       <strong>Pixel Watch 2:</strong> Data should appear within 5–10 minutes of your watch syncing.
-      Make sure <strong>Google Fit</strong> is open and syncing on your phone. Tap ↻ Refresh after a moment.<br><br>
+      Make sure <strong>Google Health</strong> is open and your Pixel Watch 2 is synced. Tap ↻ Refresh after a moment.<br><br>
       Tap <strong>🔍 Debug</strong> to see exactly what data Google Health returned.
     </div>`;
   } else {
@@ -7104,8 +7040,7 @@ function renderGfitDisconnectedState(){
 
 function disconnectGoogleFit(){
   if(!confirm('Disconnect Google Health / Fit? Your synced data will be cleared.')) return;
-  ['ghealth_access_token','ghealth_refresh_token','ghealth_expires_at',
-   'gfit_access_token','gfit_refresh_token','gfit_expires_at','gfit_latest']
+  ['ghealth_access_token','ghealth_refresh_token','ghealth_expires_at','gfit_latest']
     .forEach(k => localStorage.removeItem(k));
   window.gfitLiveData = null;
   renderGfitDisconnectedState();
@@ -7141,7 +7076,7 @@ function initGoogleFit(){
   if(inp && saved) inp.value = saved;
 
   handleGfitCallback(); // check if returning from OAuth
-  if(gfitConnected()){
+  if(ghealthConnected()){
     renderGfitConnectedState();
     const cached = localStorage.getItem('gfit_latest');
     if(cached){ try{ renderGfitData(JSON.parse(cached)); }catch(e){} }
