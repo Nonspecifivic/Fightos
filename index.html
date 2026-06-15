@@ -1777,7 +1777,7 @@ html,body{
     <div class="card-body">
       <div class="f2 fg">
         <div><label class="lbl">Weight (kg)</label><input type="number" id="wt-input" step="0.1" placeholder="e.g. 80.2"></div>
-        <div><label class="lbl">Time</label><input type="time" id="wt-time"></div>
+        <div><label class="lbl">Date</label><input type="date" id="wt-date"></div>
       </div>
       <button class="btn btn-acc btn-full" onclick="logWeight()">LOG WEIGHT</button>
     </div>
@@ -3800,11 +3800,8 @@ function checkLinkResult(){
 // so logging after midnight always uses the current day without a page reload.
 
 function refreshWeightDateInput(){
-  // Weight tab has no explicit date input — it logs to todayStr() on submit, which is live
-  // But refresh the chart title / period display if present
-  const today = todayStr();
-  const inp = document.getElementById('wt-date-input');
-  if(inp) inp.value = today;
+  const inp = document.getElementById('wt-date');
+  if(inp && !inp.value) inp.value = todayStr();
 }
 
 function refreshTrainingDateInputs(){
@@ -4448,20 +4445,26 @@ function renderWeightChart(){
 }
 
 function logWeight(){
-  const val=parseFloat(document.getElementById('wt-input').value);
+  const val = parseFloat(document.getElementById('wt-input').value);
   if(!val) return;
-  const wLog=JSON.parse(localStorage.getItem('fos_weight_log')||'[]');
-  // Remove any existing entry for today (avoid duplicates for same date)
-  const today=todayStr();
-  const filtered=wLog.filter(w=>w.date!==today);
-  filtered.push({id:Date.now(), date:today, val});
-  // Keep sorted by date ascending
+  // Use selected date — defaults to today if left blank
+  const dateEl = document.getElementById('wt-date');
+  const entryDate = (dateEl && dateEl.value) ? dateEl.value : todayStr();
+  const wLog = JSON.parse(localStorage.getItem('fos_weight_log')||'[]');
+  // Remove any existing entry for the same date (one entry per day)
+  const filtered = wLog.filter(w => w.date !== entryDate);
+  filtered.push({ id:Date.now(), date:entryDate, val });
+  // Keep sorted by date ascending for chart
   filtered.sort((a,b)=>{ try{ return parseDate(a.date)-parseDate(b.date); }catch(e){ return 0; } });
-  try{ localStorage.setItem('fos_weight_log',JSON.stringify(filtered)); }catch(e){}
-  const profile=loadProfile();
-  if(profile){ profile.weight=val; saveProfile(profile); }
+  try{ localStorage.setItem('fos_weight_log', JSON.stringify(filtered)); }catch(e){}
+  // Only update profile's current weight if logging for today or a future date
+  if(entryDate >= todayStr()){
+    const profile = loadProfile();
+    if(profile){ profile.weight=val; saveProfile(profile); }
+  }
   renderWeightChart();
   document.getElementById('wt-input').value='';
+  if(dateEl) dateEl.value = todayStr(); // reset to today
   renderDashboard();
   debouncedSync();
 }
@@ -7820,7 +7823,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   const trDate=document.getElementById('tr-date'); if(trDate) trDate.value=today;
   const evDate=document.getElementById('ev-date'); if(evDate) evDate.value=today;
   const ltEl=document.getElementById('last-period'); if(ltEl) ltEl.value=today;
-  const wtEl=document.getElementById('wt-time'); if(wtEl) wtEl.value=new Date().toTimeString().slice(0,5);
+  const wtEl=document.getElementById('wt-date'); if(wtEl) wtEl.value=todayStr();
 
   // ── Step 2: Decide what to show ──
   const profile = loadProfile();
