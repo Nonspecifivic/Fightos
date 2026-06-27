@@ -3881,11 +3881,33 @@ function saveSickInjuredDay(){
   renderTrainingLog();
 
   // Auto-add a recovery event to the calendar
+  // If a return date is set, span the event across all off days (injury date → day before return)
   try{
     const calEvts=JSON.parse(localStorage.getItem('fos_cal_events')||'[]');
     const calLabel=(type==='sick'||type==='rest'||type==='mental')?'🤒 Sick/rest day':'🤕 Injury — no training';
-    calEvts.push({id:Date.now()+1,date,name:calLabel,type:'recovery',notes:bodyParts||notes.slice(0,40)});
-    localStorage.setItem('fos_cal_events',JSON.stringify(calEvts));
+
+    // Calculate end date: day before returnDate (last off day)
+    // If no return date, single-day event only
+    let endDate = '';
+    if(returnDate){
+      const ret = parseDate(returnDate);
+      ret.setDate(ret.getDate()-1); // day before return = last off day
+      const retEnd = localDateStr(ret);
+      // Only set end if it's after the start date (handles same-day return edge case)
+      if(retEnd >= date) endDate = retEnd;
+    }
+
+    calEvts.push({
+      id: Date.now()+1,
+      date,
+      end: endDate,
+      name: calLabel,
+      type: 'recovery',
+      notes: bodyParts || notes.slice(0,40)
+    });
+    localStorage.setItem('fos_cal_events', JSON.stringify(calEvts));
+    calEvents = calEvts; // keep in-memory array in sync
+    renderCal();
   }catch(e){}
   debouncedSync();
 }
