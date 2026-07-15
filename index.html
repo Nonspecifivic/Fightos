@@ -2080,7 +2080,7 @@ html,body{
               2. Open <strong>Google Health app</strong> on your phone and check your Pixel Watch 2 last synced recently<br>
               3. HR data appears within 10–15 minutes of wearing the watch
             </div>
-            <button class="btn btn-acc btn-full" onclick="reconnectGoogleFit()" style="font-size:12px;margin-top:10px">🔄 Force reconnect with fresh permissions</button>
+            <button class="btn btn-acc btn-full" onclick="reconnectGoogleHealth()" style="font-size:12px;margin-top:10px">🔄 Force reconnect with fresh permissions</button>
           </div>
         </div>
       </div>
@@ -6843,7 +6843,7 @@ function showGfitReconnectPrompt(){
         Your Google Health access has expired. This happens automatically after 7 days when the app is in Google's testing mode, or if you revoked access in your Google account.<br><br>
         Tap below to reconnect — it only takes a few seconds.
       </div>
-      <button class="btn btn-acc" onclick="reconnectGoogleFit()" style="font-size:13px;padding:10px 20px">↻ Reconnect Google Health</button>
+      <button class="btn btn-acc" onclick="reconnectGoogleHealth()" style="font-size:13px;padding:10px 20px">↻ Reconnect Google Health</button>
       <div style="font-size:10px;color:var(--mut2);margin-top:8px">
         To avoid this repeating: publish your Google Cloud app (move from Testing → Production in OAuth consent screen). This gives tokens that last indefinitely.
       </div>
@@ -6983,57 +6983,8 @@ async function showGfitDebug(){
   content.innerHTML = rows + diagnosis +
     `<div style="margin-top:10px"><button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.textContent.includes('Show')?'Hide raw JSON':'Show raw JSON'" style="font-size:11px;color:var(--mut2);background:transparent;border:1px solid var(--bdr2);border-radius:5px;padding:3px 8px;cursor:pointer">Show raw JSON</button>
     <pre style="display:none;font-size:10px;font-family:monospace;color:var(--mut2);white-space:pre-wrap;word-break:break-all;margin-top:6px;max-height:200px;overflow-y:auto">${data?JSON.stringify(data,null,2):'No data'}</pre></div>`;
-}  
-
-  // Render results
-  const apiLabel = ghealthConnected()
-    ? '🟢 Google Health API (Pixel Watch 2 — preferred)'
-    : '🟢 Google Health API';
-
-  const rows = [
-    {ok: true, label: 'Active API', detail: apiLabel},
-    ...steps
-  ].map(s=>`
-    <div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid var(--bdr);font-size:12px">
-      <span style="flex-shrink:0;font-size:14px">${s.ok?'✅':'❌'}</span>
-      <div>
-        <div style="font-weight:600;color:var(--txt)">${s.label}</div>
-        <div style="color:var(--mut2)">${s.detail}</div>
-      </div>
-    </div>`).join('');
-
-  // Diagnosis
-  let diagnosis = '';
-  const hrMissing = data && !data.heart_rate?.resting && !data.heart_rate?.current;
-  const sleepMissing = data && !data.sleep?.hours;
-  const hasSteps = data?.steps > 0;
-
-  if(hrMissing && sleepMissing && hasSteps && !ghealthConnected()){
-    // Steps working but HR/sleep empty = Fit API connected but not getting Pixel Watch data
-    diagnosis = `<div style="margin-top:10px;background:rgba(255,149,0,.08);border:1px solid rgba(255,149,0,.25);border-radius:8px;padding:10px;font-size:12px;line-height:1.8">
-      <strong style="color:var(--ora)">⚠️ Steps ✅ but HR & Sleep empty</strong><br><br>
-      HR and sleep from your Pixel Watch 2 are not yet appearing.<br><br>
-      <strong>Steps to fix:</strong><br>
-      1. Open <strong>Google Health app</strong> on your phone and check your Pixel Watch 2 last synced<br>
-      2. Tap <strong>Disconnect</strong> above, then <strong>Connect Google Health</strong> again to refresh permissions<br>
-      3. Ensure <code>googlehealth.*</code> scopes are added in Google Cloud Console → Auth Platform → Data access
-    </div>`;
-  } else if(hrMissing && sleepMissing && !hasSteps){
-    diagnosis = `<div style="margin-top:10px;background:rgba(255,149,0,.08);border:1px solid rgba(255,149,0,.25);border-radius:8px;padding:10px;font-size:12px;line-height:1.8">
-      <strong style="color:var(--ora)">⚠️ No data at all</strong><br><br>
-      Google Health is not receiving any data from your Pixel Watch 2. Open the <strong>Google Health app</strong> on your phone and check your watch is paired and syncing. Then tap ↻ Refresh here.
-    </div>`;
-  } else if(hrMissing && ghealthConnected()){
-    diagnosis = `<div style="margin-top:10px;background:rgba(76,159,255,.06);border:1px solid rgba(76,159,255,.2);border-radius:8px;padding:10px;font-size:12px;line-height:1.8">
-      <strong style="color:var(--blu)">ℹ️ Google Health API connected — HR not yet available</strong><br><br>
-      Open <strong>Google Health app</strong> on your phone and confirm your Pixel Watch 2 last synced recently. HR data should appear within 10–15 minutes of wearing the watch. Tap ↻ Refresh.
-    </div>`;
-  }
-
-  content.innerHTML = rows + diagnosis +
-    `<div style="margin-top:10px"><button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.textContent.includes('Show')?'Hide raw JSON':'Show raw JSON'" style="font-size:11px;color:var(--mut2);background:transparent;border:1px solid var(--bdr2);border-radius:5px;padding:3px 8px;cursor:pointer">Show raw JSON</button>
-    <pre style="display:none;font-size:10px;font-family:monospace;color:var(--mut2);white-space:pre-wrap;word-break:break-all;margin-top:6px;max-height:200px;overflow-y:auto">${data?JSON.stringify(data,null,2):'No data'}</pre></div>`;
 }
+  
 
 function renderGfitData(d){
   const grid = document.getElementById('gfit-data-grid');
