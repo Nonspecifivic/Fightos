@@ -6850,134 +6850,11 @@ function showGfitReconnectPrompt(){
     </div>`;
 }
 
-async function reconnectGoogleFit(){
+async function reconnectGoogleHealth(){
   ['ghealth_access_token','ghealth_refresh_token','ghealth_expires_at','gfit_latest']
     .forEach(k=>localStorage.removeItem(k));
   window.gfitLiveData = null;
   connectGoogleFit(); // routes to /api/health/google
-}
-
-async function showGfitDebug(){
-  const panel   = document.getElementById('gfit-debug-panel');
-  const content = document.getElementById('gfit-debug-content');
-  if(panel.style.display==='block'){ panel.style.display='none'; return; }
-  panel.style.display='block';
-  content.innerHTML = '<div style="color:var(--mut2)">🔍 Running connection check…</div>';
-
-  const steps = [];
-  let data = null;
-
-  // Step 1: token valid?
-  try{
-    const token = await ensureGfitToken();
-    steps.push({ok:true, label:'OAuth token', detail:'Valid — not expired'});
-
-    // Step 2: backend reachable?
-    const backendUrl = gfitBackendUrl();
-    steps.push({ok:true, label:'Backend URL', detail:backendUrl});
-
-    // Step 3: fetch data
-    const res = await fetch(`${backendUrl}/api/health?action=data`, {
-      headers:{ 'Authorization':`Bearer ${token}` }
-    });
-
-    if(!res.ok){
-      const err = await res.json().catch(()=>({}));
-      steps.push({ok:false, label:'API response', detail:`HTTP ${res.status} — ${err.error||res.statusText}`});
-    } else {
-      data = await res.json();
-      steps.push({ok:true, label:'API response', detail:'HTTP 200 — data received'});
-
-      // Step 4: data points
-      const diag = data._diagnostics || {};
-      const hr    = data.heart_rate?.resting;
-      const steps_ = data.steps;
-      const sleep = data.sleep?.hours;
-      const cal   = data.calories?.active;
-      const wt    = data.weight?.kg;
-
-      steps.push({
-        ok: diag.hr_points_found > 0,
-        label: 'Heart rate points',
-        detail: typeof diag.hr_points_found === 'number'
-          ? `${diag.hr_points_found} points found → resting HR: ${hr||'none'} bpm`
-          : `Error: ${diag.hr_points_found}`
-      });
-      steps.push({
-        ok: diag.steps_points_found > 0,
-        label: 'Steps points',
-        detail: typeof diag.steps_points_found === 'number'
-          ? `${diag.steps_points_found} points found → ${steps_||0} steps`
-          : `Error: ${diag.steps_points_found}`
-      });
-      steps.push({
-        ok: diag.sleep_sessions > 0,
-        label: 'Sleep sessions',
-        detail: typeof diag.sleep_sessions === 'number'
-          ? `${diag.sleep_sessions} sessions found → ${sleep||'none'} hours`
-          : `Error: ${diag.sleep_sessions}`
-      });
-      steps.push({
-        ok: diag.weight_points > 0,
-        label: 'Weight points',
-        detail: typeof diag.weight_points === 'number'
-          ? `${diag.weight_points} points found → ${wt||'none'} kg`
-          : `Error: ${diag.weight_points}`
-      });
-    }
-  }catch(e){
-    const isReconnect = e.message === '__needs_reconnect__';
-    steps.push({ok:false, label:'Token check', detail: isReconnect ? 'Token expired — tap Reconnect' : e.message});
-  }
-
-  // Render results
-  const apiLabel = ghealthConnected()
-    ? '🟢 Google Health API (Pixel Watch 2 — preferred)'
-    : '🟢 Google Health API';
-
-  const rows = [
-    {ok: true, label: 'Active API', detail: apiLabel},
-    ...steps
-  ].map(s=>`
-    <div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid var(--bdr);font-size:12px">
-      <span style="flex-shrink:0;font-size:14px">${s.ok?'✅':'❌'}</span>
-      <div>
-        <div style="font-weight:600;color:var(--txt)">${s.label}</div>
-        <div style="color:var(--mut2)">${s.detail}</div>
-      </div>
-    </div>`).join('');
-
-  // Diagnosis
-  let diagnosis = '';
-  const hrMissing = data && !data.heart_rate?.resting && !data.heart_rate?.current;
-  const sleepMissing = data && !data.sleep?.hours;
-  const hasSteps = data?.steps > 0;
-
-  if(hrMissing && sleepMissing && hasSteps && !ghealthConnected()){
-    // Steps working but HR/sleep empty = Fit API connected but not getting Pixel Watch data
-    diagnosis = `<div style="margin-top:10px;background:rgba(255,149,0,.08);border:1px solid rgba(255,149,0,.25);border-radius:8px;padding:10px;font-size:12px;line-height:1.8">
-      <strong style="color:var(--ora)">⚠️ Steps ✅ but HR & Sleep empty</strong><br><br>
-      HR and sleep from your Pixel Watch 2 are not yet appearing.<br><br>
-      <strong>Steps to fix:</strong><br>
-      1. Open <strong>Google Health app</strong> on your phone and check your Pixel Watch 2 last synced<br>
-      2. Tap <strong>Disconnect</strong> above, then <strong>Connect Google Health</strong> again to refresh permissions<br>
-      3. Ensure <code>googlehealth.*</code> scopes are added in Google Cloud Console → Auth Platform → Data access
-    </div>`;
-  } else if(hrMissing && sleepMissing && !hasSteps){
-    diagnosis = `<div style="margin-top:10px;background:rgba(255,149,0,.08);border:1px solid rgba(255,149,0,.25);border-radius:8px;padding:10px;font-size:12px;line-height:1.8">
-      <strong style="color:var(--ora)">⚠️ No data at all</strong><br><br>
-      Google Health is not receiving any data from your Pixel Watch 2. Open the <strong>Google Health app</strong> on your phone and check your watch is paired and syncing. Then tap ↻ Refresh here.
-    </div>`;
-  } else if(hrMissing && ghealthConnected()){
-    diagnosis = `<div style="margin-top:10px;background:rgba(76,159,255,.06);border:1px solid rgba(76,159,255,.2);border-radius:8px;padding:10px;font-size:12px;line-height:1.8">
-      <strong style="color:var(--blu)">ℹ️ Google Health API connected — HR not yet available</strong><br><br>
-      Open <strong>Google Health app</strong> on your phone and confirm your Pixel Watch 2 last synced recently. HR data should appear within 10–15 minutes of wearing the watch. Tap ↻ Refresh.
-    </div>`;
-  }
-
-  content.innerHTML = rows + diagnosis +
-    `<div style="margin-top:10px"><button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.textContent.includes('Show')?'Hide raw JSON':'Show raw JSON'" style="font-size:11px;color:var(--mut2);background:transparent;border:1px solid var(--bdr2);border-radius:5px;padding:3px 8px;cursor:pointer">Show raw JSON</button>
-    <pre style="display:none;font-size:10px;font-family:monospace;color:var(--mut2);white-space:pre-wrap;word-break:break-all;margin-top:6px;max-height:200px;overflow-y:auto">${data?JSON.stringify(data,null,2):'No data'}</pre></div>`;
 }
 
 // ===== FIXED: showGfitDebug() =====
@@ -7106,6 +6983,187 @@ async function showGfitDebug(){
   content.innerHTML = rows + diagnosis +
     `<div style="margin-top:10px"><button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.textContent.includes('Show')?'Hide raw JSON':'Show raw JSON'" style="font-size:11px;color:var(--mut2);background:transparent;border:1px solid var(--bdr2);border-radius:5px;padding:3px 8px;cursor:pointer">Show raw JSON</button>
     <pre style="display:none;font-size:10px;font-family:monospace;color:var(--mut2);white-space:pre-wrap;word-break:break-all;margin-top:6px;max-height:200px;overflow-y:auto">${data?JSON.stringify(data,null,2):'No data'}</pre></div>`;
+}  
+
+  // Render results
+  const apiLabel = ghealthConnected()
+    ? '🟢 Google Health API (Pixel Watch 2 — preferred)'
+    : '🟢 Google Health API';
+
+  const rows = [
+    {ok: true, label: 'Active API', detail: apiLabel},
+    ...steps
+  ].map(s=>`
+    <div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid var(--bdr);font-size:12px">
+      <span style="flex-shrink:0;font-size:14px">${s.ok?'✅':'❌'}</span>
+      <div>
+        <div style="font-weight:600;color:var(--txt)">${s.label}</div>
+        <div style="color:var(--mut2)">${s.detail}</div>
+      </div>
+    </div>`).join('');
+
+  // Diagnosis
+  let diagnosis = '';
+  const hrMissing = data && !data.heart_rate?.resting && !data.heart_rate?.current;
+  const sleepMissing = data && !data.sleep?.hours;
+  const hasSteps = data?.steps > 0;
+
+  if(hrMissing && sleepMissing && hasSteps && !ghealthConnected()){
+    // Steps working but HR/sleep empty = Fit API connected but not getting Pixel Watch data
+    diagnosis = `<div style="margin-top:10px;background:rgba(255,149,0,.08);border:1px solid rgba(255,149,0,.25);border-radius:8px;padding:10px;font-size:12px;line-height:1.8">
+      <strong style="color:var(--ora)">⚠️ Steps ✅ but HR & Sleep empty</strong><br><br>
+      HR and sleep from your Pixel Watch 2 are not yet appearing.<br><br>
+      <strong>Steps to fix:</strong><br>
+      1. Open <strong>Google Health app</strong> on your phone and check your Pixel Watch 2 last synced<br>
+      2. Tap <strong>Disconnect</strong> above, then <strong>Connect Google Health</strong> again to refresh permissions<br>
+      3. Ensure <code>googlehealth.*</code> scopes are added in Google Cloud Console → Auth Platform → Data access
+    </div>`;
+  } else if(hrMissing && sleepMissing && !hasSteps){
+    diagnosis = `<div style="margin-top:10px;background:rgba(255,149,0,.08);border:1px solid rgba(255,149,0,.25);border-radius:8px;padding:10px;font-size:12px;line-height:1.8">
+      <strong style="color:var(--ora)">⚠️ No data at all</strong><br><br>
+      Google Health is not receiving any data from your Pixel Watch 2. Open the <strong>Google Health app</strong> on your phone and check your watch is paired and syncing. Then tap ↻ Refresh here.
+    </div>`;
+  } else if(hrMissing && ghealthConnected()){
+    diagnosis = `<div style="margin-top:10px;background:rgba(76,159,255,.06);border:1px solid rgba(76,159,255,.2);border-radius:8px;padding:10px;font-size:12px;line-height:1.8">
+      <strong style="color:var(--blu)">ℹ️ Google Health API connected — HR not yet available</strong><br><br>
+      Open <strong>Google Health app</strong> on your phone and confirm your Pixel Watch 2 last synced recently. HR data should appear within 10–15 minutes of wearing the watch. Tap ↻ Refresh.
+    </div>`;
+  }
+
+  content.innerHTML = rows + diagnosis +
+    `<div style="margin-top:10px"><button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.textContent.includes('Show')?'Hide raw JSON':'Show raw JSON'" style="font-size:11px;color:var(--mut2);background:transparent;border:1px solid var(--bdr2);border-radius:5px;padding:3px 8px;cursor:pointer">Show raw JSON</button>
+    <pre style="display:none;font-size:10px;font-family:monospace;color:var(--mut2);white-space:pre-wrap;word-break:break-all;margin-top:6px;max-height:200px;overflow-y:auto">${data?JSON.stringify(data,null,2):'No data'}</pre></div>`;
+}
+
+function renderGfitData(d){
+  const grid = document.getElementById('gfit-data-grid');
+  const rows = document.getElementById('gfit-data-rows');
+  if(!grid||!rows) return;
+
+  const restingHR = d.heart_rate?.resting;
+  const currentHR = d.heart_rate?.current;
+  const sleep     = d.sleep?.hours;
+  const steps     = d.steps;
+  const cal       = d.calories?.active;
+  const wt        = d.weight?.kg;
+  const syncedAt  = d.synced_at ? new Date(d.synced_at).toLocaleTimeString(userLocale,{hour:'2-digit',minute:'2-digit'}) : '';
+
+  const hasAnyData = restingHR || currentHR || sleep || steps || cal || wt;
+
+  // Show current HR if available, otherwise resting
+  const hrDisplay = currentHR || restingHR;
+  const hrLabel   = currentHR ? 'Current HR' : 'Resting HR';
+  const hrColor   = hrDisplay && hrDisplay < 60 ? 'grn' : hrDisplay && hrDisplay < 90 ? 'acc' : 'red';
+
+  grid.innerHTML = `
+    <div class="stat">
+      <div class="stat-l">${hrLabel}</div>
+      <div class="stat-v ${hrColor}">${hrDisplay||'—'}<span style="font-size:11px">bpm</span></div>
+      ${restingHR && currentHR ? `<div style="font-size:10px;color:var(--mut2)">Resting: ${restingHR}</div>` : ''}
+    </div>
+    <div class="stat">
+      <div class="stat-l">Sleep</div>
+      <div class="stat-v ${sleep&&sleep>=7?'grn':sleep&&sleep>=6?'acc':'red'}">${sleep||'—'}<span style="font-size:11px">h</span></div>
+    </div>
+    <div class="stat">
+      <div class="stat-l">Steps today</div>
+      <div class="stat-v blu">${steps?fmtNum(steps):'—'}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-l">Active cal</div>
+      <div class="stat-v ora">${cal?fmtNum(cal):'—'}<span style="font-size:11px">kcal</span></div>
+    </div>
+    ${wt?`<div class="stat"><div class="stat-l">Weight</div><div class="stat-v acc">${wt}<span style="font-size:11px">kg</span></div></div>`:''}`;
+
+  // Sync time badge
+  const label = document.getElementById('gfit-sync-label');
+  if(label && syncedAt) label.textContent = `Live · updated ${syncedAt}`;
+
+  if(!hasAnyData){
+    rows.innerHTML=`<div class="tip" style="margin-top:10px">
+      <strong>No data found.</strong> The API queried Google Health from midnight today.<br><br>
+      <strong>Pixel Watch 2:</strong> Data should appear within 5–10 minutes of your watch syncing.
+      Make sure <strong>Google Health</strong> is open and your Pixel Watch 2 is synced. Tap ↻ Refresh after a moment.<br><br>
+      Tap <strong>🔍 Debug</strong> to see exactly what data Google Health returned.
+    </div>`;
+  } else {
+    let insight='';
+    if(hrDisplay&&hrDisplay>90) insight+='⚠️ HR elevated — consider a lighter session today. ';
+    if(sleep&&sleep<6) insight+='😴 Under 6h sleep — prioritise recovery. ';
+    if(sleep&&sleep>=8&&restingHR&&restingHR<60) insight+='✅ Sleep & HR looking good — ready to train hard. ';
+    if(steps>10000) insight+='👟 Over 10k steps today. ';
+    rows.innerHTML=insight?`<div class="suc" style="margin-top:10px;font-size:13px">${insight}</div>`:'';
+  }
+
+  window.gfitLiveData = d;
+}
+
+function renderGfitConnectedState(){
+  document.getElementById('gfit-disconnected').style.display = 'none';
+  document.getElementById('gfit-connected').style.display   = 'block';
+  const badge = document.getElementById('gfit-status-badge');
+  badge.textContent = 'Connected ✓';
+  badge.className   = 'pill pill-grn';
+  initGooglePhotosUI(); // show Photos picker in Match Analysis
+}
+
+function renderGfitDisconnectedState(){
+  document.getElementById('gfit-disconnected').style.display = 'block';
+  document.getElementById('gfit-connected').style.display   = 'none';
+  const badge = document.getElementById('gfit-status-badge');
+  badge.textContent = 'Not connected';
+  badge.className   = 'pill pill-ora';
+  const saved = localStorage.getItem('gfit_backend_url')||'';
+  const inp = document.getElementById('gfit-backend-url');
+  if(inp && saved) inp.value = saved;
+}
+
+function disconnectGoogleFit(){
+  if(!confirm('Disconnect Google Health / Fit? Your synced data will be cleared.')) return;
+  ['ghealth_access_token','ghealth_refresh_token','ghealth_expires_at','gfit_latest']
+    .forEach(k => localStorage.removeItem(k));
+  window.gfitLiveData = null;
+  renderGfitDisconnectedState();
+}
+
+function initGoogleFit(){
+  // Show/hide URL input based on whether admin has pre-configured a backend URL
+  const hasDefault = !!DEFAULT_BACKEND_URL;
+  const inputWrap    = document.getElementById('gfit-url-input-wrap');
+  const defaultNotice = document.getElementById('gfit-url-default-notice');
+  const stepBackend  = document.getElementById('gfit-step-backend');
+  const stepSimple   = document.getElementById('gfit-step-simple');
+
+  if(hasDefault){
+    if(inputWrap)     inputWrap.style.display    = 'none';
+    if(defaultNotice) defaultNotice.style.display = 'block';
+    if(stepBackend)   stepBackend.style.display   = 'none';
+    if(stepSimple)    stepSimple.style.display     = 'inline';
+    // Also pre-save so connectGoogleFit() works without user typing it
+    if(!localStorage.getItem('gfit_backend_url')){
+      localStorage.setItem('gfit_backend_url', DEFAULT_BACKEND_URL);
+    }
+  } else {
+    if(inputWrap)     inputWrap.style.display    = 'block';
+    if(defaultNotice) defaultNotice.style.display = 'none';
+    if(stepBackend)   stepBackend.style.display   = 'inline';
+    if(stepSimple)    stepSimple.style.display     = 'none';
+  }
+
+  // Pre-fill input with saved URL for admin editing
+  const saved = localStorage.getItem('gfit_backend_url') || DEFAULT_BACKEND_URL || '';
+  const inp = document.getElementById('gfit-backend-url');
+  if(inp && saved) inp.value = saved;
+
+  handleGfitCallback(); // check if returning from OAuth
+  if(ghealthConnected()){
+    renderGfitConnectedState();
+    const cached = localStorage.getItem('gfit_latest');
+    if(cached){ try{ renderGfitData(JSON.parse(cached)); }catch(e){} }
+    syncGoogleFit();
+  } else {
+    renderGfitDisconnectedState();
+  }
 }
 
 // ===== PROFILE EDITOR =====
